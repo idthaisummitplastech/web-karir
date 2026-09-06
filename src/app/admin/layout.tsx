@@ -23,6 +23,7 @@ import {
   Quiz as QuizIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -80,32 +81,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <AppBar position="sticky" sx={{ bgcolor: '#0F172A', color: '#FFFFFF', boxShadow: '0 2px 10px rgba(0,0,0,0.15)' }}>
         <Container maxWidth="xl">
           <Toolbar disableGutters sx={{ height: 68, display: 'flex', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 1.5,
-                  bgcolor: '#018730',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 16,
-                  border: '1.5px solid #fc4509',
-                }}
-              >
-                TS
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
-                  PORTAL HR & USER ATS
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: 11 }}>
-                  PT Indonesia Thai Summit Plastech
-                </Typography>
-              </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <BrandLogo
+                title="PORTAL HR & USER ATS"
+                subtitle="PT Indonesia Thai Summit Plastech"
+                lightText={true}
+                size="small"
+              />
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

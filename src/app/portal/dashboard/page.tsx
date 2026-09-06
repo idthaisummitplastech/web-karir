@@ -383,8 +383,12 @@ export default function ApplicantDashboard() {
                   <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
                     • <strong>Jadwal Ujian:</strong>{' '}
                     {applicant?.psikotesScheduledAt
-                      ? new Date(applicant.psikotesScheduledAt).toLocaleString('id-ID')
+                      ? new Date(applicant.psikotesScheduledAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })
                       : 'Terbuka / Sesuai Jadwal Ruangan'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
+                    • <strong>Tempat / Media Pelaksanaan:</strong>{' '}
+                    <strong>{applicant?.psikotesLocation || 'Portal Karir Online PT ITSP'}</strong>
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
                     • <strong>Token Sesi:</strong> Dibagikan oleh Tim HR sesaat sebelum tes dimulai di ruangan.
@@ -442,6 +446,28 @@ export default function ApplicantDashboard() {
                 <Typography variant="body1" sx={{ color: '#334155', mb: 3, lineHeight: 1.65 }}>
                   Tes Teknis Departemen menguji pemahaman spesifik Anda terkait bidang kerja, proses plastic injection moulding, standar mutu otomotif (IATF 16949), dan pemeliharaan mold.
                 </Typography>
+
+                <Box sx={{ p: 2.5, bgcolor: '#FFFBEB', borderRadius: 2, border: '1px solid #FDE68A', mb: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#92400E', mb: 1 }}>
+                    Ketentuan & Jadwal Pelaksanaan Ujian Teknis Kejuruan:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#78350F', mb: 0.5 }}>
+                    • <strong>Jadwal Ujian:</strong>{' '}
+                    {applicant?.userTestScheduledAt
+                      ? new Date(applicant.userTestScheduledAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })
+                      : 'Sesuai Jadwal di Dashboard'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#78350F', mb: 0.5 }}>
+                    • <strong>Tempat / Media Pelaksanaan:</strong>{' '}
+                    <strong>{applicant?.userTestLocation || 'Portal Karir Online PT ITSP'}</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#78350F', mb: 0.5 }}>
+                    • <strong>Token Sesi Ujian:</strong> Memerlukan Token Ujian User yang dibagikan oleh penilai/tim departemen terkait.
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 600 }}>
+                    • <strong>Peringatan Proctoring:</strong> Dilarang berpindah tab browser atau menggunakan tools bantuan otomatis saat pengerjaan soal teknis.
+                  </Typography>
+                </Box>
 
                 {userTestSub?.submittedAt ? (
                   <Alert severity="success" sx={{ borderRadius: 2 }}>

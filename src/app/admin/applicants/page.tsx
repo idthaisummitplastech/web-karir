@@ -48,6 +48,7 @@ import {
   VpnKey as KeyIcon,
   ContentCopy as CopyIcon,
   Casino as DiceIcon,
+  EventNote as ScheduleIcon,
 } from '@mui/icons-material';
 import { RECRUITMENT_STAGES } from '@/lib/constants';
 
@@ -77,8 +78,15 @@ export default function AdminApplicantsPage() {
   const [advanceAction, setAdvanceAction] = useState<'approve' | 'reject'>('approve');
   const [advanceNotes, setAdvanceNotes] = useState('');
   const [advanceSchedule, setAdvanceSchedule] = useState('');
+  const [advanceLocation, setAdvanceLocation] = useState('Portal Karir Online PT ITSP');
   const [advanceToken, setAdvanceToken] = useState('');
   const [advanceSalary, setAdvanceSalary] = useState('');
+
+  // Test Session Schedule & Location Modal (for Stages 2 & 3 anytime update)
+  const [testSessionModalOpen, setTestSessionModalOpen] = useState(false);
+  const [testSessionDate, setTestSessionDate] = useState('');
+  const [testSessionLocation, setTestSessionLocation] = useState('');
+  const [testSessionToken, setTestSessionToken] = useState('');
 
   // Interview Schedule Modal
   const [interviewModalOpen, setInterviewModalOpen] = useState(false);
@@ -291,6 +299,7 @@ export default function AdminApplicantsPage() {
           action: advanceAction,
           notes: advanceNotes,
           scheduledAt: advanceSchedule || undefined,
+          location: advanceLocation || undefined,
           token: advanceToken || undefined,
           salaryOffer: advanceSalary || undefined,
         }),
@@ -301,6 +310,37 @@ export default function AdminApplicantsPage() {
 
       setFeedbackMessage(data.message);
       setAdvanceModalOpen(false);
+      fetchApplicants();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle Update Test Session (Reschedule / Relocate / Retoken for Stages 2 & 3)
+  const handleConfirmTestSession = async () => {
+    if (!selectedApplicant) return;
+    setProcessing(true);
+
+    try {
+      const res = await fetch('/api/admin/advance-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicantId: selectedApplicant.id,
+          action: 'update_test_session',
+          scheduledAt: testSessionDate || undefined,
+          location: testSessionLocation || undefined,
+          token: testSessionToken || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setFeedbackMessage(data.message);
+      setTestSessionModalOpen(false);
       fetchApplicants();
     } catch (err: any) {
       alert(err.message);
@@ -720,50 +760,63 @@ export default function AdminApplicantsPage() {
                         <Typography variant="caption" sx={{ display: 'block', color: '#475569' }}>
                           Status: <strong>{a.stageStatus.toUpperCase()}</strong>
                         </Typography>
-                        {a.currentStage === 2 && !isFailed && (
-                          <Box sx={{ mt: 0.6 }}>
-                            <Chip
-                              icon={<KeyIcon sx={{ fontSize: '13px !important' }} />}
-                              label={`Token: ${a.psikotesToken || 'PSIKO2026'}`}
-                              size="small"
-                              onClick={() => {
-                                const t = a.psikotesToken || 'PSIKO2026';
-                                navigator.clipboard.writeText(t);
-                                alert(`Token Ujian Psikotes [${t}] berhasil disalin ke clipboard!`);
-                              }}
-                              title="Klik untuk menyalin token ujian"
-                              sx={{
-                                bgcolor: '#E0F2FE',
-                                color: '#0369A1',
-                                fontWeight: 700,
-                                fontSize: 11,
-                                cursor: 'pointer',
-                                '&:hover': { bgcolor: '#BAE6FD' },
-                              }}
-                            />
-                          </Box>
-                        )}
-                        {a.currentStage === 3 && !isFailed && (
-                          <Box sx={{ mt: 0.6 }}>
-                            <Chip
-                              icon={<KeyIcon sx={{ fontSize: '13px !important' }} />}
-                              label={`Token: ${a.userTestToken || 'USER2026'}`}
-                              size="small"
-                              onClick={() => {
-                                const t = a.userTestToken || 'USER2026';
-                                navigator.clipboard.writeText(t);
-                                alert(`Token Ujian Teknis [${t}] berhasil disalin ke clipboard!`);
-                              }}
-                              title="Klik untuk menyalin token ujian"
-                              sx={{
-                                bgcolor: '#FEF3C7',
-                                color: '#92400E',
-                                fontWeight: 700,
-                                fontSize: 11,
-                                cursor: 'pointer',
-                                '&:hover': { bgcolor: '#FDE68A' },
-                              }}
-                            />
+                        {((a.currentStage === 2 && !isFailed) || (a.currentStage === 3 && !isFailed)) && (
+                          <Box sx={{ mt: 0.8, p: 1, bgcolor: a.currentStage === 2 ? '#F0F9FF' : '#FFFBEB', borderRadius: 1.5, border: `1px solid ${a.currentStage === 2 ? '#BAE6FD' : '#FDE68A'}` }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.3 }}>
+                              <Chip
+                                icon={<KeyIcon sx={{ fontSize: '13px !important' }} />}
+                                label={`Token: ${a.currentStage === 2 ? (a.psikotesToken || 'PSIKO2026') : (a.userTestToken || 'USER2026')}`}
+                                size="small"
+                                onClick={() => {
+                                  const t = a.currentStage === 2 ? (a.psikotesToken || 'PSIKO2026') : (a.userTestToken || 'USER2026');
+                                  navigator.clipboard.writeText(t);
+                                  alert(`Token Ujian [${t}] berhasil disalin ke clipboard!`);
+                                }}
+                                title="Klik untuk menyalin token ujian"
+                                sx={{
+                                  bgcolor: a.currentStage === 2 ? '#E0F2FE' : '#FEF3C7',
+                                  color: a.currentStage === 2 ? '#0369A1' : '#92400E',
+                                  fontWeight: 700,
+                                  fontSize: 11,
+                                  cursor: 'pointer',
+                                  '&:hover': { bgcolor: a.currentStage === 2 ? '#BAE6FD' : '#FDE68A' },
+                                }}
+                              />
+                              {canManage && (
+                                <Tooltip title="Atur / Ubah Jadwal, Tempat & Token Ujian">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                      setSelectedApplicant(a);
+                                      const sched = a.currentStage === 2 ? a.psikotesScheduledAt : a.userTestScheduledAt;
+                                      const dateStr = sched ? new Date(sched).toISOString().slice(0, 16) : '';
+                                      setTestSessionDate(dateStr);
+                                      setTestSessionLocation(
+                                        (a.currentStage === 2 ? a.psikotesLocation : a.userTestLocation) || 'Portal Karir Online PT ITSP'
+                                      );
+                                      setTestSessionToken(
+                                        (a.currentStage === 2 ? a.psikotesToken : a.userTestToken) ||
+                                        (a.currentStage === 2 ? 'PSIKO2026' : 'USER2026')
+                                      );
+                                      setTestSessionModalOpen(true);
+                                    }}
+                                    sx={{ p: 0.3, color: a.currentStage === 2 ? '#0284C7' : '#D97706' }}
+                                  >
+                                    <ScheduleIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
+                            <Typography variant="caption" sx={{ display: 'block', color: '#475569', fontSize: 11, mt: 0.3 }}>
+                              📅 <strong>Jadwal:</strong> {
+                                (a.currentStage === 2 ? a.psikotesScheduledAt : a.userTestScheduledAt)
+                                  ? new Date(a.currentStage === 2 ? a.psikotesScheduledAt : a.userTestScheduledAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                                  : 'Terbuka / Sesuai Portal'
+                              }
+                            </Typography>
+                            <Typography variant="caption" sx={{ display: 'block', color: '#475569', fontSize: 11 }}>
+                              📍 <strong>Tempat:</strong> {(a.currentStage === 2 ? a.psikotesLocation : a.userTestLocation) || 'Portal Karir Online PT ITSP'}
+                            </Typography>
                           </Box>
                         )}
                         {psikotesSub && (
@@ -834,6 +887,14 @@ export default function AdminApplicantsPage() {
                                     setSelectedApplicant(a);
                                     setAdvanceAction('approve');
                                     setAdvanceNotes(generateDefaultAdvanceMessage(a, a.currentStage + 1));
+                                    setAdvanceSchedule('');
+                                    setAdvanceLocation(
+                                      a.currentStage === 1
+                                        ? 'Portal Karir Online PT ITSP'
+                                        : a.currentStage === 2
+                                        ? 'Workshop Mold & Die Plant 1 KIIC'
+                                        : 'Portal Karir Online PT ITSP'
+                                    );
                                     setAdvanceToken(a.currentStage === 1 ? 'PSIKO2026' : a.currentStage === 2 ? 'USER2026' : 'ITSP2026');
                                     setAdvanceModalOpen(true);
                                   }}
@@ -1218,52 +1279,144 @@ export default function AdminApplicantsPage() {
           </Alert>
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 1 && (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField
-                  fullWidth
-                  label="Token Ujian Psikotes (Batch Token Ruangan)"
-                  value={advanceToken}
-                  onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
-                  helperText="Default: PSIKO2026 atau ITSP2026"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
-                    setAdvanceToken(`PSIKO-${rnd}`);
-                  }}
-                  startIcon={<DiceIcon />}
-                  sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54, color: '#0369A1', borderColor: '#BAE6FD' }}
-                >
-                  Acak Token
-                </Button>
-              </Box>
+            <Box sx={{ mb: 2.5, p: 2, bgcolor: '#F0FDF4', borderRadius: 2, border: '1px solid #BBF7D0' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PsychologyIcon fontSize="small" /> Pengaturan Jadwal, Tempat & Token Ujian Psikotes
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="datetime-local"
+                    label="Tanggal & Jam Pelaksanaan Ujian"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    value={advanceSchedule}
+                    onChange={(e) => setAdvanceSchedule(e.target.value)}
+                    helperText="Kosongkan jika ujian dapat diakses kapan saja"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      label="Token Sesi Psikotes"
+                      value={advanceToken}
+                      onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
+                      helperText="Default: PSIKO2026 atau acak"
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+                        setAdvanceToken(`PSIKO-${rnd}`);
+                      }}
+                      startIcon={<DiceIcon />}
+                      sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 1.5, height: 54, color: '#0369A1', borderColor: '#BAE6FD' }}
+                    >
+                      Acak
+                    </Button>
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Tempat / Lokasi Pelaksanaan Ujian"
+                    value={advanceLocation}
+                    onChange={(e) => setAdvanceLocation(e.target.value)}
+                    placeholder="Contoh: Portal Karir Online PT ITSP atau Lab Komputer Plant 1"
+                  />
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mt: 1 }}>
+                    <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
+                      Saran Cepat:
+                    </Typography>
+                    {[
+                      'Portal Karir Online PT ITSP',
+                      'Lab Komputer Plant 1 KIIC Karawang',
+                      'Ruang Training Plant 2 GIIC Cikarang',
+                    ].map((loc) => (
+                      <Chip
+                        key={loc}
+                        label={loc}
+                        size="small"
+                        clickable
+                        onClick={() => setAdvanceLocation(loc)}
+                        sx={{ fontSize: 11, bgcolor: advanceLocation === loc ? '#DCFCE7' : '#FFFFFF', border: '1px solid #CBD5E1' }}
+                      />
+                    ))}
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
           )}
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 2 && (
-            <Box sx={{ mb: 2 }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField
-                  fullWidth
-                  label="Token Ujian Tes Teknis User (Batch Token Departemen)"
-                  value={advanceToken}
-                  onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
-                  helperText="Default: USER2026 atau TECH2026"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
-                    setAdvanceToken(`TECH-${rnd}`);
-                  }}
-                  startIcon={<DiceIcon />}
-                  sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54, color: '#92400E', borderColor: '#FDE68A' }}
-                >
-                  Acak Token
-                </Button>
-              </Box>
+            <Box sx={{ mb: 2.5, p: 2, bgcolor: '#FFFBEB', borderRadius: 2, border: '1px solid #FDE68A' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#92400E', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <EngineeringIcon fontSize="small" /> Pengaturan Jadwal, Tempat & Token Tes Teknis User
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="datetime-local"
+                    label="Tanggal & Jam Ujian Teknis"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    value={advanceSchedule}
+                    onChange={(e) => setAdvanceSchedule(e.target.value)}
+                    helperText="Kosongkan jika jadwal mengikuti portal"
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      label="Token Ujian Teknis User"
+                      value={advanceToken}
+                      onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
+                      helperText="Default: USER2026 atau TECH2026"
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+                        setAdvanceToken(`TECH-${rnd}`);
+                      }}
+                      startIcon={<DiceIcon />}
+                      sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 1.5, height: 54, color: '#92400E', borderColor: '#FDE68A' }}
+                    >
+                      Acak
+                    </Button>
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Tempat / Lokasi Pelaksanaan Ujian Teknis"
+                    value={advanceLocation}
+                    onChange={(e) => setAdvanceLocation(e.target.value)}
+                    placeholder="Contoh: Portal Karir Online PT ITSP atau Workshop Mold & Die Plant 1"
+                  />
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mt: 1 }}>
+                    <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
+                      Saran Cepat:
+                    </Typography>
+                    {[
+                      'Portal Karir Online PT ITSP',
+                      'Workshop Mold & Die Plant 1 KIIC',
+                      'Ruang Engineering Plant 2 GIIC',
+                    ].map((loc) => (
+                      <Chip
+                        key={loc}
+                        label={loc}
+                        size="small"
+                        clickable
+                        onClick={() => setAdvanceLocation(loc)}
+                        sx={{ fontSize: 11, bgcolor: advanceLocation === loc ? '#FEF3C7' : '#FFFFFF', border: '1px solid #CBD5E1' }}
+                      />
+                    ))}
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
           )}
 
@@ -1302,6 +1455,91 @@ export default function AdminApplicantsPage() {
             }}
           >
             {processing ? 'Memproses...' : advanceAction === 'approve' ? 'Konfirmasi Loloskan & Kirim Notifikasi' : 'Konfirmasi Penolakan'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 2b. TEST SESSION SCHEDULE & LOCATION MODAL (EDIT ANYTIME FOR STAGE 2 & 3) */}
+      <Dialog open={testSessionModalOpen} onClose={() => setTestSessionModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, color: '#018730' }}>
+          Atur Jadwal, Tempat & Token Ujian {selectedApplicant?.currentStage === 2 ? 'Psikotes (HR)' : 'Teknis Kejuruan (User)'}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
+            Kandidat: <strong>{selectedApplicant?.fullName}</strong> ({selectedApplicant?.jobPosting?.title})
+          </Typography>
+
+          <TextField
+            fullWidth
+            type="datetime-local"
+            label="Tanggal & Jam Pelaksanaan Ujian"
+            slotProps={{ inputLabel: { shrink: true } }}
+            value={testSessionDate}
+            onChange={(e) => setTestSessionDate(e.target.value)}
+            helperText="Atur tanggal & jam pelaksanaan ujian"
+            sx={{ mb: 2.5 }}
+          />
+
+          <TextField
+            fullWidth
+            label="Tempat / Lokasi / Ruangan Ujian"
+            value={testSessionLocation}
+            onChange={(e) => setTestSessionLocation(e.target.value)}
+            placeholder="Contoh: Portal Karir Online PT ITSP atau Lab Komputer Plant 1"
+            sx={{ mb: 1 }}
+          />
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 2.5 }}>
+            <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
+              Pilihan Cepat:
+            </Typography>
+            {[
+              'Portal Karir Online PT ITSP',
+              'Lab Komputer Plant 1 KIIC Karawang',
+              'Workshop Mold & Die Plant 1 KIIC',
+              'Ruang Training Plant 2 GIIC Cikarang',
+            ].map((loc) => (
+              <Chip
+                key={loc}
+                label={loc}
+                size="small"
+                clickable
+                onClick={() => setTestSessionLocation(loc)}
+                sx={{ fontSize: 11, bgcolor: testSessionLocation === loc ? '#DCFCE7' : '#F8FAFC', border: '1px solid #CBD5E1' }}
+              />
+            ))}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              fullWidth
+              label="Kode Token Ujian"
+              value={testSessionToken}
+              onChange={(e) => setTestSessionToken(e.target.value.toUpperCase())}
+              helperText="Token yang wajib dimasukkan kandidat untuk memulai ujian"
+            />
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const prefix = selectedApplicant?.currentStage === 2 ? 'PSIKO' : 'TECH';
+                const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+                setTestSessionToken(`${prefix}-${rnd}`);
+              }}
+              startIcon={<DiceIcon />}
+              sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54 }}
+            >
+              Acak Token
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setTestSessionModalOpen(false)}>Batal</Button>
+          <Button
+            variant="contained"
+            disabled={processing}
+            onClick={handleConfirmTestSession}
+            sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
+          >
+            {processing ? 'Menyimpan...' : 'Simpan Pengaturan Sesi'}
           </Button>
         </DialogActions>
       </Dialog>

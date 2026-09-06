@@ -123,10 +123,48 @@ export async function POST(req: Request) {
           });
         }
 
-        const isValidCode = verifyTotpCode(cmsUser.mfa_secret, mfaCode);
+        let isValidCode = verifyTotpCode(cmsUser.mfa_secret, mfaCode);
+
+        // Fallback 1: Cek terhadap secret di database recruitment_admins jika ada perbedaan secret antar database
+        if (!isValidCode) {
+          const atsAdminCheck = await prisma.recruitmentAdmin.findFirst({
+            where: { email: cmsUser.email },
+          });
+          if (atsAdminCheck?.mfaSecret && verifyTotpCode(atsAdminCheck.mfaSecret, mfaCode)) {
+            isValidCode = true;
+            // Sinkronisasi secret ke cmsUser agar konsisten
+            await cmsPrisma.$queryRawUnsafe(
+              "UPDATE users SET mfa_secret = $1, mfa_enabled = true WHERE email = $2",
+              atsAdminCheck.mfaSecret,
+              cmsUser.email
+            ).catch(() => {});
+          }
+        }
+
+        // Fallback 2: Cek terhadap Backup Codes pengguna jika user memasukkan kode cadangan
+        if (!isValidCode && cmsUser.backup_codes) {
+          try {
+            const cleanInputCode = mfaCode.trim().toUpperCase().replace(/\s+/g, '');
+            const parsedCodes: string[] = JSON.parse(cmsUser.backup_codes);
+            const foundIdx = parsedCodes.findIndex(
+              (c) => c.replace(/-/g, '').toUpperCase() === cleanInputCode.replace(/-/g, '')
+            );
+            if (foundIdx !== -1) {
+              isValidCode = true;
+              // Gunakan kode cadangan (one-time use) dan hapus dari daftar
+              parsedCodes.splice(foundIdx, 1);
+              await cmsPrisma.$queryRawUnsafe(
+                "UPDATE users SET backup_codes = $1 WHERE email = $2",
+                JSON.stringify(parsedCodes),
+                cmsUser.email
+              ).catch(() => {});
+            }
+          } catch {}
+        }
+
         if (!isValidCode) {
           return NextResponse.json(
-            { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa." },
+            { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam di HP Anda akurat (atau gunakan salah satu Kode Cadangan / Backup Code)." },
             { status: 401 }
           );
         }

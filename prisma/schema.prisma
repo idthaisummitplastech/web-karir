@@ -53,11 +53,13 @@ model Applicant {
   // Screening
   screeningNotes      String?             @map("screening_notes") @db.Text
 
-  // Jadwal & Token Sesi Tes Online
+  // Jadwal, Lokasi & Token Sesi Tes Online
   psikotesScheduledAt DateTime?           @map("psikotes_scheduled_at")
   psikotesToken       String?             @map("psikotes_token")
+  psikotesLocation    String?             @default("Portal Karir Online PT ITSP") @map("psikotes_location")
   userTestScheduledAt DateTime?           @map("user_test_scheduled_at")
   userTestToken       String?             @map("user_test_token")
+  userTestLocation    String?             @default("Portal Karir Online PT ITSP") @map("user_test_location")
   
   // MCU & Offering
   mcuNotes            String?             @map("mcu_notes") @db.Text

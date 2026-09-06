@@ -55,12 +55,42 @@ export async function sendMailDirect({
         ]
       : [];
 
+    // Konversi HTML ke Plain-Text untuk deliverability (mencegah penalti spam filter karena email HTML-only)
+    const plainText = html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<br\s*[\/]?>/gi, '\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+
     const info = await transporter.sendMail({
       from,
       to,
+      replyTo: from,
       subject,
+      text: plainText,
       html,
       attachments,
+      headers: {
+        'X-Mailer': 'PT ITSP Career ATS Engine v1.0',
+        'X-Auto-Response-Suppress': 'All',
+        'Auto-Submitted': 'auto-generated',
+        'X-Priority': '3',
+        'Importance': 'Normal',
+        'List-Unsubscribe': `<mailto:${user}?subject=unsubscribe>`,
+      },
     });
 
     console.log('[EMAIL SENT] Berhasil mengirim email ke:', to, 'Message ID:', info.messageId);
@@ -154,7 +184,7 @@ export function emailAccountCreated(name: string, position: string, email: strin
 }
 
 // 2. Lolos Screening Dokumen & Undangan Psikotes
-export function emailScreeningPassed(name: string, position: string, scheduledAt: string, appUrl: string) {
+export function emailScreeningPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string) {
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Berdasarkan hasil evaluasi kualifikasi dan verifikasi berkas administrasi yang Anda kirimkan, Tim Rekrutmen <strong>PT Indonesia Thai Summit Plastech</strong> menyatakan bahwa Anda:</p>
@@ -169,7 +199,7 @@ export function emailScreeningPassed(name: string, position: string, scheduledAt
     <div class="info-box">
       <div class="info-item"><span class="info-label">Mata Ujian:</span> <span class="info-value">Tes Psikotes & Potensi Akademik Online</span></div>
       <div class="info-item"><span class="info-label">Jadwal Pelaksanaan:</span> <span class="info-value"><strong>${scheduledAt || "Akan diumumkan / Terbuka di Dashboard"}</strong></span></div>
-      <div class="info-item"><span class="info-label">Lokasi:</span> <span class="info-value">Portal Ujian Karir PT ITSP</span></div>
+      <div class="info-item"><span class="info-label">Tempat / Lokasi:</span> <span class="info-value"><strong>${location || "Portal Karir Online PT ITSP"}</strong></span></div>
       <div class="info-item"><span class="info-label">Ketentuan Khusus:</span> <span class="info-value">Tombol tes akan aktif pada jadwal yang ditentukan. Password / Token Sesi Ujian akan dibagikan oleh Tim HR sesaat sebelum tes dimulai.</span></div>
     </div>
 
@@ -183,7 +213,7 @@ export function emailScreeningPassed(name: string, position: string, scheduledAt
 }
 
 // 3. Lolos Psikotes & Undangan Tes User / Teknis
-export function emailPsikotesPassed(name: string, position: string, scheduledAt: string, appUrl: string) {
+export function emailPsikotesPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string) {
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Selamat! Anda dinyatakan <strong>LOLOS Tahap 2: Tes Psikotes Online</strong> untuk posisi <strong>${position}</strong> di PT Indonesia Thai Summit Plastech.</p>
@@ -191,7 +221,8 @@ export function emailPsikotesPassed(name: string, position: string, scheduledAt:
     
     <div class="info-box">
       <div class="info-item"><span class="info-label">Materi Ujian:</span> <span class="info-value">Uji Kompetensi Teknis & Keahlian Bidang</span></div>
-      <div class="info-item"><span class="info-label">Waktu:</span> <span class="info-value"><strong>${scheduledAt || "Sesuai Jadwal di Dashboard"}</strong></span></div>
+      <div class="info-item"><span class="info-label">Jadwal Pelaksanaan:</span> <span class="info-value"><strong>${scheduledAt || "Sesuai Jadwal di Dashboard"}</strong></span></div>
+      <div class="info-item"><span class="info-label">Tempat / Lokasi:</span> <span class="info-value"><strong>${location || "Portal Karir Online PT ITSP"}</strong></span></div>
       <div class="info-item"><span class="info-label">Akses Ujian:</span> <span class="info-value">Memerlukan Token Ujian User yang dibagikan oleh penilai departemen</span></div>
     </div>
 

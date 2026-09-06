@@ -148,6 +148,28 @@ export default function LoginPage() {
               borderBottom: '4px solid #fc4509',
             }}
           >
+            <Box
+              sx={{
+                width: 54,
+                height: 54,
+                bgcolor: '#FFFFFF',
+                borderRadius: '12px',
+                p: 0.6,
+                mx: 'auto',
+                mb: 1.5,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Box
+                component="img"
+                src="/logo-plastech.jpg"
+                alt="PT ITSP Logo"
+                sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            </Box>
             <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
               Login Sistem Rekrutmen & ATS
             </Typography>

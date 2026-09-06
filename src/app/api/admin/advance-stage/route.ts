@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
     }
 
-    const { applicantId, action, notes, scheduledAt, token, salaryOffer } = await req.json();
+    const { applicantId, action, notes, scheduledAt, token, salaryOffer, location } = await req.json();
 
     const applicant = await prisma.applicant.findUnique({
       where: { id: Number(applicantId) },
@@ -74,20 +74,20 @@ export async function POST(req: Request) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
-    // KASUS PERBARUI TOKEN UJIAN SAJA (UPDATE TOKEN)
-    if (action === "update_token") {
-      if (!token) {
-        return NextResponse.json({ error: "Kode token ujian tidak boleh kosong." }, { status: 400 });
-      }
-
+    // KASUS PERBARUI JADWAL, TEMPAT & TOKEN SESI UJIAN (UPDATE TEST SESSION / TOKEN)
+    if (action === "update_test_session" || action === "update_token") {
       const updateData: any = {};
       if (applicant.currentStage === 2) {
-        updateData.psikotesToken = token.trim().toUpperCase();
+        if (token) updateData.psikotesToken = token.trim().toUpperCase();
+        if (scheduledAt !== undefined) updateData.psikotesScheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+        if (location !== undefined) updateData.psikotesLocation = location.trim();
       } else if (applicant.currentStage === 3) {
-        updateData.userTestToken = token.trim().toUpperCase();
+        if (token) updateData.userTestToken = token.trim().toUpperCase();
+        if (scheduledAt !== undefined) updateData.userTestScheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+        if (location !== undefined) updateData.userTestLocation = location.trim();
       } else {
         return NextResponse.json(
-          { error: `Pelamar berada di Tahap ${applicant.currentStage} yang bukan tahapan ujian berbasis token.` },
+          { error: `Pelamar berada di Tahap ${applicant.currentStage} yang bukan tahapan ujian online berbasis token.` },
           { status: 400 }
         );
       }
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Token sesi ujian untuk ${applicant.fullName} berhasil diperbarui menjadi: ${token.trim().toUpperCase()}`,
+        message: `Pengaturan jadwal, tempat & token ujian untuk ${applicant.fullName} berhasil diperbarui!`,
       });
     }
 
@@ -187,13 +187,16 @@ export async function POST(req: Request) {
       updateData.screeningNotes = notes || "Berkas lengkap & memenuhi kualifikasi.";
       updateData.psikotesToken = token || "PSIKO2026";
       if (scheduledAt) updateData.psikotesScheduledAt = new Date(scheduledAt);
+      if (location) (updateData as any).psikotesLocation = location.trim();
 
       const formattedSchedule = scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Jadwal Terbuka di Dashboard";
+      const testLocation = location ? location.trim() : "Portal Karir Online PT ITSP";
       const defaultHtml = emailScreeningPassed(
         applicant.fullName,
         applicant.jobPosting.title,
         formattedSchedule,
-        appUrl
+        appUrl,
+        testLocation
       );
       const mailData = renderTemplate(
         "screening_passed",
@@ -203,6 +206,7 @@ export async function POST(req: Request) {
           nama: applicant.fullName,
           posisi: applicant.jobPosting.title,
           jadwal: formattedSchedule,
+          lokasi: testLocation,
           token: token || "PSIKO2026",
           link_portal: `${appUrl}/login`,
         }
@@ -216,13 +220,16 @@ export async function POST(req: Request) {
       // Lolos Psikotes -> Masuk Tahap 3 (Tes Teknis User)
       updateData.userTestToken = token || "USER2026";
       if (scheduledAt) updateData.userTestScheduledAt = new Date(scheduledAt);
+      if (location) (updateData as any).userTestLocation = location.trim();
 
       const formattedSchedule = scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Sesuai Jadwal di Dashboard";
+      const testLocation = location ? location.trim() : "Portal Karir Online PT ITSP";
       const defaultHtml = emailPsikotesPassed(
         applicant.fullName,
         applicant.jobPosting.title,
         formattedSchedule,
-        appUrl
+        appUrl,
+        testLocation
       );
       const mailData = renderTemplate(
         "psikotes_passed",
@@ -232,6 +239,7 @@ export async function POST(req: Request) {
           nama: applicant.fullName,
           posisi: applicant.jobPosting.title,
           jadwal: formattedSchedule,
+          lokasi: testLocation,
           token: token || "USER2026",
           link_portal: `${appUrl}/login`,
         }

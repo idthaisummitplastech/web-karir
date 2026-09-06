@@ -4,39 +4,27 @@ import React from 'react';
 import { Box, Container, Typography, Divider } from '@mui/material';
 import { Security as SecurityIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 
+import BrandLogo from '@/components/BrandLogo';
+
 export default function Footer() {
   return (
-    <Box sx={{ bgcolor: '#0F172A', color: '#94A3B8', pt: 6, pb: 4, mt: 8 }}>
+    <Box sx={{ bgcolor: '#0F172A', color: '#CBD5E1', pt: 8, pb: 4 }}>
       <Container maxWidth="lg">
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1.2fr 1.8fr' },
+            gridTemplateColumns: { xs: '1fr', md: '2fr 1.5fr 1fr' },
             gap: 4,
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 1.5,
-                  bgcolor: '#018730',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: 16,
-                  border: '1.5px solid #fc4509',
-                }}
-              >
-                TS
-              </Box>
-              <Typography variant="h6" sx={{ color: '#FFFFFF', fontWeight: 800, fontSize: 16 }}>
-                PT INDONESIA THAI SUMMIT PLASTECH
-              </Typography>
+            <Box sx={{ mb: 2 }}>
+              <BrandLogo
+                title="PT INDONESIA THAI SUMMIT PLASTECH"
+                subtitle="Automotive Plastic & Interior Systems"
+                lightText={true}
+                size="medium"
+              />
             </Box>
             <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.7, mb: 2 }}>
               Manufaktur otomotif plastic injection molding, spray painting, dan interior assembly presisi tinggi. Bagian dari Thai Summit Group global.
