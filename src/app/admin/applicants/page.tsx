@@ -45,6 +45,9 @@ import {
   AdminPanelSettings as AdminIcon,
   Person as PersonIcon,
   AssignmentTurnedIn as VerifiedIcon,
+  VpnKey as KeyIcon,
+  ContentCopy as CopyIcon,
+  Casino as DiceIcon,
 } from '@mui/icons-material';
 import { RECRUITMENT_STAGES } from '@/lib/constants';
 
@@ -717,6 +720,52 @@ export default function AdminApplicantsPage() {
                         <Typography variant="caption" sx={{ display: 'block', color: '#475569' }}>
                           Status: <strong>{a.stageStatus.toUpperCase()}</strong>
                         </Typography>
+                        {a.currentStage === 2 && !isFailed && (
+                          <Box sx={{ mt: 0.6 }}>
+                            <Chip
+                              icon={<KeyIcon sx={{ fontSize: '13px !important' }} />}
+                              label={`Token: ${a.psikotesToken || 'PSIKO2026'}`}
+                              size="small"
+                              onClick={() => {
+                                const t = a.psikotesToken || 'PSIKO2026';
+                                navigator.clipboard.writeText(t);
+                                alert(`Token Ujian Psikotes [${t}] berhasil disalin ke clipboard!`);
+                              }}
+                              title="Klik untuk menyalin token ujian"
+                              sx={{
+                                bgcolor: '#E0F2FE',
+                                color: '#0369A1',
+                                fontWeight: 700,
+                                fontSize: 11,
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: '#BAE6FD' },
+                              }}
+                            />
+                          </Box>
+                        )}
+                        {a.currentStage === 3 && !isFailed && (
+                          <Box sx={{ mt: 0.6 }}>
+                            <Chip
+                              icon={<KeyIcon sx={{ fontSize: '13px !important' }} />}
+                              label={`Token: ${a.userTestToken || 'USER2026'}`}
+                              size="small"
+                              onClick={() => {
+                                const t = a.userTestToken || 'USER2026';
+                                navigator.clipboard.writeText(t);
+                                alert(`Token Ujian Teknis [${t}] berhasil disalin ke clipboard!`);
+                              }}
+                              title="Klik untuk menyalin token ujian"
+                              sx={{
+                                bgcolor: '#FEF3C7',
+                                color: '#92400E',
+                                fontWeight: 700,
+                                fontSize: 11,
+                                cursor: 'pointer',
+                                '&:hover': { bgcolor: '#FDE68A' },
+                              }}
+                            />
+                          </Box>
+                        )}
                         {psikotesSub && (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                             <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 600 }}>
@@ -1169,25 +1218,53 @@ export default function AdminApplicantsPage() {
           </Alert>
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 1 && (
-            <TextField
-              fullWidth
-              label="Token Ujian Psikotes (Batch Token Ruangan)"
-              value={advanceToken}
-              onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
-              helperText="Default: PSIKO2026 atau ITSP2026"
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  label="Token Ujian Psikotes (Batch Token Ruangan)"
+                  value={advanceToken}
+                  onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
+                  helperText="Default: PSIKO2026 atau ITSP2026"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    setAdvanceToken(`PSIKO-${rnd}`);
+                  }}
+                  startIcon={<DiceIcon />}
+                  sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54, color: '#0369A1', borderColor: '#BAE6FD' }}
+                >
+                  Acak Token
+                </Button>
+              </Box>
+            </Box>
           )}
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 2 && (
-            <TextField
-              fullWidth
-              label="Token Ujian Tes Teknis User (Batch Token Departemen)"
-              value={advanceToken}
-              onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
-              helperText="Default: USER2026 atau ENG2026"
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  fullWidth
+                  label="Token Ujian Tes Teknis User (Batch Token Departemen)"
+                  value={advanceToken}
+                  onChange={(e) => setAdvanceToken(e.target.value.toUpperCase())}
+                  helperText="Default: USER2026 atau TECH2026"
+                />
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    const rnd = Math.random().toString(36).substring(2, 6).toUpperCase();
+                    setAdvanceToken(`TECH-${rnd}`);
+                  }}
+                  startIcon={<DiceIcon />}
+                  sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54, color: '#92400E', borderColor: '#FDE68A' }}
+                >
+                  Acak Token
+                </Button>
+              </Box>
+            </Box>
           )}
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 6 && (

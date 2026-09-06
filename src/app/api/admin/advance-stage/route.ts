@@ -74,6 +74,35 @@ export async function POST(req: Request) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
+    // KASUS PERBARUI TOKEN UJIAN SAJA (UPDATE TOKEN)
+    if (action === "update_token") {
+      if (!token) {
+        return NextResponse.json({ error: "Kode token ujian tidak boleh kosong." }, { status: 400 });
+      }
+
+      const updateData: any = {};
+      if (applicant.currentStage === 2) {
+        updateData.psikotesToken = token.trim().toUpperCase();
+      } else if (applicant.currentStage === 3) {
+        updateData.userTestToken = token.trim().toUpperCase();
+      } else {
+        return NextResponse.json(
+          { error: `Pelamar berada di Tahap ${applicant.currentStage} yang bukan tahapan ujian berbasis token.` },
+          { status: 400 }
+        );
+      }
+
+      await prisma.applicant.update({
+        where: { id: applicant.id },
+        data: updateData,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Token sesi ujian untuk ${applicant.fullName} berhasil diperbarui menjadi: ${token.trim().toUpperCase()}`,
+      });
+    }
+
     // Ambil Pengaturan & Master Template Email Kustom dari Database
     const settingsList = await prisma.recruitmentSetting.findMany();
     const settingsMap = settingsList.reduce((acc, c) => ({ ...acc, [c.key]: c.value }), {} as Record<string, string>);
