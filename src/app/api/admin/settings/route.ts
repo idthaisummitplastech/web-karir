@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { sendMailDirect, generateCorporateEmailWrapper } from "@/lib/email";
 
 export async function GET() {
   try {
@@ -20,6 +21,7 @@ export async function GET() {
         mcu_instructions: map["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions,
         plant_address_karawang: map["plant_address_karawang"] || DEFAULT_SETTINGS.plantAddressKarawang,
         plant_address_cikarang: map["plant_address_cikarang"] || DEFAULT_SETTINGS.plantAddressCikarang,
+        ...map,
       },
     });
   } catch (error: any) {
@@ -34,7 +36,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const settingsData = await req.json();
+    const payload = await req.json();
+
+    // Aksi Uji Coba Kirim Email Preview
+    if (payload.action === "test_email") {
+      const { to, subject, bodyContent } = payload;
+      const targetEmail = to || session.email;
+
+      if (!targetEmail) {
+        return NextResponse.json({ error: "Alamat email tujuan tidak boleh kosong." }, { status: 400 });
+      }
+
+      const html = generateCorporateEmailWrapper(subject || "Uji Coba Template Email - PT ITSP", bodyContent || "<p>Ini adalah pesan uji coba template email.</p>");
+      const result = await sendMailDirect({
+        to: targetEmail,
+        subject: `[PREVIEW TEMPLATE] ${subject || "Uji Coba Template Email PT ITSP"}`,
+        html,
+      });
+
+      if (!result.success) {
+        return NextResponse.json({ error: result.error || "Gagal mengirim email uji coba." }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Email uji coba template berhasil dikirimkan ke: ${targetEmail}`,
+      });
+    }
+
+    // Simpan Pengaturan
+    const settingsData = payload.settings || payload;
 
     for (const [key, value] of Object.entries(settingsData)) {
       if (typeof value === "string") {
@@ -48,7 +79,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Pengaturan default rekrutmen & klinik rekanan berhasil disimpan!",
+      message: "Pengaturan dan template email berhasil disimpan secara permanen!",
     });
   } catch (error: any) {
     console.error("Save settings error:", error);

@@ -8,6 +8,7 @@ import {
   emailOfferingIssued,
   emailRejectionNotice,
   sendMailDirect,
+  generateCorporateEmailWrapper,
 } from "@/lib/email";
 import { DEFAULT_SETTINGS, RECRUITMENT_STAGES } from "@/lib/constants";
 
@@ -73,6 +74,34 @@ export async function POST(req: Request) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
 
+    // Ambil Pengaturan & Master Template Email Kustom dari Database
+    const settingsList = await prisma.recruitmentSetting.findMany();
+    const settingsMap = settingsList.reduce((acc, c) => ({ ...acc, [c.key]: c.value }), {} as Record<string, string>);
+
+    const renderTemplate = (key: string, defaultSubject: string, defaultHtml: string, vars: Record<string, string>) => {
+      const customSub = settingsMap[`email_tpl_${key}_subject`];
+      const customBody = settingsMap[`email_tpl_${key}_body`];
+
+      if (customSub && customBody) {
+        let sub = customSub;
+        let body = customBody;
+        Object.entries(vars).forEach(([k, v]) => {
+          sub = sub.replace(new RegExp(`{${k}}`, "g"), v || "-");
+          body = body.replace(new RegExp(`{${k}}`, "g"), v || "-");
+        });
+        body = body.replace(/\n/g, "<br/>");
+        return {
+          subject: sub,
+          html: generateCorporateEmailWrapper(
+            sub,
+            `<div style="line-height: 1.7; font-size: 14px; color: #334155;">${body}</div>`
+          ),
+        };
+      }
+
+      return { subject: defaultSubject, html: defaultHtml };
+    };
+
     // KASUS PENOLAKAN (REJECT)
     if (action === "reject") {
       const currentStageInfo = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage);
@@ -87,11 +116,22 @@ export async function POST(req: Request) {
         },
       });
 
-      const rejectHtml = emailRejectionNotice(applicant.fullName, applicant.jobPosting.title, stageName);
+      const rejectDefaultHtml = emailRejectionNotice(applicant.fullName, applicant.jobPosting.title, stageName);
+      const mailData = renderTemplate(
+        "rejection_notice",
+        `[PT ITSP] Pemberitahuan Status Seleksi - ${applicant.jobPosting.title}`,
+        rejectDefaultHtml,
+        {
+          nama: applicant.fullName,
+          posisi: applicant.jobPosting.title,
+          tahap_gagal: stageName,
+        }
+      );
+
       sendMailDirect({
         to: applicant.email,
-        subject: `[PT ITSP] Pemberitahuan Status Seleksi - ${applicant.jobPosting.title}`,
-        html: rejectHtml,
+        subject: mailData.subject,
+        html: mailData.html,
       }).catch((err) => console.error("Email reject error:", err));
 
       return NextResponse.json({
@@ -119,48 +159,84 @@ export async function POST(req: Request) {
       updateData.psikotesToken = token || "PSIKO2026";
       if (scheduledAt) updateData.psikotesScheduledAt = new Date(scheduledAt);
 
-      const emailHtml = emailScreeningPassed(
+      const formattedSchedule = scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Jadwal Terbuka di Dashboard";
+      const defaultHtml = emailScreeningPassed(
         applicant.fullName,
         applicant.jobPosting.title,
-        scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Jadwal Terbuka di Dashboard",
+        formattedSchedule,
         appUrl
+      );
+      const mailData = renderTemplate(
+        "screening_passed",
+        `[PT ITSP] Hasil Screening & Undangan Psikotes - ${applicant.jobPosting.title}`,
+        defaultHtml,
+        {
+          nama: applicant.fullName,
+          posisi: applicant.jobPosting.title,
+          jadwal: formattedSchedule,
+          token: token || "PSIKO2026",
+          link_portal: `${appUrl}/login`,
+        }
       );
       sendMailDirect({
         to: applicant.email,
-        subject: `[PT ITSP] Hasil Screening & Undangan Psikotes - ${applicant.jobPosting.title}`,
-        html: emailHtml,
+        subject: mailData.subject,
+        html: mailData.html,
       }).catch((err) => console.error("Email screening error:", err));
     } else if (applicant.currentStage === 2) {
       // Lolos Psikotes -> Masuk Tahap 3 (Tes Teknis User)
       updateData.userTestToken = token || "USER2026";
       if (scheduledAt) updateData.userTestScheduledAt = new Date(scheduledAt);
 
-      const emailHtml = emailPsikotesPassed(
+      const formattedSchedule = scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Sesuai Jadwal di Dashboard";
+      const defaultHtml = emailPsikotesPassed(
         applicant.fullName,
         applicant.jobPosting.title,
-        scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Sesuai Jadwal di Dashboard",
+        formattedSchedule,
         appUrl
+      );
+      const mailData = renderTemplate(
+        "psikotes_passed",
+        `[PT ITSP] Hasil Psikotes & Undangan Ujian Teknis - ${applicant.jobPosting.title}`,
+        defaultHtml,
+        {
+          nama: applicant.fullName,
+          posisi: applicant.jobPosting.title,
+          jadwal: formattedSchedule,
+          token: token || "USER2026",
+          link_portal: `${appUrl}/login`,
+        }
       );
       sendMailDirect({
         to: applicant.email,
-        subject: `[PT ITSP] Hasil Psikotes & Undangan Ujian Teknis - ${applicant.jobPosting.title}`,
-        html: emailHtml,
+        subject: mailData.subject,
+        html: mailData.html,
       }).catch((err) => console.error("Email psikotes error:", err));
     } else if (applicant.currentStage === 5) {
       // Lolos Interview User -> Masuk Tahap 6 (MCU)
-      const settings = await prisma.recruitmentSetting.findMany();
-      const sMap = settings.reduce((acc, c) => ({ ...acc, [c.key]: c.value }), {} as any);
+      const clinic = settingsMap["mcu_partner_name"] || DEFAULT_SETTINGS.mcuPartnerName;
+      const address = settingsMap["mcu_partner_address"] || DEFAULT_SETTINGS.mcuPartnerAddress;
+      const cost = settingsMap["mcu_estimated_cost"] || DEFAULT_SETTINGS.mcuEstimatedCost;
+      const instr = settingsMap["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions;
 
-      const clinic = sMap["mcu_partner_name"] || DEFAULT_SETTINGS.mcuPartnerName;
-      const address = sMap["mcu_partner_address"] || DEFAULT_SETTINGS.mcuPartnerAddress;
-      const cost = sMap["mcu_estimated_cost"] || DEFAULT_SETTINGS.mcuEstimatedCost;
-      const instr = sMap["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions;
-
-      const emailHtml = emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl);
+      const defaultHtml = emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl);
+      const mailData = renderTemplate(
+        "mcu_referral",
+        `[PT ITSP] Rujukan Medical Check-Up (MCU) - ${applicant.jobPosting.title}`,
+        defaultHtml,
+        {
+          nama: applicant.fullName,
+          posisi: applicant.jobPosting.title,
+          klinik_mcu: clinic,
+          alamat_mcu: address,
+          biaya_mcu: cost,
+          link_portal: `${appUrl}/login`,
+        }
+      );
       sendMailDirect({
         to: applicant.email,
-        subject: `[PT ITSP] Rujukan Medical Check-Up (MCU) - ${applicant.jobPosting.title}`,
-        html: emailHtml,
+        subject: mailData.subject,
+        html: mailData.html,
       }).catch((err) => console.error("Email MCU error:", err));
     } else if (applicant.currentStage === 6) {
       // Lolos MCU -> Masuk Tahap 7 (Offering Letter)
@@ -169,11 +245,22 @@ export async function POST(req: Request) {
       updateData.offeringSalary = salaryOffer || "Sesuai Standar Grade PT ITSP + Tunjangan";
       updateData.offeringLetter = notes || "Surat Penawaran Resmi PT ITSP: Selamat bergabung dengan paket kompensasi kompetitif, BPJS Kesehatan & Ketenagakerjaan, Asuransi, serta Makan & Transportasi Pabrik.";
 
-      const emailHtml = emailOfferingIssued(applicant.fullName, applicant.jobPosting.title, appUrl);
+      const defaultHtml = emailOfferingIssued(applicant.fullName, applicant.jobPosting.title, appUrl);
+      const mailData = renderTemplate(
+        "offering_issued",
+        `[PT ITSP] Resmi: Penawaran Kerja (Offering Letter) - ${applicant.jobPosting.title}`,
+        defaultHtml,
+        {
+          nama: applicant.fullName,
+          posisi: applicant.jobPosting.title,
+          gaji_offer: salaryOffer || "Sesuai Standar Grade PT ITSP + Tunjangan",
+          link_portal: `${appUrl}/login`,
+        }
+      );
       sendMailDirect({
         to: applicant.email,
-        subject: `[PT ITSP] Resmi: Penawaran Kerja (Offering Letter) - ${applicant.jobPosting.title}`,
-        html: emailHtml,
+        subject: mailData.subject,
+        html: mailData.html,
       }).catch((err) => console.error("Email offering error:", err));
     } else if (applicant.currentStage === 7) {
       // Selesai Offering -> Otomatis Salin ke Karyawan Sementara

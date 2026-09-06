@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signApplicantToken } from "@/lib/auth";
-import { emailAccountCreated, sendMailDirect } from "@/lib/email";
+import { emailAccountCreated, sendMailDirect, generateCorporateEmailWrapper } from "@/lib/email";
 import { cookies } from "next/headers";
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly
@@ -117,18 +117,45 @@ export async function POST(req: Request) {
 
     // 7. Siapkan & Kirim Email Kredensial Resmi
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
-    const emailHtml = emailAccountCreated(
+    let emailHtml = emailAccountCreated(
       applicant.fullName,
       applicant.jobPosting.title,
       applicant.email,
       tempPassword,
       appUrl
     );
+    let emailSubject = `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${applicant.jobPosting.title}`;
+
+    // Cek jika Super Admin telah menetapkan template kustom di database
+    try {
+      const customSub = await prisma.recruitmentSetting.findUnique({ where: { key: "email_tpl_account_created_subject" } });
+      const customBody = await prisma.recruitmentSetting.findUnique({ where: { key: "email_tpl_account_created_body" } });
+      if (customSub?.value && customBody?.value) {
+        emailSubject = customSub.value
+          .replace(/{posisi}/g, applicant.jobPosting.title)
+          .replace(/{nama}/g, applicant.fullName);
+
+        const renderedBody = customBody.value
+          .replace(/{nama}/g, applicant.fullName)
+          .replace(/{posisi}/g, applicant.jobPosting.title)
+          .replace(/{email}/g, applicant.email)
+          .replace(/{password}/g, tempPassword)
+          .replace(/{link_portal}/g, `${appUrl}/login`)
+          .replace(/\n/g, "<br/>");
+
+        emailHtml = generateCorporateEmailWrapper(
+          emailSubject,
+          `<div style="line-height: 1.7; font-size: 14px; color: #334155;">${renderedBody}</div>`
+        );
+      }
+    } catch (tplErr) {
+      console.warn("Custom email template fetch failed, using default:", tplErr);
+    }
 
     try {
       await sendMailDirect({
         to: applicant.email,
-        subject: `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${applicant.jobPosting.title}`,
+        subject: emailSubject,
         html: emailHtml,
       });
       console.log(`[REAL EMAIL SENT] to ${applicant.email} (Password: ${tempPassword})`);
