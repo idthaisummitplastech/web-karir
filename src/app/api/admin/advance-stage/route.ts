@@ -7,6 +7,7 @@ import {
   emailMcuReferral,
   emailOfferingIssued,
   emailRejectionNotice,
+  sendMailDirect,
 } from "@/lib/email";
 import { DEFAULT_SETTINGS, RECRUITMENT_STAGES } from "@/lib/constants";
 
@@ -28,30 +29,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Pelamar tidak ditemukan." }, { status: 404 });
     }
 
-    // =========================================================================
-    // VALIDASI HAK APPROVAL PER TAHAP:
-    // - Tahap HR: 1 (Screening), 2 (Psikotes), 4 (Interview HR), 6 (MCU), 7 (Offering)
-    // - Tahap User Dept: 3 (Tes Teknis Kejuruan & Essay), 5 (Interview User)
-    // - Super Admin: Memiliki hak pengawasan penuh di semua tahap
-    // =========================================================================
-    const hrStages = [1, 2, 4, 6, 7];
+    // RBAC: Cek hak akses per role
+    // HR: Tahap 1, 2, 4, 6, 7
+    // User Dept: Tahap 3 (Tes Teknis) & Tahap 5 (Interview Teknis)
     const userDeptStages = [3, 5];
+    const hrStages = [1, 2, 4, 6, 7];
 
-    if (session.role === "user_dept" && !userDeptStages.includes(applicant.currentStage)) {
-      const stageName = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.name || `Tahap ${applicant.currentStage}`;
-      return NextResponse.json(
-        {
-          error: `Akses Ditolak: ${stageName} merupakan wewenang Tim HR Recruitment. User Departemen hanya berwenang meloloskan Tahap 3 (Tes Teknis & Essay) dan Tahap 5 (Interview User).`,
-        },
-        { status: 403 }
-      );
+    if (session.role === "user_dept") {
+      if (!userDeptStages.includes(applicant.currentStage)) {
+        const stageName = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.name || `Tahap ${applicant.currentStage}`;
+        return NextResponse.json(
+          {
+            error: `Akses Ditolak: User Departemen hanya berhak meloloskan pelamar pada Tahap 3 (Ujian Teknis) & Tahap 5 (Interview User). ${stageName} adalah wewenang HR Recruitment.`,
+          },
+          { status: 403 }
+        );
+      }
+
+      // Validasi Kesesuaian Departemen:
+      // User Departemen HANYA berhak meloloskan pelamar yang melamar pada divisinya sendiri
+      const userDept = (session.department || "").trim().toLowerCase();
+      const jobDept = (applicant.jobPosting?.department || "").trim().toLowerCase();
+
+      if (userDept && jobDept && !jobDept.includes(userDept) && !userDept.includes(jobDept)) {
+        return NextResponse.json(
+          {
+            error: `Akses Ditolak: Anda login sebagai User Departemen '${session.department}'. Anda hanya berhak mengevaluasi & meloloskan pelamar untuk lowongan divisi '${session.department}'. Pelamar ini melamar untuk divisi '${applicant.jobPosting?.department}'.`,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     if (session.role === "hr" && !hrStages.includes(applicant.currentStage)) {
       const stageName = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.name || `Tahap ${applicant.currentStage}`;
       return NextResponse.json(
         {
-          error: `Akses Ditolak: ${stageName} merupakan wewenang User Departemen terkait (${applicant.jobPosting.department}) untuk mengevaluasi dan meloloskan peserta.`,
+          error: `Akses Ditolak: ${stageName} adalah wewenang penilaian teknis User Departemen (${applicant.jobPosting?.department || 'Terkait'}). Mohon tunggu evaluasi dari tim departemen tersebut.`,
         },
         { status: 403 }
       );
@@ -69,13 +83,16 @@ export async function POST(req: Request) {
         data: {
           stageStatus: "failed",
           failedAtStage: applicant.currentStage,
-          rejectionReason: notes || "Kualifikasi belum sesuai dengan kebutuhan posisi saat ini.",
+          rejectionReason: notes || "Kualifikasi teknis belum memenuhi kriteria spesifikasi saat ini.",
         },
       });
 
-      // Kirim email penolakan resmi
-      emailRejectionNotice(applicant.fullName, applicant.jobPosting.title, stageName);
-      console.log(`[SIMULATED REJECTION EMAIL SENT] to ${applicant.email}`);
+      const rejectHtml = emailRejectionNotice(applicant.fullName, applicant.jobPosting.title, stageName);
+      sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Pemberitahuan Status Seleksi - ${applicant.jobPosting.title}`,
+        html: rejectHtml,
+      }).catch((err) => console.error("Email reject error:", err));
 
       return NextResponse.json({
         success: true,
@@ -102,23 +119,33 @@ export async function POST(req: Request) {
       updateData.psikotesToken = token || "PSIKO2026";
       if (scheduledAt) updateData.psikotesScheduledAt = new Date(scheduledAt);
 
-      emailScreeningPassed(
+      const emailHtml = emailScreeningPassed(
         applicant.fullName,
         applicant.jobPosting.title,
         scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Jadwal Terbuka di Dashboard",
         appUrl
       );
+      sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Hasil Screening & Undangan Psikotes - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      }).catch((err) => console.error("Email screening error:", err));
     } else if (applicant.currentStage === 2) {
       // Lolos Psikotes -> Masuk Tahap 3 (Tes Teknis User)
       updateData.userTestToken = token || "USER2026";
       if (scheduledAt) updateData.userTestScheduledAt = new Date(scheduledAt);
 
-      emailPsikotesPassed(
+      const emailHtml = emailPsikotesPassed(
         applicant.fullName,
         applicant.jobPosting.title,
         scheduledAt ? new Date(scheduledAt).toLocaleString("id-ID") : "Sesuai Jadwal di Dashboard",
         appUrl
       );
+      sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Hasil Psikotes & Undangan Ujian Teknis - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      }).catch((err) => console.error("Email psikotes error:", err));
     } else if (applicant.currentStage === 5) {
       // Lolos Interview User -> Masuk Tahap 6 (MCU)
       const settings = await prisma.recruitmentSetting.findMany();
@@ -129,7 +156,12 @@ export async function POST(req: Request) {
       const cost = sMap["mcu_estimated_cost"] || DEFAULT_SETTINGS.mcuEstimatedCost;
       const instr = sMap["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions;
 
-      emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl);
+      const emailHtml = emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl);
+      sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Rujukan Medical Check-Up (MCU) - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      }).catch((err) => console.error("Email MCU error:", err));
     } else if (applicant.currentStage === 6) {
       // Lolos MCU -> Masuk Tahap 7 (Offering Letter)
       updateData.mcuNotes = notes || "Hasil MCU: Fit to Work (Memenuhi Syarat Medis)";
@@ -137,7 +169,12 @@ export async function POST(req: Request) {
       updateData.offeringSalary = salaryOffer || "Sesuai Standar Grade PT ITSP + Tunjangan";
       updateData.offeringLetter = notes || "Surat Penawaran Resmi PT ITSP: Selamat bergabung dengan paket kompensasi kompetitif, BPJS Kesehatan & Ketenagakerjaan, Asuransi, serta Makan & Transportasi Pabrik.";
 
-      emailOfferingIssued(applicant.fullName, applicant.jobPosting.title, appUrl);
+      const emailHtml = emailOfferingIssued(applicant.fullName, applicant.jobPosting.title, appUrl);
+      sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Resmi: Penawaran Kerja (Offering Letter) - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      }).catch((err) => console.error("Email offering error:", err));
     } else if (applicant.currentStage === 7) {
       // Selesai Offering -> Otomatis Salin ke Karyawan Sementara
       updateData.stageStatus = "passed";

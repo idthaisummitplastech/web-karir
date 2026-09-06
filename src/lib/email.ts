@@ -1,9 +1,57 @@
+import nodemailer from 'nodemailer';
+
 export interface EmailPayload {
   to: string;
   applicantName: string;
   positionTitle: string;
   subject: string;
   contentHtml: string;
+}
+
+export async function sendMailDirect({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const port = parseInt(process.env.SMTP_PORT || '587');
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const from = process.env.SMTP_FROM || `PT ITSP Recruitment <${user || 'recruitment@itsp.co.id'}>`;
+
+    if (!user || !pass) {
+      console.warn('[EMAIL WARNING] SMTP_USER atau SMTP_PASS belum diset di .env');
+      return { success: false, error: 'Kredensial SMTP belum diset.' };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: {
+        user,
+        pass,
+      },
+    });
+
+    const info = await transporter.sendMail({
+      from,
+      to,
+      subject,
+      html,
+    });
+
+    console.log('[EMAIL SENT] Berhasil mengirim email ke:', to, 'Message ID:', info.messageId);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[EMAIL ERROR] Gagal mengirim email ke:', to, error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 export function generateCorporateEmailWrapper(title: string, bodyContent: string): string {

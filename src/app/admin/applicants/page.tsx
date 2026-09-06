@@ -143,23 +143,40 @@ export default function AdminApplicantsPage() {
     fetchApplicants();
   }, [stageFilter, statusFilter]);
 
-  // Stage Permission Logic:
-  // - HR: Stages 1 (Screening), 2 (Psikotes & Profiling), 4 (Interview HR), 6 (MCU), 7 (Offering)
-  // - User Dept: Stages 3 (Tes Teknis & Essay), 5 (Interview User)
-  // - Super Admin: Full access to all stages
-  const canManageStage = (stageNum: number) => {
+  // Permission Logic per Role & Departemen:
+  // - HR: Berwenang di Tahap 1 (Screening), 2 (Psikotes), 4 (Interview HR), 6 (MCU), 7 (Offering) untuk seluruh pelamar
+  // - User Dept: HANYA berwenang di Tahap 3 (Tes Teknis) & 5 (Interview User) DAN pelamar harus melamar pada departemennya sendiri!
+  // - Super Admin: Memiliki akses pengawasan dan kelolosan penuh di semua tahap & departemen
+  const canManageApplicant = (applicant: any) => {
     if (!adminSession) return true;
     if (adminSession.role === 'admin') return true;
-    if (adminSession.role === 'hr') return [1, 2, 4, 6, 7].includes(stageNum);
-    if (adminSession.role === 'user_dept') return [3, 5].includes(stageNum);
+
+    const stageNum = applicant.currentStage;
+    if (adminSession.role === 'hr') {
+      return [1, 2, 4, 6, 7].includes(stageNum);
+    }
+
+    if (adminSession.role === 'user_dept') {
+      if (![3, 5].includes(stageNum)) return false;
+
+      // Wajib sesuai departemen yang dilamar
+      const userDept = (adminSession.department || '').trim().toLowerCase();
+      const jobDept = (applicant.jobPosting?.department || '').trim().toLowerCase();
+      if (!userDept) return true;
+      return jobDept.includes(userDept) || userDept.includes(jobDept);
+    }
+
     return false;
   };
 
-  const getStageOwnerInfo = (stageNum: number) => {
+  const getStageOwnerInfo = (applicant: any) => {
+    const stageNum = applicant.currentStage;
+    const jobDept = applicant.jobPosting?.department || 'User Dept';
+
     if ([1, 2, 4, 6, 7].includes(stageNum)) {
       return { owner: 'hr', label: 'Wewenang HR Recruitment', color: '#0369A1', bg: '#E0F2FE' };
     }
-    return { owner: 'user_dept', label: 'Wewenang User Dept', color: '#B45309', bg: '#FEF3C7' };
+    return { owner: 'user_dept', label: `Wewenang User Dept (${jobDept})`, color: '#B45309', bg: '#FEF3C7' };
   };
 
   // Generate Personalized Official Default Approval Message
@@ -654,8 +671,8 @@ export default function AdminApplicantsPage() {
                   const psikotesSub = a.testSubmissions?.find((s: any) => s.testType === 'psikotes');
                   const userTestSub = a.testSubmissions?.find((s: any) => s.testType === 'user_test');
 
-                  const canManage = canManageStage(a.currentStage);
-                  const stageOwner = getStageOwnerInfo(a.currentStage);
+                  const canManage = canManageApplicant(a);
+                  const stageOwner = getStageOwnerInfo(a);
 
                   return (
                     <TableRow key={a.id} hover>
