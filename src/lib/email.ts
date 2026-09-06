@@ -37,6 +37,9 @@ export async function sendMailDirect({
         user,
         pass,
       },
+      tls: {
+        rejectUnauthorized: false, // Aman untuk mail server korporat on-premise seperti Zimbra
+      },
     });
 
     const info = await transporter.sendMail({
