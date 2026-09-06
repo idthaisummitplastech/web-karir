@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, signApplicantToken } from "@/lib/auth";
-import { emailAccountCreated } from "@/lib/email";
+import { emailAccountCreated, sendMailDirect } from "@/lib/email";
 import { cookies } from "next/headers";
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly
@@ -125,7 +125,16 @@ export async function POST(req: Request) {
       appUrl
     );
 
-    console.log(`[SIMULATED EMAIL SENT] to ${applicant.email} (Password: ${tempPassword})`);
+    try {
+      await sendMailDirect({
+        to: applicant.email,
+        subject: `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      });
+      console.log(`[REAL EMAIL SENT] to ${applicant.email} (Password: ${tempPassword})`);
+    } catch (mailErr: any) {
+      console.error("[APPLY EMAIL ERROR] Gagal mengirim email pendaftaran:", mailErr?.message);
+    }
 
     // 8. Buat Sesi Login Otomatis
     const token = await signApplicantToken({
