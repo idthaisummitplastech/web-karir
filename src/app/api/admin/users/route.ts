@@ -126,3 +126,168 @@ export async function POST(req: Request) {
   }
 }
 
+// PUT /api/admin/users - Edit User Details (Name, Username, Email, Role, Department, optional Password)
+export async function PUT(req: Request) {
+  try {
+    const session = await getAdminSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (session.role !== "admin") {
+      return NextResponse.json(
+        { error: "Akses Ditolak: Hanya Super Admin yang berhak mengubah data akun pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const { id, username, name, email, role, department, newPassword } = await req.json();
+
+    if (!id) {
+      return NextResponse.json({ error: "ID pengguna wajib disertakan." }, { status: 400 });
+    }
+
+    const targetUser = await prisma.recruitmentAdmin.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "Pengguna tidak ditemukan." }, { status: 404 });
+    }
+
+    // Cegah admin mengubah rolenya sendiri jika itu akun aktifnya
+    if (targetUser.id === session.adminId && role && role !== "admin") {
+      return NextResponse.json(
+        { error: "Anda tidak dapat mencabut hak Super Administrator dari akun Anda sendiri yang sedang aktif." },
+        { status: 400 }
+      );
+    }
+
+    const updateData: any = {};
+    if (username) updateData.username = username.trim();
+    if (name) updateData.name = name.trim();
+    if (email) updateData.email = email.trim().toLowerCase();
+    if (role) updateData.role = role;
+    if (department !== undefined) updateData.department = department.trim();
+
+    if (newPassword && newPassword.trim().length > 0) {
+      if (newPassword.trim().length < 6) {
+        return NextResponse.json({ error: "Password baru minimal 6 karakter." }, { status: 400 });
+      }
+      updateData.password = await hashPassword(newPassword.trim());
+    }
+
+    const updatedUser = await prisma.recruitmentAdmin.update({
+      where: { id: targetUser.id },
+      data: updateData,
+    });
+
+    // Sinkronisasi update ke central CMS users
+    try {
+      if (updateData.password) {
+        await cmsPrisma.$queryRawUnsafe(
+          "UPDATE users SET name = $1, role = $2, password = $3, email = $4, updated_at = NOW() WHERE email = $5",
+          updatedUser.name,
+          updatedUser.role,
+          updateData.password,
+          updatedUser.email,
+          targetUser.email
+        );
+      } else {
+        await cmsPrisma.$queryRawUnsafe(
+          "UPDATE users SET name = $1, role = $2, email = $3, updated_at = NOW() WHERE email = $4",
+          updatedUser.name,
+          updatedUser.role,
+          updatedUser.email,
+          targetUser.email
+        );
+      }
+    } catch (cmsErr) {
+      console.warn("Sinkronisasi update pengguna ke CMS gagal:", cmsErr);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Data akun ${updatedUser.name} (${updatedUser.username}) berhasil diperbarui!`,
+      user: updatedUser,
+    });
+  } catch (error: any) {
+    console.error("Update user error:", error);
+    return NextResponse.json({ error: "Gagal memperbarui data pengguna." }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/users?id=123 - Hapus User
+export async function DELETE(req: Request) {
+  try {
+    const session = await getAdminSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    if (session.role !== "admin") {
+      return NextResponse.json(
+        { error: "Akses Ditolak: Hanya Super Admin yang berhak menghapus akun pengguna." },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = Number(searchParams.get("id"));
+
+    if (!id) {
+      return NextResponse.json({ error: "ID pengguna tidak valid." }, { status: 400 });
+    }
+
+    const targetUser = await prisma.recruitmentAdmin.findUnique({
+      where: { id },
+    });
+
+    if (!targetUser) {
+      return NextResponse.json({ error: "Pengguna tidak ditemukan." }, { status: 404 });
+    }
+
+    // Cegah admin menghapus dirinya sendiri
+    if (targetUser.id === session.adminId) {
+      return NextResponse.json(
+        { error: "Anda tidak dapat menghapus akun Super Admin Anda sendiri yang sedang aktif digunakan." },
+        { status: 400 }
+      );
+    }
+
+    // Cegah menghapus jika tersisa hanya 1 admin di sistem
+    if (targetUser.role === "admin") {
+      const adminCount = await prisma.recruitmentAdmin.count({ where: { role: "admin" } });
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { error: "Tidak dapat menghapus satu-satunya akun Super Admin di sistem." },
+          { status: 400 }
+        );
+      }
+    }
+
+    await prisma.recruitmentAdmin.delete({
+      where: { id },
+    });
+
+    // Sinkronisasi hapus ke central CMS users
+    try {
+      await cmsPrisma.$queryRawUnsafe(
+        "DELETE FROM users WHERE email = $1",
+        targetUser.email
+      );
+    } catch (cmsErr) {
+      console.warn("Sinkronisasi hapus pengguna ke CMS gagal:", cmsErr);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Akun ${targetUser.name} (${targetUser.username}) berhasil dihapus dari sistem dan database karyawan.`,
+    });
+  } catch (error: any) {
+    console.error("Delete user error:", error);
+    return NextResponse.json({ error: "Gagal menghapus pengguna." }, { status: 500 });
+  }
+}
+
+

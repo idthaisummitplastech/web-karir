@@ -32,6 +32,8 @@ import {
   Security as SecurityIcon,
   PersonAdd as AddUserIcon,
   CheckCircle as CheckCircleIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 
 export default function AdminUsersPage() {
@@ -55,6 +57,16 @@ export default function AdminUsersPage() {
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
   const [newUserPassword, setNewUserPassword] = useState('admin123');
+
+  // Edit User Modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedEditUser, setSelectedEditUser] = useState<any | null>(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState('hr');
+  const [editDepartment, setEditDepartment] = useState('Human Capital');
+  const [editNewPassword, setEditNewPassword] = useState('');
 
   const fetchUsers = () => {
     setLoading(true);
@@ -157,6 +169,76 @@ export default function AdminUsersPage() {
       setNewUsername('');
       setNewName('');
       setNewEmail('');
+      fetchUsers();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleOpenEdit = (user: any) => {
+    setSelectedEditUser(user);
+    setEditUsername(user.username);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditRole(user.role);
+    setEditDepartment(user.department || '');
+    setEditNewPassword('');
+    setEditModalOpen(true);
+  };
+
+  const handleConfirmEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEditUser) return;
+    setProcessing(true);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedEditUser.id,
+          username: editUsername,
+          name: editName,
+          email: editEmail,
+          role: editRole,
+          department: editDepartment,
+          newPassword: editNewPassword || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setResetFeedback(data.message);
+      setEditModalOpen(false);
+      fetchUsers();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin menghapus akun ${userName}? Akun ini akan dihapus permanen dari sistem rekrutmen dan database pengguna.`
+      )
+    )
+      return;
+
+    setProcessing(true);
+    try {
+      const res = await fetch(`/api/admin/users?id=${userId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setResetFeedback(data.message);
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
@@ -279,7 +361,19 @@ export default function AdminUsersPage() {
                 </TableCell>
 
                 <TableCell align="right">
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                    {/* Edit User Button */}
+                    <Tooltip title="Edit Data, Role & Departemen Akun">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleOpenEdit(u)}
+                        sx={{ color: '#0284C7' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* Reset Password Button */}
                     <Tooltip title="Reset Password Akun Ini">
                       <Button
                         size="small"
@@ -297,6 +391,7 @@ export default function AdminUsersPage() {
                       </Button>
                     </Tooltip>
 
+                    {/* Reset MFA Button */}
                     {u.isMfaEnabled && (
                       <Tooltip title="Reset MFA jika ponsel hilang / ganti perangkat">
                         <Button
@@ -310,6 +405,17 @@ export default function AdminUsersPage() {
                         </Button>
                       </Tooltip>
                     )}
+
+                    {/* Delete User Button */}
+                    <Tooltip title="Hapus Akun Pengguna">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteUser(u.id, u.name)}
+                        sx={{ color: '#EF4444' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
                 </TableCell>
               </TableRow>
@@ -411,6 +517,75 @@ export default function AdminUsersPage() {
             <Button onClick={() => setAddModalOpen(false)}>Batal</Button>
             <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
               {processing ? 'Menyimpan...' : 'Buat Akun'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* EDIT USER MODAL */}
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleConfirmEdit}>
+          <DialogTitle sx={{ fontWeight: 800 }}>Edit Data Akun Pengguna</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
+              Ubah rincian profil, role wewenang, departemen, atau password akun: <strong>{selectedEditUser?.name}</strong>
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
+              <TextField
+                fullWidth
+                required
+                label="Username Login"
+                value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                required
+                label="Nama Lengkap & Gelar"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                required
+                type="email"
+                label="Email Resmi"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+              />
+              <TextField
+                select
+                fullWidth
+                required
+                label="Role Akun"
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
+              >
+                <MenuItem value="hr">HR Recruitment</MenuItem>
+                <MenuItem value="user_dept">User Departemen</MenuItem>
+                <MenuItem value="admin">Administrator</MenuItem>
+              </TextField>
+              <TextField
+                fullWidth
+                required
+                label="Departemen"
+                value={editDepartment}
+                onChange={(e) => setEditDepartment(e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Password Baru (Opsional)"
+                placeholder="Kosongkan jika tidak diubah"
+                value={editNewPassword}
+                onChange={(e) => setEditNewPassword(e.target.value)}
+                helperText="Biarkan kosong jika tetap menggunakan password saat ini."
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, pt: 0 }}>
+            <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
+            <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
+              {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
             </Button>
           </DialogActions>
         </form>
