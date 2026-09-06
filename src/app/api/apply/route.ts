@@ -84,9 +84,9 @@ export async function POST(req: Request) {
       age--;
     }
 
-    // 5. Generate Password Sementara (e.g. ITSP-8k2p)
-    const randomSuffix = Math.random().toString(36).substring(2, 6);
-    const tempPassword = `ITSP-${randomSuffix}`;
+    // 5. Generate Password Sementara Standar Berdasarkan Tahun Berjalan (e.g. Itsp@2026, Itsp@2027)
+    const currentYear = new Date().getFullYear();
+    const tempPassword = `Itsp@${currentYear}`;
     const hashedPassword = await hashPassword(tempPassword);
 
     // 6. Buat Record Pelamar

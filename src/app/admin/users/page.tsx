@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
-  const [newUserPassword, setNewUserPassword] = useState('admin123');
+  const [newUserPassword, setNewUserPassword] = useState(`Itsp@${new Date().getFullYear()}`);
 
   // Edit User Modal
   const [editModalOpen, setEditModalOpen] = useState(false);

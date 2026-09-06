@@ -69,11 +69,13 @@ export async function POST(req: Request) {
     }
 
     // Tambah Akun Baru
-    if (!username || !password || !name || !email) {
-      return NextResponse.json({ error: "Seluruh kolom wajib diisi." }, { status: 400 });
+    if (!username || !name || !email) {
+      return NextResponse.json({ error: "Kolom username, nama, dan email wajib diisi." }, { status: 400 });
     }
 
-    const hashedPassword = await hashPassword(password);
+    const currentYear = new Date().getFullYear();
+    const finalPassword = password && password.trim().length >= 6 ? password.trim() : `Itsp@${currentYear}`;
+    const hashedPassword = await hashPassword(finalPassword);
 
     const newUser = await prisma.recruitmentAdmin.create({
       data: {

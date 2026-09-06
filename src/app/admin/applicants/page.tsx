@@ -1356,11 +1356,11 @@ export default function AdminApplicantsPage() {
 
           <TextField
             fullWidth
-            label="Password Baru Pelamar (Kosongkan untuk acak otomatis)"
-            placeholder="Misal: ITSP-k39x atau kosongkan"
+            label="Password Baru Pelamar (Kosongkan untuk default tahun)"
+            placeholder={`Misal: Itsp@${new Date().getFullYear()} atau tentukan sendiri`}
             value={newApplicantPassInput}
             onChange={(e) => setNewApplicantPassInput(e.target.value)}
-            helperText="Jika dikosongkan, sistem akan mengenerate password acak baru."
+            helperText={`Jika dikosongkan, otomatis menggunakan password standar: Itsp@${new Date().getFullYear()}`}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>

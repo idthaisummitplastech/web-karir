@@ -16,11 +16,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Parameter target tidak lengkap." }, { status: 400 });
     }
 
-    // Generate random secure password if not provided
+    // Generate default annual secure password (e.g. Itsp@2026, Itsp@2027) if not provided
+    const currentYear = new Date().getFullYear();
+    const defaultPassword = `Itsp@${currentYear}`;
     const resolvedPassword =
       newPassword && newPassword.trim().length >= 6
         ? newPassword.trim()
-        : `ITSP-${Math.random().toString(36).substring(2, 7)}`;
+        : defaultPassword;
 
     const hashedPassword = await hashPassword(resolvedPassword);
 
