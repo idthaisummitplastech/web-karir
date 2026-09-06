@@ -1,0 +1,40 @@
+{
+  "name": "web-karir",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.4.0",
+    "@mui/material": "^9.4.0",
+    "@mui/material-nextjs": "^9.4.0",
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.10",
+    "lucide-react": "^1.16.0",
+    "next": "16.3.4",
+    "otpauth": "^9.5.2",
+    "qrcode": "^1.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "prisma": "^6.19.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}
