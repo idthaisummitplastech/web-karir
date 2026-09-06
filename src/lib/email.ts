@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 
 export interface EmailPayload {
   to: string;
@@ -42,11 +44,23 @@ export async function sendMailDirect({
       },
     });
 
+    const logoPath = path.join(process.cwd(), 'public', 'logo-plastech.jpg');
+    const attachments = fs.existsSync(logoPath)
+      ? [
+          {
+            filename: 'logo-plastech.jpg',
+            path: logoPath,
+            cid: 'companylogo',
+          },
+        ]
+      : [];
+
     const info = await transporter.sendMail({
       from,
       to,
       subject,
       html,
+      attachments,
     });
 
     console.log('[EMAIL SENT] Berhasil mengirim email ke:', to, 'Message ID:', info.messageId);
@@ -68,9 +82,7 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 20px; color: #1e293b; }
     .email-card { max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #018730 0%, #005c21 100%); padding: 28px 32px; color: #ffffff; text-align: left; position: relative; border-bottom: 4px solid #fc4509; }
-    .header h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-    .header p { margin: 6px 0 0 0; font-size: 13px; color: #d1fae5; }
+    .header { background: linear-gradient(135deg, #018730 0%, #005c21 100%); padding: 24px 28px; color: #ffffff; border-bottom: 4px solid #fc4509; }
     .content { padding: 32px; font-size: 15px; line-height: 1.65; color: #334155; }
     .greeting { font-size: 17px; font-weight: 600; color: #0f172a; margin-bottom: 16px; }
     .info-box { background: #f8fafc; border: 1px solid #cbd5e1; border-left: 5px solid #018730; padding: 18px 20px; border-radius: 6px; margin: 20px 0; }
@@ -86,9 +98,20 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
 <body>
   <div class="email-card">
     <div class="header">
-      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #fed7aa; font-weight: 700;">Human Capital Management</div>
-      <h1>PT INDONESIA THAI SUMMIT PLASTECH</h1>
-      <p>Sistem Rekrutmen Terpadu & Portal Karir Resmi</p>
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td valign="middle" align="left" style="text-align: left;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #fed7aa; font-weight: 700; margin-bottom: 4px;">Human Capital Management</div>
+            <h1 style="margin: 0; font-size: 19px; font-weight: 700; color: #ffffff; line-height: 1.25;">PT INDONESIA THAI SUMMIT PLASTECH</h1>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #d1fae5;">Sistem Rekrutmen Terpadu &amp; Portal Karir Resmi</p>
+          </td>
+          <td valign="middle" align="right" style="text-align: right; width: 130px; padding-left: 15px;">
+            <div style="background: #ffffff; padding: 6px 10px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+              <img src="cid:companylogo" alt="PT ITSP" style="height: 40px; max-width: 110px; object-fit: contain; display: block;" />
+            </div>
+          </td>
+        </tr>
+      </table>
     </div>
     <div class="content">
       ${bodyContent}
