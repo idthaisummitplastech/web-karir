@@ -9,24 +9,54 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sesi tidak valid." }, { status: 401 });
     }
 
-    const { testType, answers } = await req.json(); // answers: { [questionId]: "A" | "B" | "C" | "D" }
+    const { testType, answers } = await req.json(); // answers: { [questionId]: "A" | "B" | "C" | "D" | essay text | string[] }
 
-    // 1. Ambil Kunci Jawaban Resmi dari Database
-    const questions = await prisma.testQuestion.findMany({
-      where: { category: testType },
+    // 1. Ambil submission stabil untuk tahu paket soal + peta opsi peserta
+    const submission0 = await prisma.testSubmission.findFirst({
+      where: { applicantId: session.applicantId, testType },
     });
+    let assignedIds: number[] | null = null;
+    let optionMap: Record<string, number[]> = {};
+    if ((submission0 as any)?.questionSet) {
+      try {
+        const parsed = JSON.parse((submission0 as any).questionSet);
+        if (Array.isArray(parsed)) assignedIds = parsed.map((x) => Number(x)).filter((x) => Number.isFinite(x));
+      } catch {}
+    }
+    if ((submission0 as any)?.optionMap) {
+      try {
+        const parsed = JSON.parse((submission0 as any).optionMap);
+        if (parsed && typeof parsed === "object") optionMap = parsed;
+      } catch {}
+    }
+
+    // 1b. Ambil Kunci Jawaban Resmi — hanya soal dalam paket peserta (adil: nilai dari soal yang dikerjakan)
+    const questions = assignedIds && assignedIds.length > 0
+      ? await prisma.testQuestion.findMany({ where: { id: { in: assignedIds } } })
+      : await prisma.testQuestion.findMany({ where: { category: testType } });
 
     let calculatedScore = 0;
     let totalPossible = 0;
+
+    const toOrigLetter = (qId: number, displayedLetter: string): string | null => {
+      const map = optionMap[String(qId)];
+      const di = (displayedLetter || "").toUpperCase().charCodeAt(0) - 65;
+      if (!Array.isArray(map) || di < 0 || di >= map.length) return displayedLetter?.toUpperCase() || null; // fallback: bank lama tanpa acak
+      const origIdx = map[di];
+      return String.fromCharCode(65 + origIdx);
+    };
 
     questions.forEach((q) => {
       // Hanya soal pilihan ganda reguler yang memiliki kunci jawaban pasti yang dihitung otomatis!
       // Soal kepribadian (multi_choice) & essay dievaluasi langsung oleh HR / User Dept
       if ((!q.questionType || q.questionType === 'single_choice') && q.correctKey) {
         totalPossible += q.points;
-        const applicantAnswer = (answers && answers[q.id]) || "";
-        if (typeof applicantAnswer === "string" && applicantAnswer.toUpperCase() === q.correctKey.toUpperCase()) {
-          calculatedScore += q.points;
+        const applicantAnswer = (answers && (answers as any)[q.id]) || "";
+        if (typeof applicantAnswer === "string" && applicantAnswer.length > 0) {
+          const origLetter = optionMap[String(q.id)] ? toOrigLetter(q.id, applicantAnswer.slice(0, 1)) : applicantAnswer.slice(0, 1).toUpperCase();
+          if (origLetter && origLetter.toUpperCase() === q.correctKey.toUpperCase()) {
+            calculatedScore += q.points;
+          }
         }
       }
     });

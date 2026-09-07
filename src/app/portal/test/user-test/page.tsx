@@ -33,7 +33,9 @@ import {
   ArrowForward as ArrowForwardIcon,
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
+  GridView as GridIcon,
 } from '@mui/icons-material';
+import QuestionNavigator, { countAnswered } from '@/components/QuestionNavigator';
 
 const EXAM_DURATION_SECONDS = 25 * 60; // 25 minutes
 
@@ -52,6 +54,8 @@ export default function UserTestExamPage() {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [isLockedByAntiCheat, setIsLockedByAntiCheat] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showNav, setShowNav] = useState(false);
+  const [examMeta, setExamMeta] = useState<{ pgCount: number; essayCount: number } | null>(null);
 
   useEffect(() => {
     fetch('/api/test/questions?category=user_test')
@@ -65,6 +69,9 @@ export default function UserTestExamPage() {
       .then((data) => {
         if (data && data.questions) {
           setQuestions(data.questions);
+          if (typeof data.pgCount === 'number' || typeof data.essayCount === 'number') {
+            setExamMeta({ pgCount: data.pgCount || 0, essayCount: data.essayCount || 0 });
+          }
         }
       })
       .catch((err) => console.error(err))
@@ -176,7 +183,9 @@ export default function UserTestExamPage() {
 
   const currentQ = questions[currentIndex];
   const totalQuestions = questions.length;
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = countAnswered(questions, answers);
+  const pgTotal = examMeta?.pgCount ?? questions.filter((q: any) => (q.questionType || 'single_choice') !== 'essay').length;
+  const essayTotal = examMeta?.essayCount ?? questions.filter((q: any) => (q.questionType || 'single_choice') === 'essay').length;
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F8FAFC' }}>
@@ -244,13 +253,23 @@ export default function UserTestExamPage() {
           </Card>
         ) : (
           <Card sx={{ borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
-            <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                Soal Nomor {currentIndex + 1} dari {totalQuestions}
-              </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#fc4509' }}>
-                Terjawab: {answeredCount} / {totalQuestions} Soal
-              </Typography>
+            <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                  Soal Nomor {currentIndex + 1} dari {totalQuestions}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+                  Pilihan Ganda {pgTotal} • Essay {essayTotal} • Urutan diacak unik untuk Anda
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#fc4509' }}>
+                  Terjawab: {answeredCount} / {totalQuestions} Soal
+                </Typography>
+                <Button variant="outlined" size="small" startIcon={<GridIcon />} onClick={() => setShowNav(true)} sx={{ borderRadius: 2, fontWeight: 800, borderColor: '#fc4509', color: '#fc4509' }}>
+                  Lihat Semua Soal
+                </Button>
+              </Box>
             </Box>
 
             <LinearProgress
@@ -489,6 +508,17 @@ export default function UserTestExamPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <QuestionNavigator
+        open={showNav}
+        onClose={() => setShowNav(false)}
+        questions={questions}
+        answers={answers}
+        currentIndex={currentIndex}
+        onJump={(idx) => setCurrentIndex(idx)}
+        accent="#fc4509"
+        title="Daftar Soal Teknis (PG Acak + Essay Akhir)"
+      />
 
       <Footer />
     </Box>

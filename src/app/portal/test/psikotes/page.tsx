@@ -33,7 +33,9 @@ import {
   ArrowForward as ArrowForwardIcon,
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
+  GridView as GridIcon,
 } from '@mui/icons-material';
+import QuestionNavigator, { countAnswered } from '@/components/QuestionNavigator';
 
 const EXAM_DURATION_SECONDS = 20 * 60; // 20 minutes
 
@@ -54,8 +56,10 @@ export default function PsikotesExamPage() {
 
   // Confirmation Submit Modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showNav, setShowNav] = useState(false);
+  const [examMeta, setExamMeta] = useState<{ pgCount: number; essayCount: number } | null>(null);
 
-  // Fetch Questions
+  // Fetch Questions (paket acak unik per peserta, essay selalu akhir)
   useEffect(() => {
     fetch('/api/test/questions?category=psikotes')
       .then((res) => {
@@ -68,6 +72,9 @@ export default function PsikotesExamPage() {
       .then((data) => {
         if (data && data.questions) {
           setQuestions(data.questions);
+          if (typeof data.pgCount === 'number' || typeof data.essayCount === 'number') {
+            setExamMeta({ pgCount: data.pgCount || 0, essayCount: data.essayCount || 0 });
+          }
         }
       })
       .catch((err) => console.error(err))
@@ -183,7 +190,9 @@ export default function PsikotesExamPage() {
 
   const currentQ = questions[currentIndex];
   const totalQuestions = questions.length;
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = countAnswered(questions, answers);
+  const pgTotal = examMeta?.pgCount ?? questions.filter((q: any) => (q.questionType || 'single_choice') !== 'essay').length;
+  const essayTotal = examMeta?.essayCount ?? questions.filter((q: any) => (q.questionType || 'single_choice') === 'essay').length;
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F8FAFC' }}>
@@ -252,13 +261,23 @@ export default function PsikotesExamPage() {
         ) : (
           <Card sx={{ borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             {/* Question Progress Header */}
-            <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                Soal Nomor {currentIndex + 1} dari {totalQuestions}
-              </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#018730' }}>
-                Terjawab: {answeredCount} / {totalQuestions} Soal
-              </Typography>
+            <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                  Soal Nomor {currentIndex + 1} dari {totalQuestions}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+                  Pilihan Ganda {pgTotal} • Essay {essayTotal} • Urutan diacak unik untuk Anda
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: '#018730' }}>
+                  Terjawab: {answeredCount} / {totalQuestions} Soal
+                </Typography>
+                <Button variant="outlined" size="small" startIcon={<GridIcon />} onClick={() => setShowNav(true)} sx={{ borderRadius: 2, fontWeight: 800, borderColor: '#018730', color: '#018730' }}>
+                  Lihat Semua Soal
+                </Button>
+              </Box>
             </Box>
 
             <LinearProgress
@@ -520,6 +539,17 @@ export default function PsikotesExamPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <QuestionNavigator
+        open={showNav}
+        onClose={() => setShowNav(false)}
+        questions={questions}
+        answers={answers}
+        currentIndex={currentIndex}
+        onJump={(idx) => setCurrentIndex(idx)}
+        accent="#018730"
+        title="Daftar Soal Psikotes (PG Acak + Essay Akhir)"
+      />
 
       <Footer />
     </Box>

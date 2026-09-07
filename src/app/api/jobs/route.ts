@@ -3,8 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    const now = new Date();
     const jobs = await prisma.jobPosting.findMany({
-      where: { isOpen: true },
+      where: {
+        isOpen: true,
+        AND: [
+          { OR: [{ openingDate: null }, { openingDate: { lte: now } }] },
+          { OR: [{ closingDate: null }, { closingDate: { gte: now } }] },
+        ],
+      },
       orderBy: { createdAt: "desc" },
     });
 

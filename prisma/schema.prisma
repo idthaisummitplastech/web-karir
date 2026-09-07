@@ -18,6 +18,8 @@ model JobPosting {
   requirements String      @db.Text
   description  String      @db.Text
   isOpen       Boolean     @default(true) @map("is_open")
+  closingDate  DateTime?   @map("closing_date")
+  openingDate  DateTime?   @map("opening_date")
   createdAt    DateTime    @default(now()) @map("created_at")
   applicants   Applicant[]
 
@@ -126,6 +128,8 @@ model TestSubmission {
   score           Int?      @default(0)
   showScore       Boolean   @default(false) @map("show_score") // Privasi nilai
   answers         String    @db.Text // JSON string jawaban
+  questionSet     String?   @db.Text @map("question_set") // JSON [id,...] paket acak per peserta (stabil saat refresh)
+  optionMap       String?   @db.Text @map("option_map") // JSON {questionId:[origIdx,...]} urutan opsi acak per peserta
   violationsCount Int       @default(0) @map("violations_count") // Strike pindah tab / alt-tab
   isLocked        Boolean   @default(false) @map("is_locked")
   isPassed        Boolean?  @map("is_passed")

@@ -22,6 +22,7 @@ import {
   Security as SecurityIcon,
   Quiz as QuizIcon,
   Logout as LogoutIcon,
+  Work as WorkIcon,
 } from '@mui/icons-material';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -58,6 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   } else if (currentUserRole === 'hr') {
     navItems = [
       { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
       { label: 'Bank Soal Psikotes', href: '/admin/questions', icon: <QuizIcon /> },
       { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
       { label: 'Pengaturan MCU & Template Pesan', href: '/admin/settings', icon: <SettingsIcon /> },
@@ -66,6 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // Super Admin: Full Access
     navItems = [
       { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
       { label: 'Bank Soal Ujian Online', href: '/admin/questions', icon: <QuizIcon /> },
       { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
       { label: 'Pengaturan MCU & Default', href: '/admin/settings', icon: <SettingsIcon /> },

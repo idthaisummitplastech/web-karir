@@ -93,6 +93,13 @@ export default function AdminQuestionsPage() {
     isAdmin: boolean;
   } | null>(null);
 
+  // Pengaturan jumlah soal yang diujikan (PG acak unik + Essay akhir)
+  const [examPsikotesPg, setExamPsikotesPg] = useState(10);
+  const [examPsikotesEssay, setExamPsikotesEssay] = useState(5);
+  const [examUserPg, setExamUserPg] = useState(10);
+  const [examUserEssay, setExamUserEssay] = useState(5);
+  const [savingExamCfg, setSavingExamCfg] = useState(false);
+
   useEffect(() => {
     fetch('/api/admin/session')
       .then((res) => res.json())
@@ -131,6 +138,40 @@ export default function AdminQuestionsPage() {
   useEffect(() => {
     fetchQuestions();
   }, [activeTab, departmentFilter]);
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then((r) => r.json())
+      .then((d) => {
+        const s = d?.settings || {};
+        if (s.exam_psikotes_pg_count) setExamPsikotesPg(Number(s.exam_psikotes_pg_count) || 10);
+        if (s.exam_psikotes_essay_count !== undefined) setExamPsikotesEssay(Number(s.exam_psikotes_essay_count) || 0);
+        if (s.exam_user_test_pg_count) setExamUserPg(Number(s.exam_user_test_pg_count) || 10);
+        if (s.exam_user_test_essay_count !== undefined) setExamUserEssay(Number(s.exam_user_test_essay_count) || 0);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveExamCfg = async () => {
+    if (examPsikotesPg < 1 || examUserPg < 1) { alert('Jumlah PG minimal 1 soal.'); return; }
+    if (examPsikotesEssay < 0 || examUserEssay < 0) { alert('Jumlah essay minimal 0.'); return; }
+    setSavingExamCfg(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exam_psikotes_pg_count: String(examPsikotesPg),
+          exam_psikotes_essay_count: String(examPsikotesEssay),
+          exam_user_test_pg_count: String(examUserPg),
+          exam_user_test_essay_count: String(examUserEssay),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setFeedback({ type: 'success', text: 'Jumlah soal ujian berhasil disimpan. Berlaku untuk peserta berikutnya (paket acak unik, essay selalu akhir).' });
+    } catch (e: any) { alert(e.message); }
+    finally { setSavingExamCfg(false); }
+  };
 
   // Handle Image Upload & Convert to Base64
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,6 +368,32 @@ export default function AdminQuestionsPage() {
           Tambah Soal Baru
         </Button>
       </Box>
+      {/* PENGATURAN JUMLAH SOAL YANG DIUJIKAN */}
+      <Card sx={{ mb: 3, borderRadius: 2.5, border: '1.5px solid #BBF7D0', bgcolor: '#F0FDF4' }}>
+        <CardContent sx={{ p: 2.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#166534' }}>
+            Jumlah Soal yang Diujikan (berlaku acak unik per peserta, essay selalu paling akhir)
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#15803D', mb: 2 }}>
+            Bank soal boleh banyak. Sistem mengambil PG secara acak + mengacak opsi A/B/C/D tiap peserta sehingga tidak ada paket yang sama.
+          </Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 2 }}>
+            <TextField fullWidth type="number" label="Psikotes: PG" value={examPsikotesPg} onChange={(e)=>setExamPsikotesPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
+            <TextField fullWidth type="number" label="Psikotes: Essay" value={examPsikotesEssay} onChange={(e)=>setExamPsikotesEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
+            <TextField fullWidth type="number" label="Tes Teknis: PG" value={examUserPg} onChange={(e)=>setExamUserPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
+            <TextField fullWidth type="number" label="Tes Teknis: Essay" value={examUserEssay} onChange={(e)=>setExamUserEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
+          </Box>
+          <Box sx={{ mt: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Button variant="contained" disabled={savingExamCfg} onClick={handleSaveExamCfg} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
+              {savingExamCfg ? 'Menyimpan...' : 'Simpan Jumlah Soal'}
+            </Button>
+            <Typography variant="caption" sx={{ color: '#64748B' }}>
+              Contoh: PG 10 + Essay 5. Bila bank kurang, dipakai semua yang ada.
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
+
 
       {/* ROLE-AWARE WORKFLOW BANNER */}
       {adminSession && (

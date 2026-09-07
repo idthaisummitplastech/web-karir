@@ -75,6 +75,22 @@ export async function POST(req: Request) {
       );
     }
 
+    // 3b. Tolak lamaran ke lowongan yang tutup / terjadwal / kedaluwarsa
+    const targetJob = await prisma.jobPosting.findUnique({ where: { id: Number(jobPostingId) } });
+    if (!targetJob) {
+      return NextResponse.json({ error: "Lowongan yang dipilih tidak ditemukan." }, { status: 404 });
+    }
+    const nowDate = new Date();
+    if (!targetJob.isOpen) {
+      return NextResponse.json({ error: "Mohon maaf, lowongan ini sudah DITUTUP dan tidak menerima lamaran baru." }, { status: 400 });
+    }
+    if (targetJob.openingDate && new Date(targetJob.openingDate).getTime() > nowDate.getTime()) {
+      return NextResponse.json({ error: "Lowongan ini belum dibuka. Silakan kembali pada tanggal pembukaan." }, { status: 400 });
+    }
+    if (targetJob.closingDate && new Date(targetJob.closingDate).getTime() < nowDate.getTime()) {
+      return NextResponse.json({ error: "Masa pendaftaran lowongan ini telah BERAKHIR (kedaluwarsa)." }, { status: 400 });
+    }
+
     // 4. Hitung Usia dari Tanggal Lahir
     const birthDateObj = new Date(birthDate);
     const today = new Date();

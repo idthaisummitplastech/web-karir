@@ -68,11 +68,12 @@ export async function POST(req: Request) {
     const settingsData = payload.settings || payload;
 
     for (const [key, value] of Object.entries(settingsData)) {
-      if (typeof value === "string") {
+      const strVal = typeof value === "string" ? value : typeof value === "number" ? String(value) : null;
+      if (strVal !== null) {
         await prisma.recruitmentSetting.upsert({
           where: { key },
-          update: { value },
-          create: { key, value },
+          update: { value: strVal },
+          create: { key, value: strVal },
         });
       }
     }
