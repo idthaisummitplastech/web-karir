@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { emailHrInterviewInvite, emailUserInterviewInvite } from "@/lib/email";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { emailHrInterviewInvite, emailUserInterviewInvite, sendMailDirect } from "@/lib/email";
+import { DEFAULT_SETTINGS, getPlantMapsUrl } from "@/lib/constants";
 
 export async function POST(req: Request) {
   try {
@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       meetingLink,
       meetingPasscode,
       locationAddress,
+      mapsUrl,
       roomName,
       interviewerName,
       notes,
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
       (applicant.jobPosting.location.includes("Cikarang")
         ? DEFAULT_SETTINGS.plantAddressCikarang
         : DEFAULT_SETTINGS.plantAddressKarawang);
+
+    const resolvedMapsUrl = mapsUrl || getPlantMapsUrl(resolvedLocationAddress);
 
     // 1. Simpan Jadwal Interview
     const interview = await prisma.interviewSchedule.create({
@@ -67,15 +70,17 @@ export async function POST(req: Request) {
       });
     }
 
-    // 3. Kirim Email Undangan Resmi Berformat Korporat
+    // 3. Kirim Email Undangan Resmi Berformat Korporat (di-await agar kegagalan terlihat)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
     const formattedDate = new Date(scheduledAt).toLocaleString("id-ID", {
       dateStyle: "full",
       timeStyle: "short",
     });
 
+    let emailStatus: { success: boolean; error?: string } | null = null;
+
     if (interviewType === "hr") {
-      emailHrInterviewInvite(
+      const emailHtml = emailHrInterviewInvite(
         applicant.fullName,
         applicant.jobPosting.title,
         {
@@ -85,12 +90,20 @@ export async function POST(req: Request) {
           meetingLink,
           meetingPasscode,
           locationAddress: resolvedLocationAddress,
+          mapsUrl: resolvedMapsUrl,
           roomName,
         },
         appUrl
       );
+
+      emailStatus = await sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Undangan Resmi Wawancara (Interview HR) - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      });
+      if (!emailStatus.success) console.error("Email interview HR error:", emailStatus.error);
     } else {
-      emailUserInterviewInvite(
+      const emailHtml = emailUserInterviewInvite(
         applicant.fullName,
         applicant.jobPosting.title,
         {
@@ -101,16 +114,28 @@ export async function POST(req: Request) {
           meetingLink,
           meetingPasscode,
           locationAddress: resolvedLocationAddress,
+          mapsUrl: resolvedMapsUrl,
           roomName,
         },
         appUrl
       );
+
+      emailStatus = await sendMailDirect({
+        to: applicant.email,
+        subject: `[PT ITSP] Undangan Resmi Wawancara Teknis (Interview User) - ${applicant.jobPosting.title}`,
+        html: emailHtml,
+      });
+      if (!emailStatus.success) console.error("Email interview user error:", emailStatus.error);
     }
 
     return NextResponse.json({
       success: true,
-      message: `Jadwal Interview ${interviewType.toUpperCase()} berhasil dibuat dan undangan email resmi telah dikirimkan ke ${applicant.email}!`,
+      message: emailStatus && !emailStatus.success
+        ? `Jadwal Interview ${interviewType.toUpperCase()} berhasil dibuat, namun email gagal terkirim (${emailStatus.error || "kesalahan SMTP"}).`
+        : `Jadwal Interview ${interviewType.toUpperCase()} berhasil dibuat dan undangan email resmi (lengkap dengan Google Maps) telah dikirimkan ke ${applicant.email}!`,
       interview,
+      emailSent: emailStatus ? emailStatus.success : undefined,
+      emailError: emailStatus && !emailStatus.success ? emailStatus.error : undefined,
     });
   } catch (error: any) {
     console.error("Schedule interview error:", error);

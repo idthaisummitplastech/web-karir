@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApplicantSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_SETTINGS } from "@/lib/constants";
+import { DEFAULT_SETTINGS, getEmbedMapsUrl, getPlantMapsUrl, DEFAULT_MCU_LOCATION } from "@/lib/constants";
 
 export async function GET() {
   try {
@@ -86,6 +86,16 @@ export async function GET() {
         partnerAddress: settingsMap["mcu_partner_address"] || DEFAULT_SETTINGS.mcuPartnerAddress,
         estimatedCost: settingsMap["mcu_estimated_cost"] || DEFAULT_SETTINGS.mcuEstimatedCost,
         instructions: settingsMap["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions,
+        mapsUrl:
+          getPlantMapsUrl(settingsMap["mcu_partner_maps"] || "") ||
+          getPlantMapsUrl(settingsMap["mcu_partner_address"] || "") ||
+          getPlantMapsUrl(settingsMap["mcu_partner_name"] || "") ||
+          DEFAULT_MCU_LOCATION.mapsUrl,
+        embedUrl:
+          getEmbedMapsUrl(settingsMap["mcu_partner_maps"] || "") ||
+          getEmbedMapsUrl(settingsMap["mcu_partner_address"] || "") ||
+          getEmbedMapsUrl(settingsMap["mcu_partner_name"] || "") ||
+          DEFAULT_MCU_LOCATION.embedUrl,
       },
       plantConfig: {
         karawang: settingsMap["plant_address_karawang"] || DEFAULT_SETTINGS.plantAddressKarawang,

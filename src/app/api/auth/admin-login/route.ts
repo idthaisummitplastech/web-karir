@@ -96,7 +96,7 @@ export async function POST(req: Request) {
         const isValidCode = verifyTotpCode(secretToUse, mfaCode);
         if (!isValidCode) {
           return NextResponse.json(
-            { error: "Kode verifikasi 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam di HP Anda akurat dan masukkan kode yang sedang aktif." },
+            { error: "Kode verifikasi 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam HP (iPhone: Pengaturan > Umum > Tanggal & Waktu > Atur Otomatis AKTIF) dan jam laptop/server sudah sinkron (WIB UTC+7), lalu masukkan kode yang sedang aktif." },
             { status: 401 }
           );
         }
@@ -164,7 +164,7 @@ export async function POST(req: Request) {
 
         if (!isValidCode) {
           return NextResponse.json(
-            { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam di HP Anda akurat (atau gunakan salah satu Kode Cadangan / Backup Code)." },
+            { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam HP (iPhone: Pengaturan > Umum > Tanggal & Waktu > Atur Otomatis AKTIF) dan jam laptop/server sudah sinkron (WIB UTC+7) (atau gunakan salah satu Kode Cadangan / Backup Code)." },
             { status: 401 }
           );
         }
@@ -300,7 +300,7 @@ export async function POST(req: Request) {
       const isValidCode = verifyTotpCode(secretToUse, mfaCode);
       if (!isValidCode) {
         return NextResponse.json(
-          { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam di HP Anda sinkron." },
+          { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam HP (iPhone: Pengaturan > Umum > Tanggal & Waktu > Atur Otomatis AKTIF) dan jam laptop/server sudah sinkron (WIB UTC+7)." },
           { status: 401 }
         );
       }
@@ -323,7 +323,7 @@ export async function POST(req: Request) {
       const isValidCode = verifyTotpCode(admin.mfaSecret, mfaCode);
       if (!isValidCode) {
         return NextResponse.json(
-          { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa." },
+          { error: "Kode MFA Authenticator 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam HP (iPhone: Pengaturan > Umum > Tanggal & Waktu > Atur Otomatis AKTIF) dan jam laptop/server sudah sinkron (WIB UTC+7), lalu masukkan kode yang sedang aktif." },
           { status: 401 }
         );
       }

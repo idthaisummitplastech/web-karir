@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       const isValid = verifyTotpCode(admin.mfaSecret, code);
       if (!isValid) {
         return NextResponse.json(
-          { error: "Kode verifikasi 6-digit tidak valid. Pastikan jam perangkat Anda akurat." },
+          { error: "Kode verifikasi 6-digit tidak valid atau sudah kedaluwarsa. Pastikan jam HP (iPhone: Pengaturan > Umum > Tanggal & Waktu > Atur Otomatis AKTIF) dan jam laptop/server sudah sinkron (WIB UTC+7), lalu masukkan kode yang sedang aktif." },
           { status: 400 }
         );
       }

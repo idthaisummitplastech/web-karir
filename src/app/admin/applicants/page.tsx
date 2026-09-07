@@ -49,8 +49,18 @@ import {
   ContentCopy as CopyIcon,
   Casino as DiceIcon,
   EventNote as ScheduleIcon,
+  Map as MapIcon,
+  Place as PlaceIcon,
+  Business as FactoryIcon,
+  Language as OnlineIcon,
 } from '@mui/icons-material';
-import { RECRUITMENT_STAGES } from '@/lib/constants';
+import {
+  RECRUITMENT_STAGES,
+  PLANT_LOCATIONS,
+  DEFAULT_MCU_LOCATION,
+  getPlantMapsUrl,
+  getEmbedMapsUrl,
+} from '@/lib/constants';
 
 export default function AdminApplicantsPage() {
   const [applicants, setApplicants] = useState<any[]>([]);
@@ -79,6 +89,7 @@ export default function AdminApplicantsPage() {
   const [advanceNotes, setAdvanceNotes] = useState('');
   const [advanceSchedule, setAdvanceSchedule] = useState('');
   const [advanceLocation, setAdvanceLocation] = useState('Portal Karir Online PT ITSP');
+  const [advanceMapsInput, setAdvanceMapsInput] = useState('');
   const [advanceToken, setAdvanceToken] = useState('');
   const [advanceSalary, setAdvanceSalary] = useState('');
 
@@ -86,6 +97,7 @@ export default function AdminApplicantsPage() {
   const [testSessionModalOpen, setTestSessionModalOpen] = useState(false);
   const [testSessionDate, setTestSessionDate] = useState('');
   const [testSessionLocation, setTestSessionLocation] = useState('');
+  const [testSessionMapsInput, setTestSessionMapsInput] = useState('');
   const [testSessionToken, setTestSessionToken] = useState('');
 
   // Interview Schedule Modal
@@ -96,12 +108,17 @@ export default function AdminApplicantsPage() {
   const [meetingLink, setMeetingLink] = useState('https://teams.microsoft.com/meet/itsp-interview');
   const [meetingPasscode, setMeetingPasscode] = useState('ITSP123');
   const [interviewDate, setInterviewDate] = useState('');
+  const [interviewPlantChoice, setInterviewPlantChoice] = useState<'kiic' | 'giic' | 'custom'>('kiic');
+  const [interviewCustomAddress, setInterviewCustomAddress] = useState('');
+  const [interviewMapsInput, setInterviewMapsInput] = useState('');
+  const [interviewRoom, setInterviewRoom] = useState('Ruang Meeting HCM Lt. 2 (Gedung Admin)');
 
   // Score Modal
   const [scoreModalOpen, setScoreModalOpen] = useState(false);
   const [scoreTestType, setScoreTestType] = useState<'psikotes' | 'user_test'>('psikotes');
   const [scoreInput, setScoreInput] = useState<number | ''>('');
   const [showScoreToCandidate, setShowScoreToCandidate] = useState(false);
+
 
   const [processing, setProcessing] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
@@ -300,6 +317,7 @@ export default function AdminApplicantsPage() {
           notes: advanceNotes,
           scheduledAt: advanceSchedule || undefined,
           location: advanceLocation || undefined,
+          mapsUrl: advanceMapsInput || undefined,
           token: advanceToken || undefined,
           salaryOffer: advanceSalary || undefined,
         }),
@@ -308,9 +326,35 @@ export default function AdminApplicantsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setFeedbackMessage(data.message);
+      setFeedbackMessage(
+        data.emailSent === false
+          ? `${data.message} (Email gagal: ${data.emailError || 'kesalahan SMTP'})`
+          : data.message
+      );
       setAdvanceModalOpen(false);
       fetchApplicants();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Handle Resend Stage Email (recovery bila email kelolosan tidak diterima kandidat)
+  const handleResendEmail = async (applicant: any) => {
+    const stageLabel = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.shortName || `Tahap ${applicant.currentStage}`;
+    if (!confirm(`Kirim ulang email notifikasi ${stageLabel} ke ${applicant.email}?`)) return;
+    setProcessing(true);
+    try {
+      const res = await fetch('/api/admin/resend-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicantId: applicant.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal mengirim ulang email.');
+      setFeedbackMessage(data.message);
+      alert(data.message);
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -379,6 +423,23 @@ export default function AdminApplicantsPage() {
 
     setProcessing(true);
     try {
+      let resolvedAddress = PLANT_LOCATIONS.kiic.address;
+      let resolvedMaps = PLANT_LOCATIONS.kiic.mapsUrl;
+
+      if (locationMode === 'onsite') {
+        if (interviewPlantChoice === 'giic') {
+          resolvedAddress = PLANT_LOCATIONS.giic.address;
+          resolvedMaps = PLANT_LOCATIONS.giic.mapsUrl;
+        } else if (interviewPlantChoice === 'custom') {
+          resolvedAddress = interviewCustomAddress.trim() || PLANT_LOCATIONS.kiic.address;
+          resolvedMaps = interviewMapsInput.trim() ? getPlantMapsUrl(interviewMapsInput.trim()) : getPlantMapsUrl(resolvedAddress);
+        }
+
+        if (interviewMapsInput.trim()) {
+          resolvedMaps = getPlantMapsUrl(interviewMapsInput.trim()) || resolvedMaps;
+        }
+      }
+
       const res = await fetch('/api/admin/schedule-interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -390,6 +451,9 @@ export default function AdminApplicantsPage() {
           meetingPlatform,
           meetingLink: locationMode === 'online' ? meetingLink : undefined,
           meetingPasscode: locationMode === 'online' ? meetingPasscode : undefined,
+          locationAddress: locationMode === 'onsite' ? resolvedAddress : undefined,
+          mapsUrl: locationMode === 'onsite' ? resolvedMaps : undefined,
+          roomName: locationMode === 'onsite' ? interviewRoom : undefined,
         }),
       });
 
@@ -895,6 +959,7 @@ export default function AdminApplicantsPage() {
                                         ? 'Workshop Mold & Die Plant 1 KIIC'
                                         : 'Portal Karir Online PT ITSP'
                                     );
+                                    setAdvanceMapsInput('');
                                     setAdvanceToken(a.currentStage === 1 ? 'PSIKO2026' : a.currentStage === 2 ? 'USER2026' : 'ITSP2026');
                                     setAdvanceModalOpen(true);
                                   }}
@@ -928,12 +993,16 @@ export default function AdminApplicantsPage() {
 
                           {/* Schedule Interview: Tahap 4 (HR Interview) & Tahap 5 (User Interview) */}
                           {a.currentStage === 4 && canManage && (
-                            <Tooltip title="Jadwalkan Interview HR (Teams / Onsite)">
+                            <Tooltip title="Jadwalkan Interview HR (Teams / Onsite di Pabrik)">
                               <IconButton
                                 size="small"
                                 onClick={() => {
                                   setSelectedApplicant(a);
                                   setInterviewType('hr');
+                                  const isCikarang = a.jobPosting?.location?.toLowerCase().includes('cikarang');
+                                  setInterviewPlantChoice(isCikarang ? 'giic' : 'kiic');
+                                  setInterviewRoom('Ruang Meeting HCM Lt. 2 (Gedung Admin)');
+                                  setInterviewMapsInput('');
                                   setInterviewModalOpen(true);
                                 }}
                                 sx={{ color: '#0284C7' }}
@@ -944,12 +1013,16 @@ export default function AdminApplicantsPage() {
                           )}
 
                           {a.currentStage === 5 && canManage && (
-                            <Tooltip title="Jadwalkan Interview User Departemen (Teams / Onsite)">
+                            <Tooltip title="Jadwalkan Interview User Departemen (Teams / Onsite di Pabrik)">
                               <IconButton
                                 size="small"
                                 onClick={() => {
                                   setSelectedApplicant(a);
                                   setInterviewType('user');
+                                  const isCikarang = a.jobPosting?.location?.toLowerCase().includes('cikarang');
+                                  setInterviewPlantChoice(isCikarang ? 'giic' : 'kiic');
+                                  setInterviewRoom(`Ruang Meeting Teknis Divisi ${a.jobPosting?.department || 'Terkait'}`);
+                                  setInterviewMapsInput('');
                                   setInterviewModalOpen(true);
                                 }}
                                 sx={{ color: '#D97706' }}
@@ -974,6 +1047,19 @@ export default function AdminApplicantsPage() {
                                 sx={{ color: '#F59E0B' }}
                               >
                                 <ScoreIcon />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+
+                          {/* Resend Stage Email (recovery bila kandidat tidak menerima email) */}
+                          {!isFailed && canManage && (
+                            <Tooltip title="Kirim Ulang Email Notifikasi Tahap Ini">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleResendEmail(a)}
+                                sx={{ color: '#018730' }}
+                              >
+                                <EmailIcon />
                               </IconButton>
                             </Tooltip>
                           )}
@@ -1318,32 +1404,104 @@ export default function AdminApplicantsPage() {
                   </Box>
                 </Grid>
                 <Grid item xs={12}>
+                  <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, display: 'block', mb: 0.5 }}>
+                    Pilihan Lokasi Pelaksanaan Ujian Psikotes:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('Portal Karir Online') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Portal Karir Online PT ITSP');
+                        setAdvanceMapsInput('');
+                      }}
+                      startIcon={<OnlineIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('Portal Karir Online') ? '#018730' : '#FFFFFF',
+                        color: advanceLocation.includes('Portal Karir Online') ? '#FFFFFF' : '#018730',
+                        borderColor: '#018730',
+                      }}
+                    >
+                      Online Portal Karir
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('KIIC') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Lab Komputer Plant 1 KIIC Karawang');
+                        setAdvanceMapsInput(PLANT_LOCATIONS.kiic.mapsUrl);
+                      }}
+                      startIcon={<FactoryIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('KIIC') ? '#018730' : '#FFFFFF',
+                        color: advanceLocation.includes('KIIC') ? '#FFFFFF' : '#018730',
+                        borderColor: '#018730',
+                      }}
+                    >
+                      Onsite: Plant 1 (KIIC Karawang)
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('GIIC') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Ruang Training Plant 2 GIIC Cikarang');
+                        setAdvanceMapsInput(PLANT_LOCATIONS.giic.mapsUrl);
+                      }}
+                      startIcon={<FactoryIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('GIIC') ? '#018730' : '#FFFFFF',
+                        color: advanceLocation.includes('GIIC') ? '#FFFFFF' : '#018730',
+                        borderColor: '#018730',
+                      }}
+                    >
+                      Onsite: Plant 2 (GIIC Cikarang)
+                    </Button>
+                  </Box>
+
                   <TextField
                     fullWidth
+                    size="small"
                     label="Tempat / Lokasi Pelaksanaan Ujian"
                     value={advanceLocation}
                     onChange={(e) => setAdvanceLocation(e.target.value)}
                     placeholder="Contoh: Portal Karir Online PT ITSP atau Lab Komputer Plant 1"
+                    sx={{ mb: 1, bgcolor: '#FFFFFF' }}
                   />
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mt: 1 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
-                      Saran Cepat:
-                    </Typography>
-                    {[
-                      'Portal Karir Online PT ITSP',
-                      'Lab Komputer Plant 1 KIIC Karawang',
-                      'Ruang Training Plant 2 GIIC Cikarang',
-                    ].map((loc) => (
-                      <Chip
-                        key={loc}
-                        label={loc}
-                        size="small"
-                        clickable
-                        onClick={() => setAdvanceLocation(loc)}
-                        sx={{ fontSize: 11, bgcolor: advanceLocation === loc ? '#DCFCE7' : '#FFFFFF', border: '1px solid #CBD5E1' }}
-                      />
-                    ))}
-                  </Box>
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Link Google Maps / Tag Maps (<iframe ...>)"
+                    value={advanceMapsInput}
+                    onChange={(e) => setAdvanceMapsInput(e.target.value)}
+                    placeholder="Kosongkan untuk memakai peta resmi PT ITSP, atau paste link/tag iframe kustom"
+                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal pelamar bila ujian dilakukan di pabrik."
+                    sx={{ mb: 1, bgcolor: '#FFFFFF' }}
+                  />
+
+                  {(() => {
+                    const resolvedMaps = advanceMapsInput.trim() ? getPlantMapsUrl(advanceMapsInput.trim()) : getPlantMapsUrl(advanceLocation);
+                    if (!resolvedMaps) return null;
+                    return (
+                      <Box sx={{ p: 1, bgcolor: '#DCFCE7', borderRadius: 1.5, border: '1px solid #86EFAC', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700 }}>
+                          🗺️ Google Maps Terhubung: {advanceLocation.includes('GIIC') ? 'Plant 2 GIIC' : advanceLocation.includes('KIIC') ? 'Plant 1 KIIC' : 'Peta Kustom'}
+                        </Typography>
+                        <Button size="small" href={resolvedMaps} target="_blank" sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none', color: '#166534', py: 0.2 }}>
+                          Uji Buka Maps &rarr;
+                        </Button>
+                      </Box>
+                    );
+                  })()}
                 </Grid>
               </Grid>
             </Box>
@@ -1389,32 +1547,104 @@ export default function AdminApplicantsPage() {
                   </Box>
                 </Grid>
                 <Grid item xs={12}>
+                  <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, display: 'block', mb: 0.5 }}>
+                    Pilihan Lokasi Pelaksanaan Ujian Teknis User:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('Portal Karir Online') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Portal Karir Online PT ITSP');
+                        setAdvanceMapsInput('');
+                      }}
+                      startIcon={<OnlineIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('Portal Karir Online') ? '#D97706' : '#FFFFFF',
+                        color: advanceLocation.includes('Portal Karir Online') ? '#FFFFFF' : '#D97706',
+                        borderColor: '#D97706',
+                      }}
+                    >
+                      Online Portal Karir
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('KIIC') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Workshop Mold & Die Plant 1 KIIC Karawang');
+                        setAdvanceMapsInput(PLANT_LOCATIONS.kiic.mapsUrl);
+                      }}
+                      startIcon={<FactoryIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('KIIC') ? '#D97706' : '#FFFFFF',
+                        color: advanceLocation.includes('KIIC') ? '#FFFFFF' : '#D97706',
+                        borderColor: '#D97706',
+                      }}
+                    >
+                      Onsite: Plant 1 (KIIC Karawang)
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={advanceLocation.includes('GIIC') ? 'contained' : 'outlined'}
+                      onClick={() => {
+                        setAdvanceLocation('Ruang Engineering Plant 2 GIIC Cikarang');
+                        setAdvanceMapsInput(PLANT_LOCATIONS.giic.mapsUrl);
+                      }}
+                      startIcon={<FactoryIcon />}
+                      sx={{
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: 11.5,
+                        bgcolor: advanceLocation.includes('GIIC') ? '#D97706' : '#FFFFFF',
+                        color: advanceLocation.includes('GIIC') ? '#FFFFFF' : '#D97706',
+                        borderColor: '#D97706',
+                      }}
+                    >
+                      Onsite: Plant 2 (GIIC Cikarang)
+                    </Button>
+                  </Box>
+
                   <TextField
                     fullWidth
+                    size="small"
                     label="Tempat / Lokasi Pelaksanaan Ujian Teknis"
                     value={advanceLocation}
                     onChange={(e) => setAdvanceLocation(e.target.value)}
                     placeholder="Contoh: Portal Karir Online PT ITSP atau Workshop Mold & Die Plant 1"
+                    sx={{ mb: 1, bgcolor: '#FFFFFF' }}
                   />
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mt: 1 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
-                      Saran Cepat:
-                    </Typography>
-                    {[
-                      'Portal Karir Online PT ITSP',
-                      'Workshop Mold & Die Plant 1 KIIC',
-                      'Ruang Engineering Plant 2 GIIC',
-                    ].map((loc) => (
-                      <Chip
-                        key={loc}
-                        label={loc}
-                        size="small"
-                        clickable
-                        onClick={() => setAdvanceLocation(loc)}
-                        sx={{ fontSize: 11, bgcolor: advanceLocation === loc ? '#FEF3C7' : '#FFFFFF', border: '1px solid #CBD5E1' }}
-                      />
-                    ))}
-                  </Box>
+
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Link Google Maps / Tag Maps (<iframe ...>)"
+                    value={advanceMapsInput}
+                    onChange={(e) => setAdvanceMapsInput(e.target.value)}
+                    placeholder="Kosongkan untuk memakai peta resmi PT ITSP, atau paste link/tag iframe kustom"
+                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal pelamar bila ujian dilakukan di pabrik."
+                    sx={{ mb: 1, bgcolor: '#FFFFFF' }}
+                  />
+
+                  {(() => {
+                    const resolvedMaps = advanceMapsInput.trim() ? getPlantMapsUrl(advanceMapsInput.trim()) : getPlantMapsUrl(advanceLocation);
+                    if (!resolvedMaps) return null;
+                    return (
+                      <Box sx={{ p: 1, bgcolor: '#FEF3C7', borderRadius: 1.5, border: '1px solid #FCD34D', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700 }}>
+                          🗺️ Google Maps Terhubung: {advanceLocation.includes('GIIC') ? 'Plant 2 GIIC' : advanceLocation.includes('KIIC') ? 'Plant 1 KIIC' : 'Peta Kustom'}
+                        </Typography>
+                        <Button size="small" href={resolvedMaps} target="_blank" sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none', color: '#92400E', py: 0.2 }}>
+                          Uji Buka Maps &rarr;
+                        </Button>
+                      </Box>
+                    );
+                  })()}
                 </Grid>
               </Grid>
             </Box>
@@ -1606,9 +1836,131 @@ export default function AdminApplicantsPage() {
               />
             </>
           ) : (
-            <Alert severity="info" sx={{ borderRadius: 2 }}>
-              Alamat default pabrik ({selectedApplicant?.jobPosting?.location || 'Plant 1 Karawang'}) akan otomatis dimuat ke dalam kartu kandidat & email resmi.
-            </Alert>
+            <Box sx={{ p: 2, bgcolor: '#F0FDF4', borderRadius: 2, border: '1px solid #BBF7D0' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <FactoryIcon fontSize="small" /> Penentuan Pabrik PT ITSP & Peta Rute Google Maps
+              </Typography>
+
+              <Typography variant="caption" sx={{ color: '#475569', display: 'block', mb: 1 }}>
+                Pilih lokasi pabrik untuk pelaksanaan wawancara tatap muka (Onsite):
+              </Typography>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
+                <Button
+                  variant={interviewPlantChoice === 'kiic' ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setInterviewPlantChoice('kiic');
+                    setInterviewRoom(interviewType === 'hr' ? 'Ruang Meeting HCM Lt. 2 (Gedung Admin)' : 'Ruang Meeting Teknis Plant 1 KIIC');
+                  }}
+                  startIcon={<PlaceIcon />}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    py: 1,
+                    bgcolor: interviewPlantChoice === 'kiic' ? '#018730' : '#FFFFFF',
+                    color: interviewPlantChoice === 'kiic' ? '#FFFFFF' : '#018730',
+                    borderColor: '#018730',
+                    '&:hover': { bgcolor: interviewPlantChoice === 'kiic' ? '#005c21' : '#F0FDF4' },
+                  }}
+                >
+                  Plant 1 (KIIC Karawang)
+                </Button>
+
+                <Button
+                  variant={interviewPlantChoice === 'giic' ? 'contained' : 'outlined'}
+                  onClick={() => {
+                    setInterviewPlantChoice('giic');
+                    setInterviewRoom(interviewType === 'hr' ? 'Ruang Meeting Lt. 1 Gedung Plant 2 GIIC' : 'Ruang Meeting Teknis Plant 2 GIIC');
+                  }}
+                  startIcon={<PlaceIcon />}
+                  sx={{
+                    justifyContent: 'flex-start',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    py: 1,
+                    bgcolor: interviewPlantChoice === 'giic' ? '#018730' : '#FFFFFF',
+                    color: interviewPlantChoice === 'giic' ? '#FFFFFF' : '#018730',
+                    borderColor: '#018730',
+                    '&:hover': { bgcolor: interviewPlantChoice === 'giic' ? '#005c21' : '#F0FDF4' },
+                  }}
+                >
+                  Plant 2 (GIIC Cikarang)
+                </Button>
+              </Box>
+
+              <TextField
+                fullWidth
+                size="small"
+                label="Nama Ruangan Pertemuan"
+                value={interviewRoom}
+                onChange={(e) => setInterviewRoom(e.target.value)}
+                placeholder="Misal: Ruang Meeting HCM Lt. 2"
+                sx={{ mb: 1.5, bgcolor: '#FFFFFF' }}
+              />
+
+              <TextField
+                fullWidth
+                size="small"
+                label="Alamat Pabrik"
+                value={
+                  interviewPlantChoice === 'kiic'
+                    ? PLANT_LOCATIONS.kiic.address
+                    : interviewPlantChoice === 'giic'
+                    ? PLANT_LOCATIONS.giic.address
+                    : interviewCustomAddress
+                }
+                onChange={(e) => {
+                  setInterviewPlantChoice('custom');
+                  setInterviewCustomAddress(e.target.value);
+                }}
+                helperText="Otomatis terisi sesuai pabrik yang dipilih atau dapat disesuaikan."
+                sx={{ mb: 1.5, bgcolor: '#FFFFFF' }}
+              />
+
+              <TextField
+                fullWidth
+                size="small"
+                label="Link Google Maps / Tag Maps (<iframe ...>)"
+                value={interviewMapsInput}
+                onChange={(e) => setInterviewMapsInput(e.target.value)}
+                placeholder="Kosongkan untuk memakai peta resmi PT ITSP, atau paste link/tag iframe kustom"
+                helperText="Link atau tag embed maps ini akan otomatis dikirimkan ke email kandidat & dashboard portal."
+                sx={{ mb: 1.5, bgcolor: '#FFFFFF' }}
+              />
+
+              {/* Live Preview Google Maps Badge */}
+              {(() => {
+                const mapsUrl = interviewMapsInput.trim()
+                  ? getPlantMapsUrl(interviewMapsInput.trim())
+                  : interviewPlantChoice === 'giic'
+                  ? PLANT_LOCATIONS.giic.mapsUrl
+                  : PLANT_LOCATIONS.kiic.mapsUrl;
+
+                return (
+                  <Box sx={{ p: 1.5, bgcolor: '#DCFCE7', borderRadius: 1.5, border: '1px solid #86EFAC', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <MapIcon sx={{ color: '#166534', fontSize: 20 }} />
+                      <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700 }}>
+                        Peta Terhubung: {interviewPlantChoice === 'giic' ? 'Plant 2 (GIIC Cikarang)' : 'Plant 1 (KIIC Karawang)'}
+                      </Typography>
+                    </Box>
+                    {mapsUrl && (
+                      <Button
+                        size="small"
+                        href={mapsUrl}
+                        target="_blank"
+                        sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none', color: '#166534', py: 0.2 }}
+                      >
+                        Uji Buka Maps &rarr;
+                      </Button>
+                    )}
+                  </Box>
+                );
+              })()}
+            </Box>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>

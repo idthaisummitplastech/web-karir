@@ -10,7 +10,7 @@ import {
   sendMailDirect,
   generateCorporateEmailWrapper,
 } from "@/lib/email";
-import { DEFAULT_SETTINGS, RECRUITMENT_STAGES } from "@/lib/constants";
+import { DEFAULT_SETTINGS, RECRUITMENT_STAGES, getPlantMapsUrl } from "@/lib/constants";
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
     }
 
-    const { applicantId, action, notes, scheduledAt, token, salaryOffer, location } = await req.json();
+    const { applicantId, action, notes, scheduledAt, token, salaryOffer, location, mapsUrl } = await req.json();
 
     const applicant = await prisma.applicant.findUnique({
       where: { id: Number(applicantId) },
@@ -73,6 +73,10 @@ export async function POST(req: Request) {
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+
+    // Status pengiriman email (di-await agar kegagalan SMTP tidak hilang diam-diam)
+    let emailStatus: { success: boolean; error?: string } | null = null;
+    const resolvedCustomMaps = mapsUrl ? getPlantMapsUrl(String(mapsUrl)) : "";
 
     // KASUS PERBARUI JADWAL, TEMPAT & TOKEN SESI UJIAN (UPDATE TEST SESSION / TOKEN)
     if (action === "update_test_session" || action === "update_token") {
@@ -157,15 +161,20 @@ export async function POST(req: Request) {
         }
       );
 
-      sendMailDirect({
+      emailStatus = await sendMailDirect({
         to: applicant.email,
         subject: mailData.subject,
         html: mailData.html,
-      }).catch((err) => console.error("Email reject error:", err));
+      });
+      if (!emailStatus.success) console.error("Email reject error:", emailStatus.error);
 
       return NextResponse.json({
         success: true,
-        message: `Pelamar ${applicant.fullName} telah dinyatakan Tidak Lolos pada ${stageName}. Email pemberitahuan santun telah dikirimkan secara otomatis.`,
+        message: emailStatus.success
+          ? `Pelamar ${applicant.fullName} telah dinyatakan Tidak Lolos pada ${stageName}. Email pemberitahuan santun telah dikirimkan secara otomatis.`
+          : `Pelamar ${applicant.fullName} telah dinyatakan Tidak Lolos pada ${stageName}. Namun email gagal terkirim (${emailStatus.error || "kesalahan SMTP"}).`,
+        emailSent: emailStatus.success,
+        emailError: emailStatus.success ? undefined : emailStatus.error,
       });
     }
 
@@ -196,7 +205,9 @@ export async function POST(req: Request) {
         applicant.jobPosting.title,
         formattedSchedule,
         appUrl,
-        testLocation
+        testLocation,
+        resolvedCustomMaps || undefined,
+        token || "PSIKO2026"
       );
       const mailData = renderTemplate(
         "screening_passed",
@@ -211,11 +222,12 @@ export async function POST(req: Request) {
           link_portal: `${appUrl}/login`,
         }
       );
-      sendMailDirect({
+      emailStatus = await sendMailDirect({
         to: applicant.email,
         subject: mailData.subject,
         html: mailData.html,
-      }).catch((err) => console.error("Email screening error:", err));
+      });
+      if (!emailStatus.success) console.error("Email screening error:", emailStatus.error);
     } else if (applicant.currentStage === 2) {
       // Lolos Psikotes -> Masuk Tahap 3 (Tes Teknis User)
       updateData.userTestToken = token || "USER2026";
@@ -229,7 +241,9 @@ export async function POST(req: Request) {
         applicant.jobPosting.title,
         formattedSchedule,
         appUrl,
-        testLocation
+        testLocation,
+        resolvedCustomMaps || undefined,
+        token || "USER2026"
       );
       const mailData = renderTemplate(
         "psikotes_passed",
@@ -244,11 +258,12 @@ export async function POST(req: Request) {
           link_portal: `${appUrl}/login`,
         }
       );
-      sendMailDirect({
+      emailStatus = await sendMailDirect({
         to: applicant.email,
         subject: mailData.subject,
         html: mailData.html,
-      }).catch((err) => console.error("Email psikotes error:", err));
+      });
+      if (!emailStatus.success) console.error("Email psikotes error:", emailStatus.error);
     } else if (applicant.currentStage === 5) {
       // Lolos Interview User -> Masuk Tahap 6 (MCU)
       const clinic = settingsMap["mcu_partner_name"] || DEFAULT_SETTINGS.mcuPartnerName;
@@ -256,7 +271,7 @@ export async function POST(req: Request) {
       const cost = settingsMap["mcu_estimated_cost"] || DEFAULT_SETTINGS.mcuEstimatedCost;
       const instr = settingsMap["mcu_instructions"] || DEFAULT_SETTINGS.mcuInstructions;
 
-      const defaultHtml = emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl);
+      const defaultHtml = emailMcuReferral(applicant.fullName, applicant.jobPosting.title, clinic, address, cost, instr, appUrl, resolvedCustomMaps || undefined);
       const mailData = renderTemplate(
         "mcu_referral",
         `[PT ITSP] Rujukan Medical Check-Up (MCU) - ${applicant.jobPosting.title}`,
@@ -270,11 +285,12 @@ export async function POST(req: Request) {
           link_portal: `${appUrl}/login`,
         }
       );
-      sendMailDirect({
+      emailStatus = await sendMailDirect({
         to: applicant.email,
         subject: mailData.subject,
         html: mailData.html,
-      }).catch((err) => console.error("Email MCU error:", err));
+      });
+      if (!emailStatus.success) console.error("Email MCU error:", emailStatus.error);
     } else if (applicant.currentStage === 6) {
       // Lolos MCU -> Masuk Tahap 7 (Offering Letter)
       updateData.mcuNotes = notes || "Hasil MCU: Fit to Work (Memenuhi Syarat Medis)";
@@ -294,11 +310,12 @@ export async function POST(req: Request) {
           link_portal: `${appUrl}/login`,
         }
       );
-      sendMailDirect({
+      emailStatus = await sendMailDirect({
         to: applicant.email,
         subject: mailData.subject,
         html: mailData.html,
-      }).catch((err) => console.error("Email offering error:", err));
+      });
+      if (!emailStatus.success) console.error("Email offering error:", emailStatus.error);
     } else if (applicant.currentStage === 7) {
       // Selesai Offering -> Otomatis Salin ke Karyawan Sementara
       updateData.stageStatus = "passed";
@@ -333,8 +350,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Berhasil meloloskan ${applicant.fullName} ke Tahap ${updated.currentStage}. Notifikasi email resmi telah dikirimkan secara otomatis!`,
+      message: emailStatus
+        ? emailStatus.success
+          ? `Berhasil meloloskan ${applicant.fullName} ke Tahap ${updated.currentStage}. Notifikasi email resmi telah dikirimkan secara otomatis!`
+          : `Berhasil meloloskan ${applicant.fullName} ke Tahap ${updated.currentStage}. Namun email gagal terkirim (${emailStatus.error || "kesalahan SMTP"}) — silakan kirim ulang / cek konfigurasi SMTP.`
+        : `Berhasil meloloskan ${applicant.fullName} ke Tahap ${updated.currentStage}.`,
       applicant: updated,
+      emailSent: emailStatus ? emailStatus.success : undefined,
+      emailError: emailStatus && !emailStatus.success ? emailStatus.error : undefined,
     });
   } catch (error: any) {
     console.error("Advance stage error:", error);

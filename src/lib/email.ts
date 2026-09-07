@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
+import { getPlantMapsUrl } from './constants';
 
 export interface EmailPayload {
   to: string;
@@ -184,7 +185,8 @@ export function emailAccountCreated(name: string, position: string, email: strin
 }
 
 // 2. Lolos Screening Dokumen & Undangan Psikotes
-export function emailScreeningPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string) {
+export function emailScreeningPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string, customMapsUrl?: string, examToken?: string) {
+  const mapsUrl = customMapsUrl || getPlantMapsUrl(location);
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Berdasarkan hasil evaluasi kualifikasi dan verifikasi berkas administrasi yang Anda kirimkan, Tim Rekrutmen <strong>PT Indonesia Thai Summit Plastech</strong> menyatakan bahwa Anda:</p>
@@ -200,7 +202,15 @@ export function emailScreeningPassed(name: string, position: string, scheduledAt
       <div class="info-item"><span class="info-label">Mata Ujian:</span> <span class="info-value">Tes Psikotes & Potensi Akademik Online</span></div>
       <div class="info-item"><span class="info-label">Jadwal Pelaksanaan:</span> <span class="info-value"><strong>${scheduledAt || "Akan diumumkan / Terbuka di Dashboard"}</strong></span></div>
       <div class="info-item"><span class="info-label">Tempat / Lokasi:</span> <span class="info-value"><strong>${location || "Portal Karir Online PT ITSP"}</strong></span></div>
-      <div class="info-item"><span class="info-label">Ketentuan Khusus:</span> <span class="info-value">Tombol tes akan aktif pada jadwal yang ditentukan. Password / Token Sesi Ujian akan dibagikan oleh Tim HR sesaat sebelum tes dimulai.</span></div>
+      ${mapsUrl ? `
+      <div style="margin: 10px 0 6px 0; text-align: left;">
+        <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
+          🗺️ Buka Rute Google Maps Pabrik &rarr;
+        </a>
+      </div>
+      ` : ''}
+      <div class="info-item"><span class="info-label">Token Sesi Ujian:</span> <span class="info-value"><strong style="font-size: 16px; letter-spacing: 0.05em;">${examToken || "PSIKO2026"}</strong> (wajib dimasukkan untuk memulai ujian)</span></div>
+      <div class="info-item"><span class="info-label">Ketentuan Khusus:</span> <span class="info-value">Tombol tes akan aktif pada jadwal yang ditentukan. Masukkan Token Sesi Ujian di atas pada halaman ujian portal.</span></div>
     </div>
 
     <p><strong>Perhatian Sistem Anti-Kecurangan:</strong> Selama ujian berlangsung, peserta dilarang keras membuka tab browser baru atau berpindah aplikasi (AI/LLM). Sistem dilengkapi sensor proctoring otomatis yang akan menghentikan ujian jika terjadi pelanggaran berulang.</p>
@@ -213,7 +223,8 @@ export function emailScreeningPassed(name: string, position: string, scheduledAt
 }
 
 // 3. Lolos Psikotes & Undangan Tes User / Teknis
-export function emailPsikotesPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string) {
+export function emailPsikotesPassed(name: string, position: string, scheduledAt: string, appUrl: string, location?: string, customMapsUrl?: string, examToken?: string) {
+  const mapsUrl = customMapsUrl || getPlantMapsUrl(location);
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Selamat! Anda dinyatakan <strong>LOLOS Tahap 2: Tes Psikotes Online</strong> untuk posisi <strong>${position}</strong> di PT Indonesia Thai Summit Plastech.</p>
@@ -223,7 +234,15 @@ export function emailPsikotesPassed(name: string, position: string, scheduledAt:
       <div class="info-item"><span class="info-label">Materi Ujian:</span> <span class="info-value">Uji Kompetensi Teknis & Keahlian Bidang</span></div>
       <div class="info-item"><span class="info-label">Jadwal Pelaksanaan:</span> <span class="info-value"><strong>${scheduledAt || "Sesuai Jadwal di Dashboard"}</strong></span></div>
       <div class="info-item"><span class="info-label">Tempat / Lokasi:</span> <span class="info-value"><strong>${location || "Portal Karir Online PT ITSP"}</strong></span></div>
-      <div class="info-item"><span class="info-label">Akses Ujian:</span> <span class="info-value">Memerlukan Token Ujian User yang dibagikan oleh penilai departemen</span></div>
+      ${mapsUrl ? `
+      <div style="margin: 10px 0 6px 0; text-align: left;">
+        <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #fc4509; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
+          🗺️ Buka Rute Google Maps Pabrik &rarr;
+        </a>
+      </div>
+      ` : ''}
+      <div class="info-item"><span class="info-label">Token Sesi Ujian:</span> <span class="info-value"><strong style="font-size: 16px; letter-spacing: 0.05em;">${examToken || "USER2026"}</strong> (wajib dimasukkan untuk memulai ujian teknis)</span></div>
+      <div class="info-item"><span class="info-label">Akses Ujian:</span> <span class="info-value">Masukkan Token Ujian User di atas pada halaman ujian portal.</span></div>
     </div>
 
     <div style="text-align: center;">
@@ -241,10 +260,12 @@ export function emailHrInterviewInvite(name: string, position: string, scheduleI
   meetingLink?: string;
   meetingPasscode?: string;
   locationAddress?: string;
+  mapsUrl?: string;
   roomName?: string;
   notes?: string;
 }, appUrl: string) {
   const isOnline = scheduleInfo.locationMode === "online";
+  const mapsUrl = scheduleInfo.mapsUrl || getPlantMapsUrl(scheduleInfo.locationAddress);
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Selamat! Berdasarkan hasil evaluasi tes online, Tim Human Capital Management <strong>PT Indonesia Thai Summit Plastech</strong> mengundang Anda untuk mengikuti <strong>Tahap 4: Interview HR (Wawancara SDM)</strong>.</p>
@@ -260,6 +281,13 @@ export function emailHrInterviewInvite(name: string, position: string, scheduleI
       ` : `
       <div class="info-item"><span class="info-label">Alamat Pabrik:</span> <span class="info-value">${scheduleInfo.locationAddress || "Kawasan Industri KIIC, Lot FF-3, Karawang Barat"}</span></div>
       ${scheduleInfo.roomName ? `<div class="info-item"><span class="info-label">Ruangan:</span> <span class="info-value">${scheduleInfo.roomName}</span></div>` : ""}
+      ${mapsUrl ? `
+      <div style="margin: 10px 0 6px 0; text-align: left;">
+        <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
+          🗺️ Petunjuk Arah Google Maps (Menuju Pabrik) &rarr;
+        </a>
+      </div>
+      ` : ''}
       `}
     </div>
 
@@ -285,9 +313,11 @@ export function emailUserInterviewInvite(name: string, position: string, schedul
   meetingLink?: string;
   meetingPasscode?: string;
   locationAddress?: string;
+  mapsUrl?: string;
   roomName?: string;
 }, appUrl: string) {
   const isOnline = scheduleInfo.locationMode === "online";
+  const mapsUrl = scheduleInfo.mapsUrl || getPlantMapsUrl(scheduleInfo.locationAddress);
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Anda dinyatakan <strong>LOLOS Tahap Interview HR</strong> dan diundang untuk melanjutkan ke <strong>Tahap 5: Interview User / Departemen Terkait</strong> bersama jajaran pimpinan divisi.</p>
@@ -301,6 +331,14 @@ export function emailUserInterviewInvite(name: string, position: string, schedul
       <div class="info-item"><span class="info-label">Link Meeting:</span> <span class="info-value"><a href="${scheduleInfo.meetingLink || '#'}" target="_blank" style="color: #018730; font-weight: 600;">Gabung Video Meeting</a></span></div>
       ` : `
       <div class="info-item"><span class="info-label">Lokasi:</span> <span class="info-value">${scheduleInfo.locationAddress || "Pabrik PT ITSP"}</span></div>
+      ${scheduleInfo.roomName ? `<div class="info-item"><span class="info-label">Ruangan:</span> <span class="info-value">${scheduleInfo.roomName}</span></div>` : ""}
+      ${mapsUrl ? `
+      <div style="margin: 10px 0 6px 0; text-align: left;">
+        <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #fc4509; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
+          🗺️ Petunjuk Arah Google Maps (Menuju Pabrik) &rarr;
+        </a>
+      </div>
+      ` : ''}
       `}
     </div>
 
@@ -312,7 +350,8 @@ export function emailUserInterviewInvite(name: string, position: string, schedul
 }
 
 // 6. Rujukan Medical Check-Up (MCU) Rekanan
-export function emailMcuReferral(name: string, position: string, clinicName: string, clinicAddress: string, estimatedCost: string, instructions: string, appUrl: string) {
+export function emailMcuReferral(name: string, position: string, clinicName: string, clinicAddress: string, estimatedCost: string, instructions: string, appUrl: string, customClinicMapsUrl?: string) {
+  const clinicMapsUrl = customClinicMapsUrl || getPlantMapsUrl(clinicAddress) || getPlantMapsUrl(clinicName) || "https://maps.google.com/?q=Klinik+Kimia+Farma+Galuh+Mas+Karawang";
   const body = `
     <div class="greeting">Yth. Sdr/i. ${name},</div>
     <p>Selamat! Anda telah menyelesaikan seluruh rangkaian wawancara teknis dan dinyatakan berhak melanjutkan ke <strong>Tahap 6: Pemeriksaan Kesehatan Medis (Medical Check-Up / MCU)</strong>.</p>
@@ -320,6 +359,13 @@ export function emailMcuReferral(name: string, position: string, clinicName: str
     <div class="info-box">
       <div class="info-item"><span class="info-label">Fasilitas Rekanan:</span> <span class="info-value"><strong>${clinicName}</strong></span></div>
       <div class="info-item"><span class="info-label">Alamat Rujukan:</span> <span class="info-value">${clinicAddress}</span></div>
+      ${clinicMapsUrl ? `
+      <div style="margin: 10px 0 6px 0; text-align: left;">
+        <a href="${clinicMapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
+          🗺️ Buka Rute Google Maps Klinik / RS Rekanan &rarr;
+        </a>
+      </div>
+      ` : ''}
       <div class="info-item"><span class="info-label">Estimasi Biaya:</span> <span class="info-value"><strong>${estimatedCost}</strong></span></div>
       <div class="info-item"><span class="info-label">Petunjuk Medis:</span> <span class="info-value">${instructions}</span></div>
     </div>

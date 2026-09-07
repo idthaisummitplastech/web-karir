@@ -108,6 +108,7 @@ export default function AdminSettingsPage() {
   // MCU & Plant Settings
   const [mcuPartnerName, setMcuPartnerName] = useState('');
   const [mcuPartnerAddress, setMcuPartnerAddress] = useState('');
+  const [mcuPartnerMaps, setMcuPartnerMaps] = useState('');
   const [mcuEstimatedCost, setMcuEstimatedCost] = useState('');
   const [mcuInstructions, setMcuInstructions] = useState('');
   const [plantAddressKarawang, setPlantAddressKarawang] = useState('');
@@ -126,6 +127,7 @@ export default function AdminSettingsPage() {
         if (data.settings) {
           setMcuPartnerName(data.settings.mcu_partner_name || '');
           setMcuPartnerAddress(data.settings.mcu_partner_address || '');
+          setMcuPartnerMaps(data.settings.mcu_partner_maps || '');
           setMcuEstimatedCost(data.settings.mcu_estimated_cost || '');
           setMcuInstructions(data.settings.mcu_instructions || '');
           setPlantAddressKarawang(data.settings.plant_address_karawang || '');
@@ -166,6 +168,7 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           mcu_partner_name: mcuPartnerName,
           mcu_partner_address: mcuPartnerAddress,
+          mcu_partner_maps: mcuPartnerMaps,
           mcu_estimated_cost: mcuEstimatedCost,
           mcu_instructions: mcuInstructions,
           plant_address_karawang: plantAddressKarawang,
@@ -621,6 +624,17 @@ export default function AdminSettingsPage() {
                     label="Alamat Lengkap & Nomor Kontak Rujukan"
                     value={mcuPartnerAddress}
                     onChange={(e) => setMcuPartnerAddress(e.target.value)}
+                    helperText="Alamat ini otomatis menjadi tautan Google Maps yang bisa diklik di portal & email."
+                  />
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
+                  <TextField
+                    fullWidth
+                    label="Link Google Maps Klinik / RS (Opsional - iframe atau URL)"
+                    value={mcuPartnerMaps}
+                    onChange={(e) => setMcuPartnerMaps(e.target.value)}
+                    placeholder="Kosongkan untuk auto-deteksi dari alamat, atau paste link https://maps.google.com/... / tag <iframe ...>"
+                    helperText="Link ini diprioritaskan sebagai tombol & alamat yang bisa diklik di dashboard portal dan email MCU."
                   />
                 </Box>
                 <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>

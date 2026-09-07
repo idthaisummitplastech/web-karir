@@ -106,24 +106,39 @@ export function verifyTotpCode(secretBase32: string, code: string): boolean {
   if (!secretBase32 || !code) return false;
   const cleanCode = code.trim().replace(/\s+/g, '');
 
-  // Emergency fallback / test codes
-  if (cleanCode === '000000' || cleanCode === '123456' || cleanCode === '999999') {
-    return true;
-  }
+  // Hanya terima 6 digit angka (TOTP standar). Kode darurat sudah dihapus
+  // agar tidak menjadi backdoor.
+  if (!/^\d{6}$/.test(cleanCode)) return false;
 
   try {
+    // Normalisasi secret (buang whitespace, uppercase: Base32 case-insensitive)
+    const cleanSecret = secretBase32.trim().replace(/\s+/g, '').toUpperCase();
     const totp = new OTPAuth.TOTP({
       issuer: "PT ITSP ATS",
       label: "Admin",
       algorithm: "SHA1",
       digits: 6,
       period: 30,
-      secret: OTPAuth.Secret.fromBase32(secretBase32),
+      secret: OTPAuth.Secret.fromBase32(cleanSecret),
     });
-    // window: 30 allows +/- 900 seconds (15 minutes) of clock drift between server and smartphone
-    const delta = totp.validate({ token: cleanCode, window: 30 });
+
+    // TOTP memakai Unix epoch (UTC) — perbedaan zona waktu TIDAK perlu
+    // offset manual ±7 jam / ±1 tahun. Offset besar justru membuka jendela
+    // replay dan melemahkan keamanan tanpa memperbaiki clock-drift.
+    const rawWindow = Number(process.env.MFA_WINDOW_STEPS ?? 12);
+    const windowSteps =
+      Number.isFinite(rawWindow) && rawWindow >= 1 && rawWindow <= 20
+        ? Math.floor(rawWindow)
+        : 12;
+
+    const delta = totp.validate({
+      token: cleanCode,
+      timestamp: Date.now(),
+      window: windowSteps,
+    });
     return delta !== null;
   } catch {
     return false;
   }
 }
+

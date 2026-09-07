@@ -645,8 +645,27 @@ export default function ApplicantDashboard() {
                         {data?.mcuConfig?.partnerName}
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                        Alamat Rujukan: {data?.mcuConfig?.partnerAddress}
+                        Alamat Rujukan:{' '}
+                        {data?.mcuConfig?.mapsUrl ? (
+                          <a href={data.mcuConfig.mapsUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#018730', fontWeight: 700 }}>
+                            {data?.mcuConfig?.partnerAddress}
+                          </a>
+                        ) : (
+                          data?.mcuConfig?.partnerAddress
+                        )}
                       </Typography>
+                      {data?.mcuConfig?.mapsUrl && (
+                        <Button
+                          variant="contained"
+                          size="small"
+                          href={data.mcuConfig.mapsUrl}
+                          target="_blank"
+                          startIcon={<LocationIcon />}
+                          sx={{ mt: 1, bgcolor: '#018730', fontWeight: 700, textTransform: 'none', '&:hover': { bgcolor: '#005c21' } }}
+                        >
+                          Buka Rute Google Maps Klinik &rarr;
+                        </Button>
+                      )}
                     </Box>
 
                     <Box>
@@ -663,6 +682,19 @@ export default function ApplicantDashboard() {
                   </Box>
 
                   <Divider sx={{ my: 2.5 }} />
+
+                  {data?.mcuConfig?.embedUrl && (
+                    <Box sx={{ mb: 2.5, borderRadius: 2, overflow: 'hidden', border: '1px solid #BBF7D0' }}>
+                      <iframe
+                        title="Peta Lokasi MCU"
+                        src={data.mcuConfig.embedUrl}
+                        width="100%"
+                        height="280"
+                        style={{ border: 0, display: 'block' }}
+                        loading="lazy"
+                      />
+                    </Box>
+                  )}
 
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#166534', mb: 0.8 }}>
                     Petunjuk Wajib Sebelum Pemeriksaan:
