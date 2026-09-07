@@ -26,6 +26,10 @@ import {
   Error as ErrorIcon,
   ArrowBack as ArrowBackIcon,
   Send as SendIcon,
+  MarkEmailRead as EmailSentIcon,
+  Login as LoginIcon,
+  Info as InfoIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB
@@ -38,6 +42,10 @@ export default function ApplyPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJobId, setSelectedJobId] = useState(jobId || '');
   const [loadingJobs, setLoadingJobs] = useState(true);
+
+  // Status jika pengguna saat ini sudah login sebagai pelamar
+  const [activeApplicant, setActiveApplicant] = useState<any | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // 13 Fields
   const [fullName, setFullName] = useState('');
@@ -61,6 +69,42 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successInfo, setSuccessInfo] = useState<any | null>(null);
+
+  // Periksa apakah browser sedang dalam sesi login pelamar aktif
+  useEffect(() => {
+    fetch('/api/applicant/status')
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then((data) => {
+        if (data?.applicant) {
+          const app = data.applicant;
+          const daysOld = (Date.now() - new Date(app.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+          const isStillActive = app.stageStatus === 'in_progress' && daysOld < 30;
+          if (isStillActive) {
+            setActiveApplicant(app);
+          } else {
+            // Jika lamaran sebelumnya sudah Gugur atau mangkir > 30 hari, izinkan daftar ulang!
+            setActiveApplicant(null);
+            if (app.fullName) setFullName(app.fullName);
+            if (app.email) setEmail(app.email);
+            if (app.phone) setPhone(app.phone);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCheckingAuth(false));
+  }, []);
+
+  const handleLogoutExisting = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setActiveApplicant(null);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Fetch Jobs
   useEffect(() => {
@@ -137,6 +181,23 @@ export default function ApplyPage() {
     e.preventDefault();
     setErrorMessage(null);
 
+    const cleanFullName = fullName.trim();
+    const cleanEmail = email.trim();
+    const cleanPhone = phone.trim();
+    const cleanSchoolName = schoolName.trim();
+    const cleanMajor = major.trim();
+
+    if (!cleanFullName || !cleanEmail || !cleanPhone || !birthDate || !cleanSchoolName || !cleanMajor) {
+      setErrorMessage('Mohon lengkapi seluruh formulir pendaftaran 13 kolom yang bertanda bintang (*). Tidak boleh ada data yang dikosongkan.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setErrorMessage('Format alamat email tidak valid. Mohon masukkan email aktif dengan benar (contoh: nama@domain.com).');
+      return;
+    }
+
     if (!cvBase64) {
       setErrorMessage('Mohon unggah berkas CV Anda dalam format PDF dengan ukuran maksimal 100 KB.');
       return;
@@ -154,18 +215,18 @@ export default function ApplyPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
-          email,
-          phone,
+          fullName: cleanFullName,
+          email: cleanEmail,
+          phone: cleanPhone,
           birthDate,
           age: Number(age),
           lastEducation,
-          schoolName,
-          major,
+          schoolName: cleanSchoolName,
+          major: cleanMajor,
           jobPostingId: Number(selectedJobId),
-          experience,
+          experience: experience.trim() || 'Fresh Graduate',
           englishSkill,
-          otherLanguages,
+          otherLanguages: otherLanguages.trim() || '-',
           cvBase64,
           cvFileName: cvFile?.name || 'cv.pdf',
           cvFileSize,
@@ -201,13 +262,84 @@ export default function ApplyPage() {
           Kembali ke Daftar Lowongan
         </Button>
 
-        {successInfo ? (
-          <Card sx={{ borderRadius: 3, border: '2px solid #86EFAC', boxShadow: '0 12px 36px rgba(1, 135, 48, 0.12)' }}>
+        {checkingAuth ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <CircularProgress sx={{ color: '#018730' }} />
+            <Typography variant="body2" sx={{ color: '#64748B', mt: 2 }}>
+              Memeriksa status akun pendaftaran...
+            </Typography>
+          </Box>
+        ) : activeApplicant ? (
+          /* JIKA PELAMAR SEDANG LOGIN: TAMPILKAN BLOKIR 1 EMAIL 1 PELAMAR */
+          <Card sx={{ borderRadius: 3, border: '2px solid #93C5FD', boxShadow: '0 12px 36px rgba(37, 99, 235, 0.12)' }}>
             <CardContent sx={{ p: { xs: 3, md: 5 }, textAlign: 'center' }}>
               <Box
                 sx={{
                   width: 72,
                   height: 72,
+                  borderRadius: '50%',
+                  bgcolor: '#EFF6FF',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mx: 'auto',
+                  mb: 2.5,
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.2)',
+                }}
+              >
+                <InfoIcon sx={{ fontSize: 44 }} />
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+                Anda Sudah Memiliki Lamaran Terdaftar
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#475569', maxWidth: 600, mx: 'auto', mb: 3, lineHeight: 1.6 }}>
+                Halo, <strong>{activeApplicant.fullName}</strong>. Anda saat ini tercatat dalam sistem rekrutmen kami dengan email{' '}
+                <strong>{activeApplicant.email}</strong> untuk posisi <strong>{activeApplicant.jobPosting?.title || 'Lamaran Kerja'}</strong>.
+              </Typography>
+
+              <Alert severity="info" sx={{ maxWidth: 580, mx: 'auto', textAlign: 'left', mb: 4, borderRadius: 2 }}>
+                Sesuai kebijakan resmi rekrutmen PT Indonesia Thai Summit Plastech, <strong>1 alamat email hanya dapat digunakan untuk 1 berkas pelamar</strong>. Anda tidak perlu mendaftar ulang.
+              </Alert>
+
+              <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => router.push('/portal/dashboard')}
+                  sx={{
+                    bgcolor: '#018730',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    px: 3.5,
+                    py: 1.3,
+                    borderRadius: 2,
+                    '&:hover': { bgcolor: '#005c21' },
+                  }}
+                >
+                  Buka Dashboard Progres Seleksi &rarr;
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="large"
+                  onClick={handleLogoutExisting}
+                  startIcon={<LogoutIcon />}
+                  sx={{ fontWeight: 600, px: 2.5, borderRadius: 2 }}
+                >
+                  Keluar / Gunakan Akun Lain
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        ) : successInfo ? (
+          /* JIKA BERHASIL MENDAFTAR: ALUR WAJIB CEK EMAIL */
+          <Card sx={{ borderRadius: 3, border: '2px solid #86EFAC', boxShadow: '0 12px 36px rgba(1, 135, 48, 0.12)' }}>
+            <CardContent sx={{ p: { xs: 3, md: 5 }, textAlign: 'center' }}>
+              <Box
+                sx={{
+                  width: 76,
+                  height: 76,
                   borderRadius: '50%',
                   bgcolor: '#DCFCE7',
                   color: '#16A34A',
@@ -216,59 +348,82 @@ export default function ApplyPage() {
                   justifyContent: 'center',
                   mx: 'auto',
                   mb: 2.5,
+                  boxShadow: '0 4px 14px rgba(22, 163, 74, 0.25)',
                 }}
               >
-                <CheckCircleIcon sx={{ fontSize: 44 }} />
+                <EmailSentIcon sx={{ fontSize: 44 }} />
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
                 Lamaran Kerja Berhasil Dikirim!
               </Typography>
-              <Typography variant="body1" sx={{ color: '#475569', maxWidth: 580, mx: 'auto', mb: 4, lineHeight: 1.6 }}>
+              <Typography variant="body1" sx={{ color: '#475569', maxWidth: 620, mx: 'auto', mb: 3.5, lineHeight: 1.6 }}>
                 Terima kasih, <strong>{successInfo.applicant.fullName}</strong>. Berkas lamaran Anda untuk posisi{' '}
                 <strong>{successInfo.applicant.jobTitle}</strong> telah resmi tercatat di sistem ATS PT Indonesia Thai Summit Plastech.
               </Typography>
 
+              {/* Box Instruksi Cek Email */}
               <Box
                 sx={{
-                  bgcolor: '#F1F5F9',
-                  p: 3,
+                  bgcolor: '#F8FAFC',
+                  p: { xs: 2.5, md: 3.5 },
                   borderRadius: 2.5,
-                  maxWidth: 500,
+                  maxWidth: 580,
                   mx: 'auto',
                   textAlign: 'left',
                   mb: 4,
-                  border: '1px solid #CBD5E1',
+                  border: '1.5px solid #CBD5E1',
                 }}
               >
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#018730', mb: 1.5 }}>
-                  Kredensial Akun Portal Pelamar Anda:
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                  <EmailSentIcon sx={{ color: '#018730', fontSize: 26 }} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                    Silakan Periksa Email Anda Untuk Kredensial Akun
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: '#334155', mb: 1.5, lineHeight: 1.6 }}>
+                  Sistem kami telah mengirimkan detail kredensial dan <strong>Password Sementara</strong> resmi ke alamat email pendaftaran Anda:
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#334155', mb: 0.5 }}>
-                  Email: <strong>{successInfo.applicant.email}</strong>
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#334155', mb: 1 }}>
-                  Password Sementara: <code>{successInfo.tempPassword}</code>
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                  *Informasi ini juga telah dikirimkan secara otomatis ke alamat email resmi Anda.
+                <Box
+                  sx={{
+                    bgcolor: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    color: '#1E40AF',
+                    p: 1.5,
+                    borderRadius: 1.5,
+                    fontWeight: 700,
+                    fontSize: 15,
+                    textAlign: 'center',
+                    mb: 2,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  {successInfo.applicant.email}
+                </Box>
+                <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6, fontSize: 13 }}>
+                  • Buka kotak masuk (<strong>Inbox</strong>) email Anda untuk menyalin password sementara.<br />
+                  • Jika belum muncul dalam 1–2 menit, mohon periksa folder <strong>Spam</strong> atau <strong>Promosi</strong>.<br />
+                  • Gunakan email dan password tersebut untuk login ke Portal Pelamar dan memantau progres 7 tahap seleksi.
                 </Typography>
               </Box>
 
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => router.push('/portal/dashboard')}
+                onClick={() => router.push('/login')}
+                startIcon={<LoginIcon />}
                 sx={{
                   bgcolor: '#018730',
                   color: '#FFFFFF',
                   fontWeight: 700,
                   px: 4,
-                  py: 1.4,
+                  py: 1.5,
                   borderRadius: 2,
+                  fontSize: 16,
+                  boxShadow: '0 4px 14px rgba(1, 135, 48, 0.3)',
                   '&:hover': { bgcolor: '#005c21' },
                 }}
               >
-                Masuk ke Dashboard Progres 7 Tahap &rarr;
+                Buka Halaman Login Pelamar &rarr;
               </Button>
             </CardContent>
           </Card>
@@ -295,7 +450,22 @@ export default function ApplyPage() {
 
             <CardContent sx={{ p: { xs: 3, md: 5 } }}>
               {errorMessage && (
-                <Alert severity="error" sx={{ mb: 4, borderRadius: 2 }}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 4, borderRadius: 2 }}
+                  action={
+                    (errorMessage.includes('sudah terdaftar') || errorMessage.includes('1 alamat email')) ? (
+                      <Button
+                        color="inherit"
+                        size="small"
+                        onClick={() => router.push('/login')}
+                        sx={{ fontWeight: 700, textDecoration: 'underline' }}
+                      >
+                        Login Sekarang
+                      </Button>
+                    ) : undefined
+                  }
+                >
                   {errorMessage}
                 </Alert>
               )}

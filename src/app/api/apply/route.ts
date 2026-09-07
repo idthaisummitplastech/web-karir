@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, signApplicantToken } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { emailAccountCreated, sendMailDirect, generateCorporateEmailWrapper } from "@/lib/email";
-import { cookies } from "next/headers";
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly
 
@@ -26,10 +25,36 @@ export async function POST(req: Request) {
       cvFileSize, // in bytes
     } = body;
 
-    // 1. Validasi Input Wajib
-    if (!fullName || !email || !phone || !birthDate || !lastEducation || !schoolName || !major || !jobPostingId || !cvBase64) {
+    const cleanFullName = fullName ? String(fullName).trim() : "";
+    const cleanEmail = email ? String(email).trim().toLowerCase() : "";
+    const cleanPhone = phone ? String(phone).trim() : "";
+    const cleanSchoolName = schoolName ? String(schoolName).trim() : "";
+    const cleanMajor = major ? String(major).trim() : "";
+    const cleanLastEducation = lastEducation ? String(lastEducation).trim() : "";
+
+    // 1. Validasi Input Wajib (Anti-Kosong & Anti-Spasi Kosong)
+    if (
+      !cleanFullName ||
+      !cleanEmail ||
+      !cleanPhone ||
+      !birthDate ||
+      !cleanLastEducation ||
+      !cleanSchoolName ||
+      !cleanMajor ||
+      !jobPostingId ||
+      !cvBase64
+    ) {
       return NextResponse.json(
-        { error: "Mohon lengkapi seluruh formulir pendaftaran 13 kolom yang bertanda bintang (*)." },
+        { error: "Mohon lengkapi seluruh formulir pendaftaran 13 kolom yang bertanda bintang (*). Tidak boleh ada data yang dikosongkan." },
+        { status: 400 }
+      );
+    }
+
+    // 1b. Validasi Format Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      return NextResponse.json(
+        { error: "Format alamat email tidak valid. Pastikan Anda memasukkan email aktif dengan benar (contoh: nama@domain.com)." },
         { status: 400 }
       );
     }
@@ -59,20 +84,37 @@ export async function POST(req: Request) {
       );
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-
-    // 3. Periksa apakah pelamar sudah pernah mendaftar
+    // 3. Periksa status pendaftaran sebelumnya (Hanya tolak jika masih aktif < 30 hari)
     const existing = await prisma.applicant.findUnique({
-      where: { email: normalizedEmail },
+      where: { email: cleanEmail },
+      include: { jobPosting: true },
     });
 
     if (existing) {
-      return NextResponse.json(
-        {
-          error: "Alamat email ini sudah terdaftar dalam sistem rekrutmen. Silakan langsung login ke Portal Pelamar untuk memantau status seleksi Anda.",
-        },
-        { status: 400 }
-      );
+      // Hitung selang waktu sejak pendaftaran sebelumnya (dalam hari)
+      const daysSinceCreated = (Date.now() - new Date(existing.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+      const isStillActive = existing.stageStatus === "in_progress" && daysSinceCreated < 30;
+
+      if (isStillActive) {
+        return NextResponse.json(
+          {
+            error: `Alamat email "${cleanEmail}" saat ini masih memiliki proses seleksi aktif untuk posisi "${existing.jobPosting?.title}". Harap selesaikan tahapan seleksi tersebut terlebih dahulu sebelum mendaftar lowongan lain.`,
+            alreadyRegistered: true,
+            activeJobTitle: existing.jobPosting?.title,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Jika proses sebelumnya sudah SELESAI (Gugur / failed) ATAU sudah mangkir > 30 hari:
+      // Bersihkan berkas & data lama secara tuntas agar database tidak terbebani & tidak ada duplikasi data
+      try {
+        await prisma.karyawanSementara.deleteMany({ where: { applicantId: existing.id } });
+        await prisma.applicant.delete({ where: { id: existing.id } });
+        console.log(`[RE-APPLY CLEANUP] Berkas lama pelamar ${cleanEmail} (status: ${existing.stageStatus}, usia: ${Math.round(daysSinceCreated)} hari) dibersihkan untuk pendaftaran baru.`);
+      } catch (delErr: any) {
+        console.warn("[RE-APPLY CLEANUP ERROR] Gagal mereset data lama:", delErr?.message);
+      }
     }
 
     // 3b. Tolak lamaran ke lowongan yang tutup / terjadwal / kedaluwarsa
@@ -109,15 +151,15 @@ export async function POST(req: Request) {
     const applicant = await prisma.applicant.create({
       data: {
         jobPostingId: Number(jobPostingId),
-        fullName: fullName.trim(),
-        email: normalizedEmail,
+        fullName: cleanFullName,
+        email: cleanEmail,
         password: hashedPassword,
-        phone: phone.trim(),
+        phone: cleanPhone,
         birthDate: birthDateObj,
         age: age > 0 ? age : 20,
-        lastEducation,
-        schoolName: schoolName.trim(),
-        major: major.trim(),
+        lastEducation: cleanLastEducation,
+        schoolName: cleanSchoolName,
+        major: cleanMajor,
         experience: experience || "Fresh Graduate",
         englishSkill: englishSkill || "Intermediate",
         otherLanguages: otherLanguages || "-",
@@ -174,28 +216,12 @@ export async function POST(req: Request) {
         subject: emailSubject,
         html: emailHtml,
       });
-      console.log(`[REAL EMAIL SENT] to ${applicant.email} (Password: ${tempPassword})`);
+      console.log(`[REAL EMAIL SENT] to ${applicant.email} (Kredensial dikirim via email)`);
     } catch (mailErr: any) {
       console.error("[APPLY EMAIL ERROR] Gagal mengirim email pendaftaran:", mailErr?.message);
     }
 
-    // 8. Buat Sesi Login Otomatis
-    const token = await signApplicantToken({
-      applicantId: applicant.id,
-      email: applicant.email,
-      fullName: applicant.fullName,
-      role: "applicant",
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set("applicant_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    });
-
+    // 8. Berikan respons sukses (Pelamar WAJIB cek email untuk password & login mandiri)
     return NextResponse.json({
       success: true,
       message: "Pendaftaran lamaran kerja Anda berhasil dikirim!",
@@ -205,7 +231,6 @@ export async function POST(req: Request) {
         email: applicant.email,
         jobTitle: applicant.jobPosting.title,
       },
-      tempPassword,
     });
   } catch (error: any) {
     console.error("Application submission error:", error);

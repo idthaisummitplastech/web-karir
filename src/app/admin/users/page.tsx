@@ -26,6 +26,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Autocomplete,
 } from '@mui/material';
 import {
   LockReset as ResetPasswordIcon,
@@ -68,12 +69,29 @@ export default function AdminUsersPage() {
   const [editDepartment, setEditDepartment] = useState('Human Capital');
   const [editNewPassword, setEditNewPassword] = useState('');
 
+  // Daftar Departemen Aktif di Sistem
+  const [availableDepartments, setAvailableDepartments] = useState<string[]>([
+    'Human Capital',
+    'Engineering',
+    'IT',
+    'Production',
+    'Quality Control',
+    'Purchasing',
+    'HSE',
+    'PPIC',
+    'Maintenance',
+    'Finance & Accounting',
+  ]);
+
   const fetchUsers = () => {
     setLoading(true);
     fetch('/api/admin/users')
       .then((res) => res.json())
       .then((data) => {
         if (data.users) setUsers(data.users);
+        if (data.departments && Array.isArray(data.departments)) {
+          setAvailableDepartments(data.departments);
+        }
       })
       .finally(() => setLoading(false));
   };
@@ -497,12 +515,22 @@ export default function AdminUsersPage() {
                 <MenuItem value="user_dept">User Departemen</MenuItem>
                 <MenuItem value="admin">Administrator</MenuItem>
               </TextField>
-              <TextField
-                fullWidth
-                required
-                label="Departemen"
+              <Autocomplete
+                freeSolo
+                options={availableDepartments}
                 value={newDepartment}
-                onChange={(e) => setNewDepartment(e.target.value)}
+                onChange={(_, val) => setNewDepartment(val || '')}
+                onInputChange={(_, val) => setNewDepartment(val)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    required
+                    label="Departemen"
+                    placeholder="Pilih atau ketik departemen"
+                    helperText="Pilih dari lowongan/soal atau ketik baru"
+                  />
+                )}
               />
               <TextField
                 fullWidth
@@ -565,12 +593,21 @@ export default function AdminUsersPage() {
                 <MenuItem value="user_dept">User Departemen</MenuItem>
                 <MenuItem value="admin">Administrator</MenuItem>
               </TextField>
-              <TextField
-                fullWidth
-                required
-                label="Departemen"
+              <Autocomplete
+                freeSolo
+                options={availableDepartments}
                 value={editDepartment}
-                onChange={(e) => setEditDepartment(e.target.value)}
+                onChange={(_, val) => setEditDepartment(val || '')}
+                onInputChange={(_, val) => setEditDepartment(val)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    required
+                    label="Departemen"
+                    placeholder="Pilih atau ketik departemen"
+                  />
+                )}
               />
               <TextField
                 fullWidth

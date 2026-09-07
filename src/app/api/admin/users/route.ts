@@ -24,7 +24,34 @@ export async function GET() {
       orderBy: { id: "asc" },
     });
 
-    return NextResponse.json({ success: true, users });
+    // Kumpulkan seluruh departemen unik yang pernah dibuat di sistem
+    const jobDepts = await prisma.jobPosting.findMany({ select: { department: true }, distinct: ['department'] });
+    const questionDepts = await prisma.testQuestion.findMany({ select: { department: true }, distinct: ['department'] });
+    const adminDepts = await prisma.recruitmentAdmin.findMany({ select: { department: true }, distinct: ['department'] });
+
+    const baseDepts = [
+      "Human Capital",
+      "Engineering",
+      "IT",
+      "Production",
+      "Quality Control",
+      "Purchasing",
+      "HSE",
+      "PPIC",
+      "Maintenance",
+      "Finance & Accounting",
+    ];
+
+    const departments = Array.from(
+      new Set([
+        ...baseDepts,
+        ...jobDepts.map((j) => j.department?.trim()).filter(Boolean as any),
+        ...questionDepts.map((q) => q.department?.trim()).filter(Boolean as any),
+        ...adminDepts.map((a) => a.department?.trim()).filter(Boolean as any),
+      ])
+    ).sort();
+
+    return NextResponse.json({ success: true, users, departments });
   } catch (error: any) {
     return NextResponse.json({ error: "Gagal memuat pengguna." }, { status: 500 });
   }

@@ -53,6 +53,7 @@ import {
   Place as PlaceIcon,
   Business as FactoryIcon,
   Language as OnlineIcon,
+  DeleteSweep as DeleteSweepIcon,
 } from '@mui/icons-material';
 import {
   RECRUITMENT_STAGES,
@@ -127,6 +128,12 @@ export default function AdminApplicantsPage() {
   const [resetPassModalOpen, setResetPassModalOpen] = useState(false);
   const [newApplicantPassInput, setNewApplicantPassInput] = useState('');
   const [resetApplicantFeedback, setResetApplicantFeedback] = useState<string | null>(null);
+
+  // Database Cleanup Modal State
+  const [cleanupModalOpen, setCleanupModalOpen] = useState(false);
+  const [cleanupMode, setCleanupMode] = useState<'soft_cleanup' | 'hard_delete'>('soft_cleanup');
+  const [cleaningUp, setCleaningUp] = useState(false);
+  const [cleanupFeedback, setCleanupFeedback] = useState<string | null>(null);
 
   // Load Session & Questions Map on Mount
   useEffect(() => {
@@ -526,12 +533,33 @@ export default function AdminApplicantsPage() {
     }
   };
 
+  // Handle Run Database Cleanup
+  const handleRunCleanup = async () => {
+    setCleaningUp(true);
+    setCleanupFeedback(null);
+    try {
+      const res = await fetch('/api/admin/applicants/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: cleanupMode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal memproses pembersihan');
+      setCleanupFeedback(data.message);
+      fetchApplicants();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
   const currentProfilingReview = getProfilingReview(selectedApplicant);
   const currentEssayReview = getEssayReview(selectedApplicant);
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
             Manajemen Pelamar & Alur 7 Tahap Seleksi
@@ -540,6 +568,20 @@ export default function AdminApplicantsPage() {
             Evaluasi berkas CV, tinjau hasil psikotes & essay teknis, dan lakukan 1-Klik Kelolosan dengan pesan resmi otomatis.
           </Typography>
         </Box>
+        {(adminSession?.role === 'admin' || adminSession?.role === 'hr') && (
+          <Button
+            variant="outlined"
+            color="warning"
+            startIcon={<DeleteSweepIcon />}
+            onClick={() => {
+              setCleanupFeedback(null);
+              setCleanupModalOpen(true);
+            }}
+            sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+          >
+            Bersihkan Kedaluwarsa (&gt; 30 Hari)
+          </Button>
+        )}
       </Box>
 
       {/* ROLE-AWARE WORKFLOW BANNER */}
@@ -1370,7 +1412,7 @@ export default function AdminApplicantsPage() {
                 <PsychologyIcon fontSize="small" /> Pengaturan Jadwal, Tempat & Token Ujian Psikotes
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     type="datetime-local"
@@ -1381,7 +1423,7 @@ export default function AdminApplicantsPage() {
                     helperText="Kosongkan jika ujian dapat diakses kapan saja"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <TextField
                       fullWidth
@@ -1403,7 +1445,7 @@ export default function AdminApplicantsPage() {
                     </Button>
                   </Box>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, display: 'block', mb: 0.5 }}>
                     Pilihan Lokasi Pelaksanaan Ujian Psikotes:
                   </Typography>
@@ -1513,7 +1555,7 @@ export default function AdminApplicantsPage() {
                 <EngineeringIcon fontSize="small" /> Pengaturan Jadwal, Tempat & Token Tes Teknis User
               </Typography>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
                     type="datetime-local"
@@ -1524,7 +1566,7 @@ export default function AdminApplicantsPage() {
                     helperText="Kosongkan jika jadwal mengikuti portal"
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid size={{ xs: 12, sm: 6 }}>
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <TextField
                       fullWidth
@@ -1546,7 +1588,7 @@ export default function AdminApplicantsPage() {
                     </Button>
                   </Box>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, display: 'block', mb: 0.5 }}>
                     Pilihan Lokasi Pelaksanaan Ujian Teknis User:
                   </Typography>
@@ -2042,6 +2084,79 @@ export default function AdminApplicantsPage() {
             sx={{ bgcolor: '#018730', fontWeight: 700 }}
           >
             {processing ? 'Memproses...' : 'Simpan & Terapkan Password'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 6. CLEANUP & OPTIMIZE DATABASE MODAL */}
+      <Dialog open={cleanupModalOpen} onClose={() => setCleanupModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DeleteSweepIcon color="warning" /> Pembersihan & Optimalisasi Database Pelamar
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: '#475569', mb: 2.5, lineHeight: 1.6 }}>
+            Fitur ini secara otomatis memproses pelamar yang tidak melanjutkan seleksi (mangkir) lebih dari 30 hari dan membersihkan berkas berat di database.
+          </Typography>
+
+          {cleanupFeedback && (
+            <Alert severity="success" sx={{ mb: 2.5, borderRadius: 2 }}>
+              {cleanupFeedback}
+            </Alert>
+          )}
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box
+              onClick={() => setCleanupMode('soft_cleanup')}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: '2px solid',
+                borderColor: cleanupMode === 'soft_cleanup' ? '#018730' : '#E2E8F0',
+                bgcolor: cleanupMode === 'soft_cleanup' ? '#F0FDF4' : '#FFFFFF',
+                cursor: 'pointer',
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mb: 0.5 }}>
+                1. Optimalisasi Penyimpanan (Rekomendasi)
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
+                Otomatis ubah status pelamar mangkir &gt; 30 hari menjadi <strong>Gugur</strong>, dan kosongkan file CV Base64 dari pelamar gugur lama untuk menghemat kapasitas database hingga 95% tanpa menghapus riwayat nama &amp; nilai.
+              </Typography>
+            </Box>
+
+            <Box
+              onClick={() => setCleanupMode('hard_delete')}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: '2px solid',
+                borderColor: cleanupMode === 'hard_delete' ? '#EF4444' : '#E2E8F0',
+                bgcolor: cleanupMode === 'hard_delete' ? '#FEF2F2' : '#FFFFFF',
+                cursor: 'pointer',
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#991B1B', mb: 0.5 }}>
+                2. Hapus Permanen Data Kedaluwarsa
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
+                Hapus tuntas seluruh data pelamar yang berstatus gugur atau tidak aktif &gt; 30 hari beserta seluruh riwayat tesnya dari database.
+              </Typography>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 0 }}>
+          <Button onClick={() => setCleanupModalOpen(false)}>Tutup</Button>
+          <Button
+            variant="contained"
+            disabled={cleaningUp}
+            onClick={handleRunCleanup}
+            sx={{
+              bgcolor: cleanupMode === 'hard_delete' ? '#EF4444' : '#018730',
+              fontWeight: 700,
+              '&:hover': { bgcolor: cleanupMode === 'hard_delete' ? '#DC2626' : '#005c21' },
+            }}
+          >
+            {cleaningUp ? 'Memproses...' : 'Jalankan Pembersihan Sekarang'}
           </Button>
         </DialogActions>
       </Dialog>
