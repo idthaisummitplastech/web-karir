@@ -40,10 +40,11 @@ export async function GET() {
 
     // 2. Jika Super Admin, sertakan data kredensial SMTP Server, Multi-Kanal, dan Grafana
     if (isSuperAdmin) {
+      const client = (prisma as any).smtpServer ? prisma : new (require("@prisma/client").PrismaClient)();
       const [smtpServer, channels, observability] = await Promise.all([
-        prisma.smtpServer.findFirst({ orderBy: { id: "asc" } }),
-        prisma.emailChannel.findMany({ orderBy: { id: "asc" } }),
-        prisma.observabilitySetting.findFirst(),
+        client.smtpServer.findFirst({ orderBy: { id: "asc" } }),
+        client.emailChannel.findMany({ orderBy: { id: "asc" } }),
+        client.observabilitySetting.findFirst(),
       ]);
 
       responseData.smtpServer = smtpServer || {
@@ -114,9 +115,11 @@ export async function POST(req: Request) {
 
       const { smtpServer, channels, observability } = payload;
 
+      const client = (prisma as any).smtpServer ? prisma : new (require("@prisma/client").PrismaClient)();
+
       // Simpan Server SMTP
       if (smtpServer) {
-        const existingServer = await prisma.smtpServer.findUnique({
+        const existingServer = await client.smtpServer.findUnique({
           where: { id: smtpServer.id || 1 },
         });
 
@@ -124,7 +127,7 @@ export async function POST(req: Request) {
           ? smtpServer.password
           : (existingServer?.password || "");
 
-        await prisma.smtpServer.upsert({
+        await client.smtpServer.upsert({
           where: { id: smtpServer.id || 1 },
           update: {
             host: smtpServer.host,
@@ -150,7 +153,7 @@ export async function POST(req: Request) {
       if (Array.isArray(channels)) {
         for (const ch of channels) {
           if (!ch.appCode) continue;
-          await prisma.emailChannel.upsert({
+          await client.emailChannel.upsert({
             where: { appCode: ch.appCode },
             update: {
               appName: ch.appName,
@@ -173,7 +176,7 @@ export async function POST(req: Request) {
 
       // Simpan Pengaturan Observability Grafana
       if (observability) {
-        await prisma.observabilitySetting.upsert({
+        await client.observabilitySetting.upsert({
           where: { id: observability.id || 1 },
           update: {
             grafanaOtlpUrl: observability.grafanaOtlpUrl,
