@@ -208,11 +208,14 @@ export async function POST(req: Request) {
         `
       );
 
+      const customSmtp = payload.smtpServer;
+
       const result = await sendMailDirect({
         to: targetEmail,
         subject: `[VERIFIKASI SERVER] Uji Coba Koneksi SMTP PT ITSP (${testChannel})`,
         html,
         channel: testChannel,
+        customSmtp,
       });
 
       if (!result.success) {

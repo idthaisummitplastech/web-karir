@@ -11,55 +11,78 @@ export interface EmailPayload {
   contentHtml: string;
 }
 
+export interface SmtpConfigOverride {
+  host?: string;
+  port?: number | string;
+  username?: string;
+  password?: string;
+  encryption?: 'ssl' | 'tls' | 'none' | string;
+}
+
 export async function sendMailDirect({
   to,
   subject,
   html,
   channel = 'web_karir',
+  customSmtp,
 }: {
   to: string;
   subject: string;
   html: string;
   channel?: 'web_karir' | 'web_perusahaan' | string;
+  customSmtp?: SmtpConfigOverride;
 }): Promise<{ success: boolean; error?: string }> {
   // Default values
   let host = process.env.SMTP_HOST || 'smtp.gmail.com';
   let port = parseInt(process.env.SMTP_PORT || '587');
   let user = process.env.SMTP_USER;
   let pass = process.env.SMTP_PASS;
+  let encryption = 'tls';
   let senderName = 'PT ITSP Recruitment';
   let senderEmail = user || 'recruitment@itsp.co.id';
   let replyTo = senderEmail;
 
-  // 1. Coba baca dari Database Terpusat (Dedicated SmtpServer & EmailChannel)
-  try {
-    const { prisma } = await import('./prisma');
-    const [dbServer, dbChannel] = await Promise.all([
-      prisma.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
-      prisma.emailChannel.findUnique({ where: { appCode: channel } }),
-    ]);
+  if (customSmtp && customSmtp.host && customSmtp.username) {
+    // Gunakan konfigurasi langsung dari form uji coba Super Admin
+    host = customSmtp.host;
+    port = parseInt(String(customSmtp.port || '587'));
+    user = customSmtp.username;
+    pass = customSmtp.password || pass;
+    encryption = customSmtp.encryption || (port === 465 ? 'ssl' : 'tls');
+    senderEmail = user;
+    replyTo = user;
+  } else {
+    // 1. Coba baca dari Database Terpusat (Dedicated SmtpServer & EmailChannel)
+    try {
+      const { prisma } = await import('./prisma');
+      const [dbServer, dbChannel] = await Promise.all([
+        prisma.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
+        prisma.emailChannel.findUnique({ where: { appCode: channel } }),
+      ]);
 
-    if (dbServer && dbServer.host && dbServer.username && dbServer.password) {
-      host = dbServer.host;
-      port = dbServer.port;
-      user = dbServer.username;
-      pass = dbServer.password;
-    }
+      if (dbServer && dbServer.host && dbServer.username && dbServer.password) {
+        host = dbServer.host;
+        port = dbServer.port;
+        user = dbServer.username;
+        pass = dbServer.password;
+        if (dbServer.encryption) encryption = dbServer.encryption;
+      }
 
-    if (dbChannel && dbChannel.isActive) {
-      if (dbChannel.senderName) senderName = dbChannel.senderName;
-      if (dbChannel.senderEmail) senderEmail = dbChannel.senderEmail;
-      if (dbChannel.replyTo) replyTo = dbChannel.replyTo;
+      if (dbChannel && dbChannel.isActive) {
+        if (dbChannel.senderName) senderName = dbChannel.senderName;
+        if (dbChannel.senderEmail) senderEmail = dbChannel.senderEmail;
+        if (dbChannel.replyTo) replyTo = dbChannel.replyTo;
+      }
+    } catch {
+      // Gunakan fallback environment jika query database belum siap
     }
-  } catch {
-    // Gunakan fallback environment jika query database belum siap
   }
 
   const from = `"${senderName}" <${senderEmail}>`;
 
   if (!user || !pass) {
     console.warn('[EMAIL WARNING] Kredensial SMTP belum dikonfigurasi di database maupun .env');
-    const err = 'Kredensial SMTP belum diset.';
+    const err = 'Kredensial SMTP belum diset (Username / Password kosong).';
     // Log ke Grafana
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
       pushEmailLogToGrafana({
@@ -75,10 +98,12 @@ export async function sendMailDirect({
   }
 
   try {
+    const isSecure = encryption === 'ssl' || port === 465;
+
     const transporter = nodemailer.createTransport({
       host,
       port,
-      secure: port === 465,
+      secure: isSecure,
       auth: {
         user,
         pass,

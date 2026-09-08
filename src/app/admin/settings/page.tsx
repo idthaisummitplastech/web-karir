@@ -297,6 +297,7 @@ export default function AdminSettingsPage() {
           action: 'test_smtp_connection',
           targetEmail: testSmtpTarget,
           channel: testSmtpChannel,
+          smtpServer,
         }),
       });
 
@@ -854,7 +855,18 @@ export default function AdminSettingsPage() {
                   size="small"
                   label="Protokol Enkripsi"
                   value={smtpServer.encryption || 'tls'}
-                  onChange={(e) => setSmtpServer({ ...smtpServer, encryption: e.target.value })}
+                  onChange={(e) => {
+                    const enc = e.target.value;
+                    let newPort = smtpServer.port;
+                    if (enc === 'tls' && (!smtpServer.port || smtpServer.port === 465 || smtpServer.port === 25)) {
+                      newPort = 587;
+                    } else if (enc === 'ssl' && (!smtpServer.port || smtpServer.port === 587 || smtpServer.port === 25)) {
+                      newPort = 465;
+                    } else if (enc === 'none' && (!smtpServer.port || smtpServer.port === 587 || smtpServer.port === 465)) {
+                      newPort = 25;
+                    }
+                    setSmtpServer({ ...smtpServer, encryption: enc, port: newPort });
+                  }}
                   sx={{ minWidth: 200 }}
                 >
                   <MenuItem value="tls">TLS / STARTTLS (Port 587)</MenuItem>
