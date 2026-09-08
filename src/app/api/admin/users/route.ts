@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    if (session.role !== "admin") {
+    if (session.role !== "admin" && session.role !== "superadmin") {
       return NextResponse.json(
         { error: "Akses Ditolak: Hanya Super Admin yang berhak mengelola akun dan mereset status MFA." },
         { status: 403 }
@@ -163,7 +163,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    if (session.role !== "admin") {
+    if (session.role !== "admin" && session.role !== "superadmin") {
       return NextResponse.json(
         { error: "Akses Ditolak: Hanya Super Admin yang berhak mengubah data akun pengguna." },
         { status: 403 }
@@ -254,7 +254,7 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    if (session.role !== "admin") {
+    if (session.role !== "admin" && session.role !== "superadmin") {
       return NextResponse.json(
         { error: "Akses Ditolak: Hanya Super Admin yang berhak menghapus akun pengguna." },
         { status: 403 }
@@ -285,8 +285,10 @@ export async function DELETE(req: Request) {
     }
 
     // Cegah menghapus jika tersisa hanya 1 admin di sistem
-    if (targetUser.role === "admin") {
-      const adminCount = await prisma.recruitmentAdmin.count({ where: { role: "admin" } });
+    if (targetUser.role === "admin" || targetUser.role === "superadmin") {
+      const adminCount = await prisma.recruitmentAdmin.count({
+        where: { role: { in: ["admin", "superadmin"] } },
+      });
       if (adminCount <= 1) {
         return NextResponse.json(
           { error: "Tidak dapat menghapus satu-satunya akun Super Admin di sistem." },

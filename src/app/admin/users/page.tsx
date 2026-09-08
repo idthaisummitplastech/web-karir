@@ -106,7 +106,7 @@ export default function AdminUsersPage() {
       .then((data) => {
         if (data.success) {
           setCurrentUserRole(data.role);
-          if (data.role === 'admin') {
+          if (data.role === 'admin' || data.role === 'superadmin' || data.isSuperAdmin) {
             fetchUsers();
           } else {
             setLoading(false);
@@ -278,7 +278,7 @@ export default function AdminUsersPage() {
   }
 
   // KHUSUS SUPER ADMIN ONLY
-  if (currentUserRole !== 'admin') {
+  if (currentUserRole !== 'admin' && currentUserRole !== 'superadmin') {
     return (
       <Box sx={{ maxWidth: 680, mx: 'auto', mt: 6 }}>
         <Card sx={{ borderRadius: 3, border: '2px solid #FCA5A5', p: 4, textAlign: 'center', boxShadow: '0 8px 30px rgba(239,68,68,0.1)' }}>

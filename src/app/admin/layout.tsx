@@ -101,7 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               {currentUserRole && (
                 <Chip
                   label={
-                    currentUserRole === 'admin'
+                    currentUserRole === 'admin' || currentUserRole === 'superadmin'
                       ? '👑 Super Administrator'
                       : currentUserRole === 'hr'
                       ? '👤 HR Recruitment'
@@ -110,13 +110,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   size="small"
                   sx={{
                     bgcolor:
-                      currentUserRole === 'admin'
+                      currentUserRole === 'admin' || currentUserRole === 'superadmin'
                         ? 'rgba(252, 69, 9, 0.2)'
                         : currentUserRole === 'hr'
                         ? 'rgba(1, 135, 48, 0.25)'
                         : 'rgba(59, 130, 246, 0.25)',
                     color:
-                      currentUserRole === 'admin'
+                      currentUserRole === 'admin' || currentUserRole === 'superadmin'
                         ? '#FB923C'
                         : currentUserRole === 'hr'
                         ? '#4ADE80'

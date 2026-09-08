@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       });
     } else if (targetType === "admin") {
       // HANYA SUPER ADMIN YANG BERHAK MERESET PASSWORD STAF/INTERNAL
-      if (session.role !== "admin") {
+      if (session.role !== "admin" && session.role !== "superadmin") {
         return NextResponse.json(
           { error: "Akses Ditolak: Hanya Super Administrator yang berhak mereset password akun staf/karyawan." },
           { status: 403 }
