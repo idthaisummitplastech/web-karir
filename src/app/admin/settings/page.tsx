@@ -837,14 +837,16 @@ export default function AdminSettingsPage() {
                   label="Password / App Password Akun"
                   value={smtpServer.password}
                   onChange={(e) => setSmtpServer({ ...smtpServer, password: e.target.value })}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowSmtpPassword(!showSmtpPassword)} edge="end">
-                          {showSmtpPassword ? <VisibilityOffIcon /> : <PreviewIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={() => setShowSmtpPassword(!showSmtpPassword)} edge="end">
+                            {showSmtpPassword ? <VisibilityOffIcon /> : <PreviewIcon />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
               </Box>
@@ -956,7 +958,7 @@ export default function AdminSettingsPage() {
                   <Paper key={ch.appCode} sx={{ p: 2.5, borderRadius: 2, border: '1px solid #E2E8F0', bgcolor: ch.isActive ? '#FFFFFF' : '#F8FAFC' }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Chip label={ch.appCode} size="small" sx={{ fontWeight: 800, bgcolor: '#EFF6FF', color: '#1E40AF' }} />
+                        <Chip label={ch.appCode} size="small" className="notranslate" translate="no" sx={{ fontWeight: 800, bgcolor: '#EFF6FF', color: '#1E40AF' }} />
                         <Typography sx={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{ch.appName}</Typography>
                       </Box>
                       <FormControlLabel

@@ -8,7 +8,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const isSuperAdmin = session.role === "superadmin" || session.username === "admin";
+    const isSuperAdmin =
+      session.role === "superadmin" ||
+      session.role === "admin" ||
+      session.username === "admin" ||
+      session.email === "admin@itsp.co.id";
     return NextResponse.json({
       success: true,
       role: isSuperAdmin ? "superadmin" : session.role,

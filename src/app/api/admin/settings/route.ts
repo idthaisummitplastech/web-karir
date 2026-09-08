@@ -11,7 +11,11 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const isSuperAdmin = session.role === "superadmin" || session.username === "admin";
+    const isSuperAdmin =
+      session.role === "superadmin" ||
+      session.role === "admin" ||
+      session.username === "admin" ||
+      session.email === "admin@itsp.co.id";
 
     // 1. Ambil pengaturan umum (MCU, pabrik, template email)
     const list = await prisma.recruitmentSetting.findMany();
@@ -92,7 +96,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const isSuperAdmin = session.role === "superadmin" || session.username === "admin";
+    const isSuperAdmin =
+      session.role === "superadmin" ||
+      session.role === "admin" ||
+      session.username === "admin" ||
+      session.email === "admin@itsp.co.id";
     const payload = await req.json();
 
     // 1. Aksi Khusus Super Admin: Simpan Konfigurasi SMTP Server, Multi-Kanal & Grafana
@@ -108,13 +116,21 @@ export async function POST(req: Request) {
 
       // Simpan Server SMTP
       if (smtpServer) {
+        const existingServer = await prisma.smtpServer.findUnique({
+          where: { id: smtpServer.id || 1 },
+        });
+
+        const effectivePassword = (smtpServer.password && smtpServer.password.trim() !== "")
+          ? smtpServer.password
+          : (existingServer?.password || "");
+
         await prisma.smtpServer.upsert({
           where: { id: smtpServer.id || 1 },
           update: {
             host: smtpServer.host,
             port: parseInt(smtpServer.port) || 587,
             username: smtpServer.username,
-            password: smtpServer.password,
+            password: effectivePassword,
             encryption: smtpServer.encryption || "tls",
             isActive: smtpServer.isActive ?? true,
           },
@@ -123,7 +139,7 @@ export async function POST(req: Request) {
             host: smtpServer.host,
             port: parseInt(smtpServer.port) || 587,
             username: smtpServer.username,
-            password: smtpServer.password,
+            password: effectivePassword,
             encryption: smtpServer.encryption || "tls",
             isActive: smtpServer.isActive ?? true,
           },
@@ -279,6 +295,6 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Save settings error:", error);
-    return NextResponse.json({ error: "Gagal menyimpan pengaturan." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Gagal menyimpan pengaturan." }, { status: 500 });
   }
 }
