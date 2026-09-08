@@ -40,7 +40,7 @@ export async function GET() {
 
     // 2. Jika Super Admin, sertakan data kredensial SMTP Server, Multi-Kanal, dan Grafana
     if (isSuperAdmin) {
-      const client = (prisma as any).smtpServer ? prisma : new (require("@prisma/client").PrismaClient)();
+      const client = prisma;
       const [smtpServer, channels, observability] = await Promise.all([
         client.smtpServer.findFirst({ orderBy: { id: "asc" } }),
         client.emailChannel.findMany({ orderBy: { id: "asc" } }),
@@ -114,8 +114,7 @@ export async function POST(req: Request) {
       }
 
       const { smtpServer, channels, observability } = payload;
-
-      const client = (prisma as any).smtpServer ? prisma : new (require("@prisma/client").PrismaClient)();
+      const client = prisma;
 
       // Simpan Server SMTP
       if (smtpServer) {

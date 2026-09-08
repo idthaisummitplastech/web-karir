@@ -55,10 +55,13 @@ export async function sendMailDirect({
     // 1. Coba baca dari Database Terpusat (Dedicated SmtpServer & EmailChannel)
     try {
       const { prisma } = await import('./prisma');
-      const [dbServer, dbChannel] = await Promise.all([
-        prisma.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
-        prisma.emailChannel.findUnique({ where: { appCode: channel } }),
-      ]);
+      const client = (prisma as any).smtpServer ? prisma : null;
+      const [dbServer, dbChannel] = client
+        ? await Promise.all([
+            client.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
+            client.emailChannel.findUnique({ where: { appCode: channel } }),
+          ])
+        : [null, null];
 
       if (dbServer && dbServer.host && dbServer.username && dbServer.password) {
         host = dbServer.host;
