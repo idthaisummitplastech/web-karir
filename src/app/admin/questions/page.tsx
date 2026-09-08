@@ -37,6 +37,7 @@ import {
   AdminPanelSettings as AdminIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
+import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
 interface QuestionItem {
   id: number;
@@ -57,6 +58,8 @@ export default function AdminQuestionsPage() {
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [departmentFilter, setDepartmentFilter] = useState('All');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Dialog Add/Edit state
@@ -136,6 +139,7 @@ export default function AdminQuestionsPage() {
   };
 
   useEffect(() => {
+    setPage(0);
     fetchQuestions();
   }, [activeTab, departmentFilter]);
 
@@ -586,7 +590,7 @@ export default function AdminQuestionsPage() {
         </Card>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {questions.map((q, idx) => {
+          {questions.slice(page * rowsPerPage, (page + 1) * rowsPerPage).map((q, idx) => {
             let options: string[] = [];
             try {
               options = JSON.parse(q.options);
@@ -811,6 +815,21 @@ export default function AdminQuestionsPage() {
             );
           })}
         </Box>
+      )}
+
+      {!loading && questions.length > 0 && (
+        <Card sx={{ mt: 2, borderRadius: 2, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+          <KarirTablePagination
+            count={questions.length}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={setPage}
+            onRowsPerPageChange={(newRpp) => {
+              setRowsPerPage(newRpp);
+              setPage(0);
+            }}
+          />
+        </Card>
       )}
 
       {/* CREATE / EDIT QUESTION DIALOG */}

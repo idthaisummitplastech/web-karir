@@ -27,20 +27,12 @@ import {
   Celebration as CelebrationIcon,
 } from '@mui/icons-material';
 import { RECRUITMENT_STAGES } from '@/lib/constants';
-
-interface Job {
-  id: number;
-  title: string;
-  department: string;
-  location: string;
-  type: string;
-  experience: string;
-  requirements: string;
-  description: string;
-}
+import { useLanguage } from '@/lib/LanguageContext';
+import { translateJob, JobItem } from '@/lib/contentTranslator';
 
 export default function HomePage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const { language, t } = useLanguage();
+  const [jobs, setJobs] = useState<JobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
@@ -55,9 +47,12 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const departments = ['All', ...Array.from(new Set(jobs.map((j) => j.department)))];
+  // Translate all jobs dynamically based on current language
+  const localizedJobs = jobs.map((j) => translateJob(j, language));
 
-  const filteredJobs = jobs.filter((job) => {
+  const departments = ['All', ...Array.from(new Set(localizedJobs.map((j) => j.department)))];
+
+  const filteredJobs = localizedJobs.filter((job) => {
     const matchSearch =
       job.title.toLowerCase().includes(search.toLowerCase()) ||
       job.requirements.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,6 +60,59 @@ export default function HomePage() {
     const matchDept = departmentFilter === 'All' || job.department === departmentFilter;
     return matchSearch && matchDept;
   });
+
+  // Bilingual stages mapping
+  const stageTranslations: Record<number, { name: string; shortName: string; desc: string }> = {
+    1: {
+      name: language === 'en' ? 'Administrative & CV Screening' : 'Seleksi Administrasi & Berkas',
+      shortName: language === 'en' ? 'Screening' : 'Screening',
+      desc: language === 'en'
+        ? 'Document verification and qualification review against position criteria by the HR Team.'
+        : 'Verifikasi berkas administrasi dan riwayat kualifikasi oleh Tim HR PT ITSP.',
+    },
+    2: {
+      name: language === 'en' ? 'Online Psychometric Assessment' : 'Tes Psikotes Online',
+      shortName: language === 'en' ? 'Psychometrics' : 'Psikotes',
+      desc: language === 'en'
+        ? 'Standardized psychological evaluation and aptitude testing with secure session tokens.'
+        : 'Ujian psikotes dan potensi akademik online dengan token sesi & pengawasan aman.',
+    },
+    3: {
+      name: language === 'en' ? 'Technical Competency Test' : 'Tes Teknis / User Test',
+      shortName: language === 'en' ? 'Technical Test' : 'Tes Teknis',
+      desc: language === 'en'
+        ? 'Assessment of practical technical expertise aligned with department requirements.'
+        : 'Uji kompetensi teknis dan spesialisasi sesuai departemen yang dilamar.',
+    },
+    4: {
+      name: language === 'en' ? 'HR In-Depth Interview' : 'Interview HR (Online / Onsite)',
+      shortName: language === 'en' ? 'HR Interview' : 'Interview HR',
+      desc: language === 'en'
+        ? 'Behavioral and cultural alignment interview with PT ITSP Human Resources.'
+        : 'Wawancara kompetensi kepribadian & budaya kerja bersama Tim HRD PT ITSP.',
+    },
+    5: {
+      name: language === 'en' ? 'User & Department Interview' : 'Interview User Departemen',
+      shortName: language === 'en' ? 'User Interview' : 'Interview User',
+      desc: language === 'en'
+        ? 'In-depth interview with Department Heads & Section Supervisors.'
+        : 'Wawancara teknis mendalam bersama Kepala Departemen & Supervisor terkait.',
+    },
+    6: {
+      name: language === 'en' ? 'Medical Check-Up (MCU)' : 'Medical Check-Up (MCU Rekanan)',
+      shortName: language === 'en' ? 'MCU' : 'MCU',
+      desc: language === 'en'
+        ? 'Physical fitness and occupational health check at certified medical partner clinics.'
+        : 'Pemeriksaan kesehatan fisik di Klinik / RS Rekanan resmi PT ITSP.',
+    },
+    7: {
+      name: language === 'en' ? 'Job Offer & Contract Signing' : 'Offering Letter & Kontrak Kerja',
+      shortName: language === 'en' ? 'Offering' : 'Offering',
+      desc: language === 'en'
+        ? 'Official job offer letter detailing compensation package and contract signing.'
+        : 'Penerbitan surat penawaran kerja resmi, kompensasi & benefit, serta penandatanganan kontrak.',
+    },
+  };
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F8FAFC' }}>
@@ -93,7 +141,7 @@ export default function HomePage() {
           >
             <Box>
               <Chip
-                label="PORTAL RESMI REKRUTMEN PT ITSP"
+                label={t('hero_badge', 'OFFICIAL RECRUITMENT PORTAL PT ITSP')}
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.15)',
                   color: '#FED7AA',
@@ -106,6 +154,7 @@ export default function HomePage() {
               />
               <Typography
                 variant="h2"
+                component="h1"
                 sx={{
                   fontWeight: 800,
                   fontSize: { xs: 30, sm: 38, md: 46 },
@@ -114,7 +163,10 @@ export default function HomePage() {
                   letterSpacing: '-0.03em',
                 }}
               >
-                Bangun Karir Profesional Anda di Industri Otomotif Masa Depan
+                {language === 'en' ? 'Build Your Future Career With' : 'Bangun Karir Masa Depan Anda Bersama'}{' '}
+                <Box component="span" sx={{ color: '#FED7AA' }}>
+                  {language === 'en' ? 'Automotive Innovation Leaders' : 'Pemimpin Inovasi Otomotif'}
+                </Box>
               </Typography>
               <Typography
                 variant="body1"
@@ -126,7 +178,7 @@ export default function HomePage() {
                   mb: 4,
                 }}
               >
-                PT Indonesia Thai Summit Plastech membuka peluang bagi talenta unggul untuk bergabung sebagai bagian dari manufaktur plastic injection otomotif terkemuka. Pantau proses seleksi Anda secara transparan melalui sistem terpadu 7 tahap.
+                {t('hero_subtitle', 'Join our world-class automotive manufacturing team. Explore high-impact career opportunities in plastic injection molding, precision tooling, robotic spray painting, and interior assembly.')}
               </Typography>
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
@@ -148,7 +200,7 @@ export default function HomePage() {
                     '&:hover': { bgcolor: '#e03a03' },
                   }}
                 >
-                  Lihat Lowongan Kerja Aktif
+                  {t('hero_btn_explore', 'Explore Openings')}
                 </Button>
                 <Button
                   component={Link}
@@ -166,7 +218,7 @@ export default function HomePage() {
                     '&:hover': { borderColor: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' },
                   }}
                 >
-                  Masuk ke Portal Pelamar
+                  {t('hero_btn_portal', 'Check Application Status')}
                 </Button>
               </Box>
             </Box>
@@ -182,25 +234,29 @@ export default function HomePage() {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ShieldIcon sx={{ color: '#fc4509' }} /> Keunggulan Sistem Rekrutmen
+                <ShieldIcon sx={{ color: '#fc4509' }} />{' '}
+                {language === 'en' ? 'Recruitment System Highlights' : 'Keunggulan Sistem Rekrutmen'}
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
                 <Box sx={{ display: 'flex', gap: 1.2 }}>
                   <CheckCircleIcon sx={{ color: '#4ADE80', fontSize: 20 }} />
                   <Typography variant="body2" sx={{ color: '#E2E8F0', fontSize: 13.5 }}>
-                    <strong>Alur 7 Tahap Transparan:</strong> Informasi status seleksi diperbarui langsung di dashboard Anda.
+                    <strong>{language === 'en' ? 'Transparent 7-Step Workflow:' : 'Alur 7 Tahap Transparan:'}</strong>{' '}
+                    {language === 'en' ? 'Live status tracking in your applicant dashboard.' : 'Informasi status seleksi diperbarui langsung di dashboard Anda.'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1.2 }}>
                   <CheckCircleIcon sx={{ color: '#4ADE80', fontSize: 20 }} />
                   <Typography variant="body2" sx={{ color: '#E2E8F0', fontSize: 13.5 }}>
-                    <strong>Tes Online Terjadwal:</strong> Ujian psikotes & teknis dengan token sesi & sistem anti-kecurangan aman.
+                    <strong>{language === 'en' ? 'Scheduled Online Exams:' : 'Tes Online Terjadwal:'}</strong>{' '}
+                    {language === 'en' ? 'Psychometric & technical exams with verified session tokens & security.' : 'Ujian psikotes & teknis dengan token sesi & sistem anti-kecurangan aman.'}
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1.2 }}>
                   <CheckCircleIcon sx={{ color: '#4ADE80', fontSize: 20 }} />
                   <Typography variant="body2" sx={{ color: '#E2E8F0', fontSize: 13.5 }}>
-                    <strong>Notifikasi Email Otomatis:</strong> Setiap keputusan resmi dikirimkan langsung ke email kandidat.
+                    <strong>{language === 'en' ? 'Automated Email Notifications:' : 'Notifikasi Email Otomatis:'}</strong>{' '}
+                    {language === 'en' ? 'Official selection decisions sent directly to candidate emails.' : 'Setiap keputusan resmi dikirimkan langsung ke email kandidat.'}
                   </Typography>
                 </Box>
               </Box>
@@ -209,20 +265,20 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* 7-Stage Process Stepper Overview (Uniform 4x2 Grid Layout) */}
+      {/* 7-Stage Process Stepper Overview */}
       <Container maxWidth="lg" id="tahapan" sx={{ py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography
             variant="overline"
             sx={{ color: '#018730', fontWeight: 800, fontSize: 13, letterSpacing: '0.1em' }}
           >
-            STANDAR PENERIMAAN KARYAWAN PT ITSP
+            {t('stages_badge', 'TRANSPARENT RECRUITMENT')}
           </Typography>
           <Typography variant="h3" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5, mb: 1.5, fontSize: { xs: 26, sm: 32, md: 36 } }}>
-            Alur Lengkap 7 Tahap Seleksi Calon Karyawan
+            {t('stages_title', '7 Steps of Integrated Selection Process')}
           </Typography>
           <Typography variant="body1" sx={{ color: '#64748B', maxWidth: 680, mx: 'auto' }}>
-            Setiap pelamar akan melalui tahapan seleksi terstruktur dan transparan, mulai dari berkas administrasi hingga penandatanganan kontrak kerja.
+            {t('stages_subtitle', 'Our recruitment process is completely transparent, merit-based, and 100% FREE OF CHARGE at every stage. Beware of fraudulent job offers.')}
           </Typography>
         </Box>
 
@@ -237,62 +293,65 @@ export default function HomePage() {
             gap: 2.5,
           }}
         >
-          {RECRUITMENT_STAGES.map((st) => (
-            <Card
-              key={st.number}
-              sx={{
-                borderRadius: 2.5,
-                border: '1.5px solid #E2E8F0',
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                minHeight: 185,
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  borderColor: '#018730',
-                  transform: 'translateY(-3px)',
-                  boxShadow: '0 8px 24px rgba(1, 135, 48, 0.12)',
-                },
-              }}
-            >
-              <Box
+          {RECRUITMENT_STAGES.map((st) => {
+            const stage = stageTranslations[st.number] || st;
+            return (
+              <Card
+                key={st.number}
                 sx={{
-                  bgcolor: st.number % 2 === 0 ? '#018730' : '#fc4509',
-                  color: '#FFFFFF',
-                  py: 1,
-                  px: 2,
+                  borderRadius: 2.5,
+                  border: '1.5px solid #E2E8F0',
                   display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
+                  flexDirection: 'column',
+                  height: '100%',
+                  minHeight: 185,
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    borderColor: '#018730',
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 8px 24px rgba(1, 135, 48, 0.12)',
+                  },
                 }}
               >
-                <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: '0.05em' }}>
-                  TAHAP {st.number}
-                </Typography>
-                <Chip
-                  label={st.shortName}
-                  size="small"
+                <Box
                   sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
+                    bgcolor: st.number % 2 === 0 ? '#018730' : '#fc4509',
                     color: '#FFFFFF',
-                    fontWeight: 700,
-                    fontSize: 10,
-                    height: 20,
+                    py: 1,
+                    px: 2,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                   }}
-                />
-              </Box>
-              <CardContent sx={{ p: 2.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1, lineHeight: 1.3 }}>
-                  {st.name}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.5, fontSize: 13, flex: 1 }}>
-                  {st.description}
-                </Typography>
-              </CardContent>
-            </Card>
-          ))}
+                >
+                  <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: '0.05em' }}>
+                    {language === 'en' ? `STAGE ${st.number}` : `TAHAP ${st.number}`}
+                  </Typography>
+                  <Chip
+                    label={stage.shortName}
+                    size="small"
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: '#FFFFFF',
+                      fontWeight: 700,
+                      fontSize: 10,
+                      height: 20,
+                    }}
+                  />
+                </Box>
+                <CardContent sx={{ p: 2.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1, lineHeight: 1.3 }}>
+                    {stage.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.5, fontSize: 13, flex: 1 }}>
+                    {stage.desc}
+                  </Typography>
+                </CardContent>
+              </Card>
+            );
+          })}
 
-          {/* 8th Balanced Milestone Card: Onboarding & ID Card */}
+          {/* 8th Balanced Milestone Card: Onboarding */}
           <Card
             sx={{
               borderRadius: 2.5,
@@ -322,7 +381,7 @@ export default function HomePage() {
               }}
             >
               <Typography variant="caption" sx={{ fontWeight: 800, letterSpacing: '0.05em', color: '#4ADE80' }}>
-                HASIL AKHIR
+                {language === 'en' ? 'FINAL OUTCOME' : 'HASIL AKHIR'}
               </Typography>
               <Chip
                 icon={<CelebrationIcon sx={{ fontSize: 14, color: '#FED7AA !important' }} />}
@@ -339,10 +398,12 @@ export default function HomePage() {
             </Box>
             <CardContent sx={{ p: 2.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1, lineHeight: 1.3 }}>
-                Selamat Bergabung di PT ITSP!
+                {language === 'en' ? 'Welcome to PT ITSP Family!' : 'Selamat Bergabung di PT ITSP!'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#166534', lineHeight: 1.5, fontSize: 13, flex: 1 }}>
-                Penerbitan ID Card Karyawan berstandar CR80, orientasi plant pabrik, dan penempatan kerja resmi.
+                {language === 'en'
+                  ? 'CR80 standard employee ID card issuance, plant safety induction, and official job placement.'
+                  : 'Penerbitan ID Card Karyawan berstandar CR80, orientasi plant pabrik, dan penempatan kerja resmi.'}
               </Typography>
             </CardContent>
           </Card>
@@ -355,21 +416,23 @@ export default function HomePage() {
           <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', mb: 4, gap: 2 }}>
             <Box>
               <Typography variant="overline" sx={{ color: '#fc4509', fontWeight: 800, fontSize: 13 }}>
-                PELUANG KARIR TERBUKA
+                {t('jobs_badge', 'CURRENT OPENINGS')}
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5, fontSize: { xs: 26, sm: 32, md: 36 } }}>
-                Daftar Lowongan Kerja Aktif
+                {t('jobs_title', 'Open Career Opportunities')}
               </Typography>
             </Box>
             <Typography variant="body2" sx={{ color: '#64748B' }}>
-              Menampilkan {filteredJobs.length} posisi yang siap dilamar
+              {language === 'en'
+                ? `Showing ${filteredJobs.length} active positions ready to apply`
+                : `Menampilkan ${filteredJobs.length} posisi yang siap dilamar`}
             </Typography>
           </Box>
 
           {/* Filters */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
             <TextField
-              placeholder="Cari posisi, keahlian, atau lokasi pabrik..."
+              placeholder={t('search_placeholder', 'Search position, department, or location...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               sx={{ flex: '1 1 300px' }}
@@ -385,14 +448,14 @@ export default function HomePage() {
             />
             <TextField
               select
-              label="Departemen"
+              label={t('dept_filter_label', 'Department')}
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
               sx={{ minWidth: 220 }}
             >
               {departments.map((dept) => (
                 <MenuItem key={dept} value={dept}>
-                  {dept === 'All' ? 'Semua Departemen' : dept}
+                  {dept === 'All' ? t('dept_filter_all', 'All Departments') : dept}
                 </MenuItem>
               ))}
             </TextField>
@@ -403,16 +466,16 @@ export default function HomePage() {
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <CircularProgress sx={{ color: '#018730' }} />
               <Typography variant="body2" sx={{ color: '#64748B', mt: 2 }}>
-                Memuat data lowongan kerja...
+                {language === 'en' ? 'Loading career opportunities...' : 'Memuat data lowongan kerja...'}
               </Typography>
             </Box>
           ) : filteredJobs.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8, bgcolor: '#F8FAFC', borderRadius: 3, border: '1px dashed #CBD5E1' }}>
               <Typography variant="h6" sx={{ color: '#475569', fontWeight: 700 }}>
-                Tidak ada lowongan yang sesuai dengan pencarian Anda.
+                {t('job_empty_title', 'No Job Vacancies Found')}
               </Typography>
               <Typography variant="body2" sx={{ color: '#94A3B8', mt: 1 }}>
-                Silakan ubah kata kunci pencarian atau pilih departemen lain.
+                {t('job_empty_desc', 'No current job openings match your search criteria. Please try another keyword or department.')}
               </Typography>
             </Box>
           ) : (
@@ -464,7 +527,7 @@ export default function HomePage() {
                       </Box>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <WorkIcon sx={{ fontSize: 16, color: '#018730' }} />
-                        <span>Pengalaman: {job.experience}</span>
+                        <span>{language === 'en' ? `Experience: ${job.experience}` : `Pengalaman: ${job.experience}`}</span>
                       </Box>
                     </Box>
 
@@ -474,7 +537,7 @@ export default function HomePage() {
 
                     <Box sx={{ p: 1.8, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 3 }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 0.5 }}>
-                        Kualifikasi Utama:
+                        {language === 'en' ? 'Key Qualifications:' : 'Kualifikasi Utama:'}
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#64748B', lineHeight: 1.5, display: 'block' }}>
                         {job.requirements}
@@ -483,7 +546,7 @@ export default function HomePage() {
 
                     <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pt: 1 }}>
                       <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                        Upload CV: Max 100 KB (PDF)
+                        {language === 'en' ? 'CV Upload: Max 100 KB (PDF)' : 'Upload CV: Max 100 KB (PDF)'}
                       </Typography>
                       <Button
                         component={Link}
@@ -499,7 +562,7 @@ export default function HomePage() {
                           '&:hover': { bgcolor: '#005c21' },
                         }}
                       >
-                        Lamar Sekarang
+                        {t('job_btn_apply', 'Apply Now')}
                       </Button>
                     </Box>
                   </CardContent>

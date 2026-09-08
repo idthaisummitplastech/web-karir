@@ -17,6 +17,45 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id">
+      <head>
+        {/* Enterprise React DOM Safety Patch & Auto-Translation Init */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // 1. Prevent React removeChild / insertBefore crashes from translation DOM mutations
+              if (typeof window !== 'undefined' && typeof Node === 'function' && Node.prototype) {
+                var origRemoveChild = Node.prototype.removeChild;
+                Node.prototype.removeChild = function(child) {
+                  if (child.parentNode !== this) {
+                    if (console && console.warn) console.warn('Protected removeChild mismatch', this, child);
+                    return child;
+                  }
+                  return origRemoveChild.apply(this, arguments);
+                };
+
+                var origInsertBefore = Node.prototype.insertBefore;
+                Node.prototype.insertBefore = function(newNode, refNode) {
+                  if (refNode && refNode.parentNode !== this) {
+                    if (console && console.warn) console.warn('Protected insertBefore mismatch', this, refNode);
+                    return newNode;
+                  }
+                  return origInsertBefore.apply(this, arguments);
+                };
+              }
+
+              // 2. Default to English auto-translation on load
+              try {
+                var saved = localStorage.getItem('itsp_language');
+                var target = saved === 'id' ? '/id/id' : '/id/en';
+                document.cookie = 'googtrans=' + target + '; path=/;';
+                if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                  document.cookie = 'googtrans=' + target + '; path=/; domain=' + window.location.hostname + ';';
+                }
+              } catch(e) {}
+            `,
+          }}
+        />
+      </head>
       <body>
         <ThemeRegistry>{children}</ThemeRegistry>
       </body>

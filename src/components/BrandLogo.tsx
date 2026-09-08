@@ -17,14 +17,24 @@ export default function BrandLogo({
   lightText = false,
 }: BrandLogoProps) {
   const dimensions = {
-    small: { imgHeight: 32, titleSize: '0.9rem', subSize: '0.62rem' },
+    small: { imgHeight: 34, titleSize: '0.84rem', subSize: '0.6rem' },
     medium: { imgHeight: 42, titleSize: '1.02rem', subSize: '0.68rem' },
     large: { imgHeight: 52, titleSize: '1.25rem', subSize: '0.75rem' },
   }[size];
 
   return (
-    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1.25, userSelect: 'none' }}>
-      {/* Official TS Plastech Logo Mark matching CMS */}
+    <Box
+      className="notranslate"
+      translate="no"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 1.25,
+        userSelect: 'none',
+        maxWidth: '100%',
+      }}
+    >
+      {/* Official TS Plastech Logo Mark */}
       <Box
         sx={{
           height: dimensions.imgHeight,
@@ -38,6 +48,7 @@ export default function BrandLogo({
           borderRadius: '10px',
           boxShadow: lightText ? '0 2px 8px rgba(0,0,0,0.25)' : '0 2px 6px rgba(0,0,0,0.06)',
           border: lightText ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(1, 135, 48, 0.2)',
+          flexShrink: 0,
         }}
       >
         <Box
@@ -54,7 +65,7 @@ export default function BrandLogo({
       </Box>
 
       {/* Corporate Typography */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
         <Typography
           variant="h6"
           sx={{
@@ -62,8 +73,9 @@ export default function BrandLogo({
             letterSpacing: '-0.02em',
             color: lightText ? '#FFFFFF' : '#018730',
             fontSize: dimensions.titleSize,
-            lineHeight: 1.2,
-            whiteSpace: 'nowrap',
+            lineHeight: 1.25,
+            wordBreak: 'break-word',
+            whiteSpace: 'normal',
           }}
         >
           {title}
@@ -72,18 +84,21 @@ export default function BrandLogo({
           variant="caption"
           sx={{
             fontWeight: 700,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.06em',
             textTransform: 'uppercase',
             color: lightText ? '#4ade80' : '#64748B',
             fontSize: dimensions.subSize,
             display: 'flex',
             alignItems: 'center',
             gap: 0.6,
-            whiteSpace: 'nowrap',
+            mt: 0.3,
+            lineHeight: 1.25,
+            wordBreak: 'break-word',
+            whiteSpace: 'normal',
           }}
         >
-          <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#fc4509', flexShrink: 0 }} />
-          {subtitle}
+          <Box component="span" sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#fc4509', flexShrink: 0 }} />
+          <span>{subtitle}</span>
         </Typography>
       </Box>
     </Box>

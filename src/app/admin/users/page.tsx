@@ -36,12 +36,16 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
+import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 
 export default function AdminUsersPage() {
   const router = useRouter();
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Reset Password Modal
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -326,121 +330,169 @@ export default function AdminUsersPage() {
         </Alert>
       )}
 
-      <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-        <Table>
-          <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 800 }}>Nama Pengguna</TableCell>
-              <TableCell sx={{ fontWeight: 800 }}>Role & Departemen</TableCell>
-              <TableCell sx={{ fontWeight: 800 }}>Status Keamanan MFA</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 800 }}>Aksi Manajemen</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.id} hover>
-                <TableCell>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {u.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                    Username: <code>{u.username}</code> • {u.email}
-                  </Typography>
-                </TableCell>
+      {(() => {
+        const filteredUsers = users.filter((u) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (u.name && u.name.toLowerCase().includes(q)) ||
+            (u.username && u.username.toLowerCase().includes(q)) ||
+            (u.email && u.email.toLowerCase().includes(q)) ||
+            (u.role && u.role.toLowerCase().includes(q)) ||
+            (u.department && u.department.toLowerCase().includes(q))
+          );
+        });
 
-                <TableCell>
-                  <Chip
-                    label={u.role === 'hr' ? 'HR Recruitment' : u.role === 'user_dept' ? 'User Departemen' : 'Super Admin'}
-                    size="small"
-                    sx={{
-                      bgcolor: u.role === 'hr' ? '#DCFCE7' : u.role === 'user_dept' ? '#FEF3C7' : '#E0F2FE',
-                      color: u.role === 'hr' ? '#166534' : u.role === 'user_dept' ? '#92400E' : '#0369A1',
-                      fontWeight: 700,
-                      mb: 0.5,
-                      display: 'inline-block',
-                    }}
-                  />
-                  <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>
-                    {u.department}
-                  </Typography>
-                </TableCell>
+        const paginatedUsers = filteredUsers.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
-                <TableCell>
-                  <Chip
-                    icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SecurityIcon sx={{ fontSize: 16 }} />}
-                    label={u.isMfaEnabled ? 'MFA Aktif (Google Authenticator)' : 'MFA Belum Aktif'}
-                    size="small"
-                    sx={{
-                      bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2',
-                      color: u.isMfaEnabled ? '#15803D' : '#991B1B',
-                      fontWeight: 700,
-                    }}
-                  />
-                </TableCell>
+        return (
+          <>
+            <KarirTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari nama, username, email, role, atau dept..."
+              totalCount={users.length}
+              filteredCount={filteredUsers.length}
+            />
+            <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+              <Table>
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 800 }}>Nama Pengguna</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Role & Departemen</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Status Keamanan MFA</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 800 }}>Aksi Manajemen</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center" sx={{ py: 6, color: '#64748B' }}>
+                        {searchQuery ? 'Tidak ada akun pengguna yang sesuai kriteria pencarian.' : 'Belum ada data akun pengguna.'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedUsers.map((u) => (
+                      <TableRow key={u.id} hover>
+                        <TableCell>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {u.name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                            Username: <code>{u.username}</code> • {u.email}
+                          </Typography>
+                        </TableCell>
 
-                <TableCell align="right">
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
-                    {/* Edit User Button */}
-                    <Tooltip title="Edit Data, Role & Departemen Akun">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenEdit(u)}
-                        sx={{ color: '#0284C7' }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                        <TableCell>
+                          <Chip
+                            label={u.role === 'hr' ? 'HR Recruitment' : u.role === 'user_dept' ? 'User Departemen' : 'Super Admin'}
+                            size="small"
+                            sx={{
+                              bgcolor: u.role === 'hr' ? '#DCFCE7' : u.role === 'user_dept' ? '#FEF3C7' : '#E0F2FE',
+                              color: u.role === 'hr' ? '#166534' : u.role === 'user_dept' ? '#92400E' : '#0369A1',
+                              fontWeight: 700,
+                              mb: 0.5,
+                              display: 'inline-block',
+                            }}
+                          />
+                          <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>
+                            {u.department}
+                          </Typography>
+                        </TableCell>
 
-                    {/* Reset Password Button */}
-                    <Tooltip title="Reset Password Akun Ini">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<ResetPasswordIcon />}
-                        onClick={() => {
-                          setSelectedUser(u);
-                          setNewPasswordInput('');
-                          setResetFeedback(null);
-                          setResetModalOpen(true);
-                        }}
-                        sx={{ borderColor: '#CBD5E1', color: '#334155', fontWeight: 700 }}
-                      >
-                        Reset Password
-                      </Button>
-                    </Tooltip>
+                        <TableCell>
+                          <Chip
+                            icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SecurityIcon sx={{ fontSize: 16 }} />}
+                            label={u.isMfaEnabled ? 'MFA Aktif (Google Authenticator)' : 'MFA Belum Aktif'}
+                            size="small"
+                            sx={{
+                              bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2',
+                              color: u.isMfaEnabled ? '#15803D' : '#991B1B',
+                              fontWeight: 700,
+                            }}
+                          />
+                        </TableCell>
 
-                    {/* Reset MFA Button */}
-                    {u.isMfaEnabled && (
-                      <Tooltip title="Reset MFA jika ponsel hilang / ganti perangkat">
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="warning"
-                          onClick={() => handleResetMfa(u.id, u.name)}
-                          sx={{ fontWeight: 700 }}
-                        >
-                          Reset MFA
-                        </Button>
-                      </Tooltip>
-                    )}
+                        <TableCell align="right">
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                            {/* Edit User Button */}
+                            <Tooltip title="Edit Data, Role & Departemen Akun">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenEdit(u)}
+                                sx={{ color: '#0284C7' }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
 
-                    {/* Delete User Button */}
-                    <Tooltip title="Hapus Akun Pengguna">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteUser(u.id, u.name)}
-                        sx={{ color: '#EF4444' }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                            {/* Reset Password Button */}
+                            <Tooltip title="Reset Password Akun Ini">
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<ResetPasswordIcon />}
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setNewPasswordInput('');
+                                  setResetFeedback(null);
+                                  setResetModalOpen(true);
+                                }}
+                                sx={{ borderColor: '#CBD5E1', color: '#334155', fontWeight: 700 }}
+                              >
+                                Reset Password
+                              </Button>
+                            </Tooltip>
+
+                            {/* Reset MFA Button */}
+                            {u.isMfaEnabled && (
+                              <Tooltip title="Reset MFA jika ponsel hilang / ganti perangkat">
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="warning"
+                                  onClick={() => handleResetMfa(u.id, u.name)}
+                                  sx={{ fontWeight: 700 }}
+                                >
+                                  Reset MFA
+                                </Button>
+                              </Tooltip>
+                            )}
+
+                            {/* Delete User Button */}
+                            <Tooltip title="Hapus Akun Pengguna">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteUser(u.id, u.name)}
+                                sx={{ color: '#EF4444' }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <KarirTablePagination
+                count={filteredUsers.length}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                onPageChange={setPage}
+                onRowsPerPageChange={(newRpp) => {
+                  setRowsPerPage(newRpp);
+                  setPage(0);
+                }}
+              />
+            </TableContainer>
+          </>
+        );
+      })()}
 
       {/* RESET PASSWORD MODAL */}
       <Dialog open={resetModalOpen} onClose={() => setResetModalOpen(false)} maxWidth="xs" fullWidth>

@@ -25,6 +25,7 @@ import {
   Work as WorkIcon,
 } from '@mui/icons-material';
 import BrandLogo from '@/components/BrandLogo';
+import LanguageToggle from '@/components/LanguageToggle';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -94,6 +95,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Language Switcher Toggle */}
+              <LanguageToggle />
+
               {currentUserRole && (
                 <Chip
                   label={

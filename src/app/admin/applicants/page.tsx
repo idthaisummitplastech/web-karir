@@ -62,6 +62,7 @@ import {
   getPlantMapsUrl,
   getEmbedMapsUrl,
 } from '@/lib/constants';
+import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
 export default function AdminApplicantsPage() {
   const [applicants, setApplicants] = useState<any[]>([]);
@@ -69,6 +70,8 @@ export default function AdminApplicantsPage() {
   const [stageFilter, setStageFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Admin Session & Role
   const [adminSession, setAdminSession] = useState<{
@@ -794,7 +797,8 @@ export default function AdminApplicantsPage() {
             <CircularProgress sx={{ color: '#018730' }} />
           </Box>
         ) : (
-          <Table>
+          <>
+            <Table>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Kandidat & Posisi</TableCell>
@@ -814,7 +818,7 @@ export default function AdminApplicantsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                applicants.map((a) => {
+                applicants.slice(page * rowsPerPage, (page + 1) * rowsPerPage).map((a) => {
                   const stage = RECRUITMENT_STAGES.find((s) => s.number === a.currentStage);
                   const isFailed = a.stageStatus === 'failed';
                   const psikotesSub = a.testSubmissions?.find((s: any) => s.testType === 'psikotes');
@@ -1148,7 +1152,16 @@ export default function AdminApplicantsPage() {
                 })
               )}
             </TableBody>
-          </Table>
+            </Table>
+            <KarirTablePagination
+              count={applicants.length}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onRowsPerPageChange={(r) => { setRowsPerPage(r); setPage(0); }}
+              rowsPerPageOptions={[10, 25, 50, 100]}
+            />
+          </>
         )}
       </TableContainer>
 

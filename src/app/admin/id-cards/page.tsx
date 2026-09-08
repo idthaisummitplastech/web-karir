@@ -29,12 +29,16 @@ import {
   CheckCircle as CheckCircleIcon,
   QrCode as QrIcon,
 } from '@mui/icons-material';
+import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 
 export default function AdminIdCardsPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchEmployees = () => {
     setLoading(true);
@@ -80,6 +84,22 @@ export default function AdminIdCardsPage() {
     );
   }
 
+  const filteredEmployees = employees.filter((emp) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (emp.namaLengkap && emp.namaLengkap.toLowerCase().includes(q)) ||
+      (emp.jabatan && emp.jabatan.toLowerCase().includes(q)) ||
+      (emp.nikSementara && emp.nikSementara.toLowerCase().includes(q)) ||
+      (emp.departemen && emp.departemen.toLowerCase().includes(q))
+    );
+  });
+
+  const paginatedEmployees = filteredEmployees.slice(
+    page * rowsPerPage,
+    (page + 1) * rowsPerPage
+  );
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -96,6 +116,16 @@ export default function AdminIdCardsPage() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.4fr 1fr' }, gap: 3 }}>
         {/* Table of Temporary Employees */}
         <Box>
+          <KarirTableToolbar
+            searchQuery={searchQuery}
+            onSearchChange={(val) => {
+              setSearchQuery(val);
+              setPage(0);
+            }}
+            placeholder="Cari nama, NIK, jabatan, atau dept..."
+            totalCount={employees.length}
+            filteredCount={filteredEmployees.length}
+          />
           <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
             <Table>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
@@ -108,14 +138,14 @@ export default function AdminIdCardsPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {employees.length === 0 ? (
+                {filteredEmployees.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} align="center" sx={{ py: 6, color: '#64748B' }}>
-                      Belum ada kandidat yang menyelesaikan Tahap 7. Setelah pelamar menerima Offering Letter, datanya otomatis tampil di sini.
+                      {searchQuery ? 'Tidak ada kandidat yang cocok dengan pencarian.' : 'Belum ada kandidat yang menyelesaikan Tahap 7. Setelah pelamar menerima Offering Letter, datanya otomatis tampil di sini.'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  employees.map((emp) => (
+                  paginatedEmployees.map((emp) => (
                     <TableRow key={emp.id} hover selected={selectedEmp?.id === emp.id}>
                       <TableCell>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
@@ -169,6 +199,16 @@ export default function AdminIdCardsPage() {
                 )}
               </TableBody>
             </Table>
+            <KarirTablePagination
+              count={filteredEmployees.length}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onRowsPerPageChange={(newRpp) => {
+                setRowsPerPage(newRpp);
+                setPage(0);
+              }}
+            />
           </TableContainer>
         </Box>
 

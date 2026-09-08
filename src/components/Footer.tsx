@@ -5,8 +5,11 @@ import { Box, Container, Typography, Divider } from '@mui/material';
 import { Security as SecurityIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 
 import BrandLogo from '@/components/BrandLogo';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <Box sx={{ bgcolor: '#0F172A', color: '#CBD5E1', pt: 8, pb: 4 }}>
       <Container maxWidth="lg">
@@ -27,18 +30,18 @@ export default function Footer() {
               />
             </Box>
             <Typography variant="body2" sx={{ color: '#94A3B8', lineHeight: 1.7, mb: 2 }}>
-              Manufaktur otomotif plastic injection molding, spray painting, dan interior assembly presisi tinggi. Bagian dari Thai Summit Group global.
+              {t('footer_about', 'Tier-1 automotive plastic injection molding, precision painting, and interior assembly manufacturing. Proud member of global Thai Summit Group.')}
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#38BDF8', fontSize: 12 }}>
               <SecurityIcon sx={{ fontSize: 16 }} />
-              <span>Sistem Rekrutmen Terisolasi & Terproteksi (MFA + Proctoring)</span>
+              <span>{t('footer_security', 'Protected & Isolated Recruitment System (MFA + Secure Proctoring)')}</span>
             </Box>
           </Box>
 
           <Box>
             <Typography variant="subtitle2" sx={{ color: '#FFFFFF', fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.8 }}>
               <LocationIcon sx={{ color: '#FC4509', fontSize: 18 }} />
-              LOKASI PABRIK PT ITSP
+              {t('footer_plants', 'PT ITSP MANUFACTURING PLANTS')}
             </Typography>
             <Box
               sx={{
@@ -49,18 +52,18 @@ export default function Footer() {
             >
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#1E293B', border: '1px solid #334155' }}>
                 <Typography variant="subtitle2" sx={{ color: '#4ADE80', fontWeight: 700, mb: 0.5 }}>
-                  PLANT 1 (KARAWANG)
+                  {t('footer_plant_1_title', 'PLANT 1 (KARAWANG)')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#CBD5E1', display: 'block', lineHeight: 1.6 }}>
-                  Kawasan Industri KIIC, Jl. Permata Raya Lot FF-3, Sirnabaya, Telukjambe Timur, Karawang, Jawa Barat 41361.
+                  {t('footer_plant_1_desc', 'KIIC Industrial Estate, Jl. Permata Raya Lot FF-3, Sirnabaya, Telukjambe Timur, Karawang, West Java 41361.')}
                 </Typography>
               </Box>
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: '#1E293B', border: '1px solid #334155' }}>
                 <Typography variant="subtitle2" sx={{ color: '#FB923C', fontWeight: 700, mb: 0.5 }}>
-                  PLANT 2 (CIKARANG)
+                  {t('footer_plant_2_title', 'PLANT 2 (CIKARANG)')}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#CBD5E1', display: 'block', lineHeight: 1.6 }}>
-                  Greenland International Industrial Center (GIIC) Blok CD No. 01, Kota Deltamas, Cikarang Pusat, Bekasi, Jawa Barat 17530.
+                  {t('footer_plant_2_desc', 'Greenland International Industrial Center (GIIC) Block CD No. 01, Deltamas, Central Cikarang, Bekasi, West Java 17530.')}
                 </Typography>
               </Box>
             </Box>
@@ -71,10 +74,10 @@ export default function Footer() {
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
           <Typography variant="caption" sx={{ color: '#64748B' }}>
-            © {new Date().getFullYear()} PT Indonesia Thai Summit Plastech. Seluruh hak cipta dilindungi undang-undang.
+            © {new Date().getFullYear()} {t('footer_rights', 'PT Indonesia Thai Summit Plastech. All rights reserved.')}
           </Typography>
           <Typography variant="caption" sx={{ color: '#64748B' }}>
-            Sistem Rekrutmen Terpadu & Portal Karir Resmi (ATS)
+            {t('footer_sub', 'Integrated Recruitment Portal & Official ATS')}
           </Typography>
         </Box>
       </Container>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardContent, Button, TextField, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip, CircularProgress, Alert, Switch, FormControlLabel } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Work as WorkIcon, Link as LinkIcon } from '@mui/icons-material';
+import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
 interface Job { id: number; title: string; department: string; location: string; type: string; experience: string; requirements: string; description: string; isOpen: boolean; openingDate: string|null; closingDate: string|null; createdAt: string; effectiveOpen?: boolean; statusLabel?: string; _count?: { applicants: number }; }
 const DEPTS = ['Information Technology','Engineering','Produksi','Quality Assurance','HSE','Purchasing','Human Capital','Finance','Logistik'];
@@ -33,6 +34,8 @@ export default function AdminJobsPage() {
   const [fOpen, setFOpen] = useState(true);
   const [fOpening, setFOpening] = useState('');
   const [fClosing, setFClosing] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   const fetchJobs = () => { setLoading(true); fetch('/api/admin/jobs').then((r)=>r.json()).then((d)=>{ if(d.jobs) setJobs(d.jobs); }).catch(()=>{}).finally(()=>setLoading(false)); };
   useEffect(()=>{ fetchJobs(); },[]);
   const openCreate = () => { setEditing(null); setFTitle(''); setFDept(DEPTS[0]); setFIsCustom(false); setFCustomDept(''); setFLoc(LOCS[0]); setFType(TYPES[0]); setFExp(EXPS[2]); setFReq(''); setFDesc(''); setFOpen(true); setFOpening(''); setFClosing(''); setDialogOpen(true); };
@@ -71,33 +74,45 @@ export default function AdminJobsPage() {
       {loading ? <Box sx={{ textAlign: 'center', py: 8 }}><CircularProgress sx={{ color: '#018730' }} /></Box> : filtered.length===0 ? (
         <Card sx={{ p: 6, textAlign: 'center' }}><WorkIcon sx={{ fontSize: 48, color: '#94A3B8' }} /><Typography variant="h6">Belum ada lowongan.</Typography><Button variant="contained" onClick={openCreate} sx={{ mt: 2, bgcolor: '#018730' }}>Buat Sekarang</Button></Card>
       ) : (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
-          {filtered.map((j)=>{ const c=statusColor(j); return (
-            <Card key={j.id} sx={{ borderRadius: 2.5, border: '1.5px solid #E2E8F0' }}>
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1 }}>
-                  <Chip label={j.statusLabel||'-'} size="small" sx={{ bgcolor: c.bg, color: c.fg, fontWeight: 800 }} />
-                  <Chip label={`${j._count?.applicants||0} pelamar`} size="small" variant="outlined" />
-                </Box>
-                <Typography variant="h6" sx={{ fontWeight: 800 }}>{j.title}</Typography>
-                <Typography variant="body2" sx={{ color: '#018730', fontWeight: 700 }}>{j.department} • {j.location} • {j.type}</Typography>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1 }}>Buka: {fmtDate(j.openingDate)} | Tutup: {fmtDate(j.closingDate)} {j.closingDate?' (otomatis tutup 23:59)':'(tanpa batas)'}</Typography>
-                <Typography variant="body2" sx={{ color: '#475569', mt: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{j.description}</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, p: 1.5, bgcolor: j.isOpen?'#F0FDF4':'#FEF2F2', borderRadius: 2, border: '1px solid #E2E8F0' }}>
-                  <FormControlLabel control={<Switch checked={j.isOpen} disabled={togglingId===j.id} onChange={()=>handleToggle(j)} color="success" />} label={<Typography variant="body2" sx={{ fontWeight: 800 }}>{j.isOpen?'TERBUKA':'TERTUTUP'}</Typography>} />
-                  {togglingId===j.id && <CircularProgress size={18} />}
-                </Box>
-                <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                  <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={()=>openEdit(j)}>Ubah</Button>
-                  <Tooltip title="Salin tautan lamar"><IconButton size="small" onClick={()=>{ navigator.clipboard?.writeText(`${window.location.origin}/apply/${j.id}`); setFeedback({type:'success',text:'Tautan lamaran disalin.'}); }}><LinkIcon /></IconButton></Tooltip>
-                  <Box sx={{ flex: 1 }} />
-                  <Tooltip title="Hapus (bila belum ada pelamar)"><span><IconButton size="small" color="error" onClick={()=>handleDelete(j)} disabled={(j._count?.applicants||0)>0}><DeleteIcon /></IconButton></span></Tooltip>
-                </Box>
-                {(j._count?.applicants||0)>0 && <Typography variant="caption" sx={{ color: '#B91C1C' }}>* Tidak dapat dihapus karena sudah ada pelamar — gunakan saklar Tutup.</Typography>}
-              </CardContent>
-            </Card>
-          ); })}
-        </Box>
+        <>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
+            {filtered.slice(page * rowsPerPage, (page + 1) * rowsPerPage).map((j)=>{ const c=statusColor(j); return (
+              <Card key={j.id} sx={{ borderRadius: 2.5, border: '1.5px solid #E2E8F0' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1 }}>
+                    <Chip label={j.statusLabel||'-'} size="small" sx={{ bgcolor: c.bg, color: c.fg, fontWeight: 800 }} />
+                    <Chip label={`${j._count?.applicants||0} pelamar`} size="small" variant="outlined" />
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>{j.title}</Typography>
+                  <Typography variant="body2" sx={{ color: '#018730', fontWeight: 700 }}>{j.department} • {j.location} • {j.type}</Typography>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1 }}>Buka: {fmtDate(j.openingDate)} | Tutup: {fmtDate(j.closingDate)} {j.closingDate?' (otomatis tutup 23:59)':'(tanpa batas)'}</Typography>
+                  <Typography variant="body2" sx={{ color: '#475569', mt: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{j.description}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, p: 1.5, bgcolor: j.isOpen?'#F0FDF4':'#FEF2F2', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                    <FormControlLabel control={<Switch checked={j.isOpen} disabled={togglingId===j.id} onChange={()=>handleToggle(j)} color="success" />} label={<Typography variant="body2" sx={{ fontWeight: 800 }}>{j.isOpen?'TERBUKA':'TERTUTUP'}</Typography>} />
+                    {togglingId===j.id && <CircularProgress size={18} />}
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                    <Button size="small" variant="outlined" startIcon={<EditIcon />} onClick={()=>openEdit(j)}>Ubah</Button>
+                    <Tooltip title="Salin tautan lamar"><IconButton size="small" onClick={()=>{ navigator.clipboard?.writeText(`${window.location.origin}/apply/${j.id}`); setFeedback({type:'success',text:'Tautan lamaran disalin.'}); }}><LinkIcon /></IconButton></Tooltip>
+                    <Box sx={{ flex: 1 }} />
+                    <Tooltip title="Hapus (bila belum ada pelamar)"><span><IconButton size="small" color="error" onClick={()=>handleDelete(j)} disabled={(j._count?.applicants||0)>0}><DeleteIcon /></IconButton></span></Tooltip>
+                  </Box>
+                  {(j._count?.applicants||0)>0 && <Typography variant="caption" sx={{ color: '#B91C1C' }}>* Tidak dapat dihapus karena sudah ada pelamar — gunakan saklar Tutup.</Typography>}
+                </CardContent>
+              </Card>
+            ); })}
+          </Box>
+          <Box sx={{ mt: 3, bgcolor: '#FFFFFF', borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            <KarirTablePagination
+              count={filtered.length}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onRowsPerPageChange={(r) => { setRowsPerPage(r); setPage(0); }}
+              rowsPerPageOptions={[6, 10, 20, 50]}
+            />
+          </Box>
+        </>
       )}
 
 
