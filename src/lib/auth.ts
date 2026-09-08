@@ -19,7 +19,7 @@ export interface AdminTokenPayload {
   username: string;
   name: string;
   email: string;
-  role: "hr" | "user_dept" | "admin";
+  role: "hr" | "user_dept" | "admin" | "superadmin";
   department?: string | null;
   isMfaVerified: boolean;
 }

@@ -15,23 +15,66 @@ export async function sendMailDirect({
   to,
   subject,
   html,
+  channel = 'web_karir',
 }: {
   to: string;
   subject: string;
   html: string;
+  channel?: 'web_karir' | 'web_perusahaan' | string;
 }): Promise<{ success: boolean; error?: string }> {
-  try {
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.SMTP_PORT || '587');
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-    const from = process.env.SMTP_FROM || `PT ITSP Recruitment <${user || 'recruitment@itsp.co.id'}>`;
+  // Default values
+  let host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  let port = parseInt(process.env.SMTP_PORT || '587');
+  let user = process.env.SMTP_USER;
+  let pass = process.env.SMTP_PASS;
+  let senderName = 'PT ITSP Recruitment';
+  let senderEmail = user || 'recruitment@itsp.co.id';
+  let replyTo = senderEmail;
 
-    if (!user || !pass) {
-      console.warn('[EMAIL WARNING] SMTP_USER atau SMTP_PASS belum diset di .env');
-      return { success: false, error: 'Kredensial SMTP belum diset.' };
+  // 1. Coba baca dari Database Terpusat (Dedicated SmtpServer & EmailChannel)
+  try {
+    const { prisma } = await import('./prisma');
+    const [dbServer, dbChannel] = await Promise.all([
+      prisma.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
+      prisma.emailChannel.findUnique({ where: { appCode: channel } }),
+    ]);
+
+    if (dbServer && dbServer.host && dbServer.username && dbServer.password) {
+      host = dbServer.host;
+      port = dbServer.port;
+      user = dbServer.username;
+      pass = dbServer.password;
     }
 
+    if (dbChannel && dbChannel.isActive) {
+      if (dbChannel.senderName) senderName = dbChannel.senderName;
+      if (dbChannel.senderEmail) senderEmail = dbChannel.senderEmail;
+      if (dbChannel.replyTo) replyTo = dbChannel.replyTo;
+    }
+  } catch {
+    // Gunakan fallback environment jika query database belum siap
+  }
+
+  const from = `"${senderName}" <${senderEmail}>`;
+
+  if (!user || !pass) {
+    console.warn('[EMAIL WARNING] Kredensial SMTP belum dikonfigurasi di database maupun .env');
+    const err = 'Kredensial SMTP belum diset.';
+    // Log ke Grafana
+    import('./grafana').then(({ pushEmailLogToGrafana }) => {
+      pushEmailLogToGrafana({
+        channel,
+        senderName,
+        recipient: to,
+        subject,
+        status: 'FAILED',
+        errorMessage: err,
+      });
+    }).catch(() => {});
+    return { success: false, error: err };
+  }
+
+  try {
     const transporter = nodemailer.createTransport({
       host,
       port,
@@ -56,7 +99,7 @@ export async function sendMailDirect({
         ]
       : [];
 
-    // Konversi HTML ke Plain-Text untuk deliverability (mencegah penalti spam filter karena email HTML-only)
+    // Konversi HTML ke Plain-Text untuk deliverability
     const plainText = html
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -79,13 +122,13 @@ export async function sendMailDirect({
     const info = await transporter.sendMail({
       from,
       to,
-      replyTo: from,
+      replyTo: replyTo || from,
       subject,
       text: plainText,
       html,
       attachments,
       headers: {
-        'X-Mailer': 'PT ITSP Career ATS Engine v1.0',
+        'X-Mailer': 'PT ITSP Enterprise Email Engine v1.0',
         'X-Auto-Response-Suppress': 'All',
         'Auto-Submitted': 'auto-generated',
         'X-Priority': '3',
@@ -95,9 +138,34 @@ export async function sendMailDirect({
     });
 
     console.log('[EMAIL SENT] Berhasil mengirim email ke:', to, 'Message ID:', info.messageId);
+
+    // Kirim Log Sukses ke Grafana Cloud secara Non-blocking
+    import('./grafana').then(({ pushEmailLogToGrafana }) => {
+      pushEmailLogToGrafana({
+        channel,
+        senderName,
+        recipient: to,
+        subject,
+        status: 'SUCCESS',
+      });
+    }).catch(() => {});
+
     return { success: true };
   } catch (error: any) {
     console.error('[EMAIL ERROR] Gagal mengirim email ke:', to, error.message);
+
+    // Kirim Log Gagal ke Grafana Cloud secara Non-blocking
+    import('./grafana').then(({ pushEmailLogToGrafana }) => {
+      pushEmailLogToGrafana({
+        channel,
+        senderName,
+        recipient: to,
+        subject,
+        status: 'FAILED',
+        errorMessage: error.message,
+      });
+    }).catch(() => {});
+
     return { success: false, error: error.message };
   }
 }

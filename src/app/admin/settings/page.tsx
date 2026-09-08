@@ -16,6 +16,14 @@ import {
   Chip,
   Divider,
   Paper,
+  IconButton,
+  InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -24,8 +32,15 @@ import {
   Email as EmailIcon,
   Send as SendIcon,
   Visibility as PreviewIcon,
+  VisibilityOff as VisibilityOffIcon,
   Code as VariableIcon,
   CheckCircle as CheckIcon,
+  AdminPanelSettings as ShieldIcon,
+  BarChart as GrafanaIcon,
+  Dns as ServerIcon,
+  Add as AddIcon,
+  Launch as LaunchIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
 // Master Template Email Default Per Tahapan
@@ -99,11 +114,76 @@ const DEFAULT_EMAIL_TEMPLATES: Record<
 };
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState(1); // Default buka tab Email Template
+  const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Super Admin Authorization & State
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Server SMTP Induk (Khusus Super Admin)
+  const [smtpServer, setSmtpServer] = useState({
+    id: 1,
+    name: 'Server Email Resmi PT ITSP',
+    host: 'smtp.gmail.com',
+    port: 587,
+    username: 'rifqi.alfaridzi22@gmail.com',
+    password: '',
+    encryption: 'tls',
+    isActive: true,
+  });
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [testingSmtp, setTestingSmtp] = useState(false);
+  const [testSmtpTarget, setTestSmtpTarget] = useState('');
+  const [testSmtpChannel, setTestSmtpChannel] = useState('web_karir');
+
+  // Multi-Kanal Pengirim Email (Multi-Web)
+  const [channels, setChannels] = useState<Array<{
+    id?: number;
+    appCode: string;
+    appName: string;
+    senderName: string;
+    senderEmail: string;
+    replyTo: string;
+    isActive: boolean;
+  }>>([
+    {
+      appCode: 'web_karir',
+      appName: 'Portal Karir & Rekrutmen ATS',
+      senderName: 'PT ITSP Recruitment',
+      senderEmail: 'info.itsp@thaisummit.co.id',
+      replyTo: 'recruitment@itsp.co.id',
+      isActive: true,
+    },
+    {
+      appCode: 'web_perusahaan',
+      appName: 'Website Profil Perusahaan',
+      senderName: 'PT ITSP Marketing',
+      senderEmail: 'info.itsp@thaisummit.co.id',
+      replyTo: 'marketing@itsp.co.id',
+      isActive: true,
+    },
+  ]);
+
+  // Dialog Tambah Kanal Baru
+  const [dialogChannelOpen, setDialogChannelOpen] = useState(false);
+  const [newChannel, setNewChannel] = useState({
+    appCode: '',
+    appName: '',
+    senderName: '',
+    senderEmail: 'info.itsp@thaisummit.co.id',
+    replyTo: '',
+  });
+
+  // Observability Grafana Cloud
+  const [observability, setObservability] = useState({
+    grafanaOtlpUrl: 'https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs',
+    grafanaAuthHeader: 'Basic MTgyMTkyOTpnbGNfZXlKdklqb2lNVGt3TXpRM01DSXNJbTRpT2lKcGRITndMV1Z0WVdsc0xXeHZaM01pTENKcklqb2lRMVp0VWt0Vk1VazFaVE0wT0RjMk1tVjFVM3B3VURrMUlpd2liU0k2ZXlKeUlqb2ljSEp2WkMxaGNDMXpiM1YwYUdWaGMzUXRNaUo5ZlE9PQ==',
+    grafanaDashboardUrl: 'https://rubylake3285.grafana.net',
+    isEnabled: true,
+  });
 
   // MCU & Plant Settings
   const [mcuPartnerName, setMcuPartnerName] = useState('');
@@ -124,6 +204,18 @@ export default function AdminSettingsPage() {
     fetch('/api/admin/settings')
       .then((res) => res.json())
       .then((data) => {
+        if (data.isSuperAdmin) {
+          setIsSuperAdmin(true);
+        }
+        if (data.smtpServer) {
+          setSmtpServer(data.smtpServer);
+        }
+        if (data.channels && data.channels.length > 0) {
+          setChannels(data.channels);
+        }
+        if (data.observability) {
+          setObservability(data.observability);
+        }
         if (data.settings) {
           setMcuPartnerName(data.settings.mcu_partner_name || '');
           setMcuPartnerAddress(data.settings.mcu_partner_address || '');
@@ -133,7 +225,6 @@ export default function AdminSettingsPage() {
           setPlantAddressKarawang(data.settings.plant_address_karawang || '');
           setPlantAddressCikarang(data.settings.plant_address_cikarang || '');
 
-          // Load email templates from DB or fallback to default
           const loadedTemplates: Record<string, { subject: string; body: string }> = {};
           Object.keys(DEFAULT_EMAIL_TEMPLATES).forEach((key) => {
             loadedTemplates[key] = {
@@ -146,14 +237,104 @@ export default function AdminSettingsPage() {
       })
       .finally(() => setLoading(false));
 
-    // Get current session for test email placeholder
     fetch('/api/admin/session')
       .then((res) => res.json())
       .then((data) => {
-        if (data.email) setTestEmailTarget(data.email);
+        if (data.isSuperAdmin) setIsSuperAdmin(true);
+        if (data.email) {
+          setTestEmailTarget(data.email);
+          setTestSmtpTarget(data.email);
+        }
       })
       .catch(() => {});
   }, []);
+
+  // Simpan Server SMTP & Multi-Kanal (Super Admin)
+  const handleSaveSmtpAndChannels = async () => {
+    setSaving(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'save_smtp_and_channels',
+          smtpServer,
+          channels,
+          observability,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setSuccessMsg(data.message || 'Konfigurasi Server SMTP, Multi-Kanal Pengirim, dan Grafana Cloud berhasil disimpan!');
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Uji Coba Server SMTP Langsung
+  const handleTestSmtpConnection = async () => {
+    if (!testSmtpTarget) {
+      alert('Silakan masukkan alamat email tujuan uji coba.');
+      return;
+    }
+
+    setTestingSmtp(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_smtp_connection',
+          targetEmail: testSmtpTarget,
+          channel: testSmtpChannel,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setSuccessMsg(data.message);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setTestingSmtp(false);
+    }
+  };
+
+  // Tambah Kanal Baru ke Daftar
+  const handleAddChannel = () => {
+    if (!newChannel.appCode || !newChannel.senderName) {
+      alert('Kode Aplikasi dan Nama Pengirim wajib diisi!');
+      return;
+    }
+    const cleanCode = newChannel.appCode.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    setChannels([
+      ...channels,
+      {
+        ...newChannel,
+        appCode: cleanCode,
+        isActive: true,
+      },
+    ]);
+    setNewChannel({
+      appCode: '',
+      appName: '',
+      senderName: '',
+      senderEmail: smtpServer.username || 'info.itsp@thaisummit.co.id',
+      replyTo: '',
+    });
+    setDialogChannelOpen(false);
+  };
 
   const handleSaveMcuAndPlant = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -228,7 +409,6 @@ export default function AdminSettingsPage() {
 
     try {
       const currentTpl = emailTemplates[selectedTemplateKey] || DEFAULT_EMAIL_TEMPLATES[selectedTemplateKey];
-      // Format dummy preview
       const previewSubject = currentTpl.subject
         .replace('{posisi}', 'Staff IT & Enterprise System')
         .replace('{nama}', 'Muhammad Rifqi');
@@ -247,8 +427,7 @@ export default function AdminSettingsPage() {
         .replace(/{gaji_offer}/g, 'Rp 6.500.000 / bulan + Tunjangan')
         .replace(/{tanggal_masuk}/g, '1 Oktober 2026')
         .replace(/{tahap_gagal}/g, 'Tahap Screening Dokumen')
-        .replace(/{link_portal}/g, 'http://localhost:3001/login')
-        .replace(/\n/g, '<br/>');
+        .replace(/{link_portal}/g, 'http://localhost:3001/login');
 
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
@@ -272,18 +451,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleResetCurrentTemplateToDefault = () => {
-    if (confirm(`Kembalikan narasi template "${DEFAULT_EMAIL_TEMPLATES[selectedTemplateKey].name}" ke format standar pabrik?`)) {
-      setEmailTemplates({
-        ...emailTemplates,
-        [selectedTemplateKey]: {
-          subject: DEFAULT_EMAIL_TEMPLATES[selectedTemplateKey].subject,
-          body: DEFAULT_EMAIL_TEMPLATES[selectedTemplateKey].body,
-        },
-      });
-    }
-  };
-
   if (loading) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -301,13 +468,22 @@ export default function AdminSettingsPage() {
   return (
     <Box sx={{ maxWidth: 1100 }}>
       {/* HEADER SECTION */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', mb: 0.5 }}>
-          Pengaturan Sistem & Master Template Email
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#64748B' }}>
-          Atur master fasilitas klinik MCU, alamat pabrik, serta master template pesan email resmi korporat PT Indonesia Thai Summit Plastech.
-        </Typography>
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', mb: 0.5 }}>
+            Pengaturan Sistem, Server Email & Observability
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B' }}>
+            Konfigurasi master template seleksi, server SMTP multi-kanal resmi PT ITSP, dan monitoring log Grafana Cloud.
+          </Typography>
+        </Box>
+        {isSuperAdmin && (
+          <Chip
+            icon={<ShieldIcon sx={{ color: '#FFFFFF !important' }} />}
+            label="Super Admin Mode Active"
+            sx={{ bgcolor: '#018730', color: '#FFFFFF', fontWeight: 700, px: 1, py: 0.5 }}
+          />
+        )}
       </Box>
 
       {successMsg && (
@@ -329,6 +505,8 @@ export default function AdminSettingsPage() {
           onChange={(_, val) => setActiveTab(val)}
           indicatorColor="primary"
           textColor="inherit"
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{
             bgcolor: '#FFFFFF',
             '& .Mui-selected': { color: '#018730', fontWeight: 800 },
@@ -338,7 +516,7 @@ export default function AdminSettingsPage() {
           <Tab
             icon={<EmailIcon />}
             iconPosition="start"
-            label="Master Template Email Seleksi (7 Tahap & Penolakan)"
+            label="Master Template Email Seleksi"
             sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
           />
           <Tab
@@ -347,311 +525,213 @@ export default function AdminSettingsPage() {
             label="Klinik Rekanan MCU & Alamat Pabrik"
             sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
           />
+          {isSuperAdmin && (
+            <Tab
+              icon={<ServerIcon />}
+              iconPosition="start"
+              label="Server Email & Multi-Kanal (Super Admin)"
+              sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
+            />
+          )}
+          {isSuperAdmin && (
+            <Tab
+              icon={<GrafanaIcon />}
+              iconPosition="start"
+              label="Monitoring & Log Grafana Cloud"
+              sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
+            />
+          )}
         </Tabs>
       </Paper>
 
-      {/* TAB 0: EMAIL TEMPLATES */}
+      {/* TAB 0: TEMPLATE EMAIL SELEKSI */}
       {activeTab === 0 && (
         <Box>
-          <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 4px 16px rgba(0,0,0,0.04)' }}>
-            <Box sx={{ p: 2.5, bgcolor: '#F0FDF4', borderBottom: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EmailIcon sx={{ color: '#16A34A' }} />
-                <Typography variant="h6" sx={{ fontWeight: 800, color: '#166534', fontSize: 17 }}>
-                  Master Template Email Korporat Berlogo
+                <EmailIcon sx={{ color: '#018730' }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
+                  Pilih Tahapan Seleksi yang Ingin Diatur Templat-nya
                 </Typography>
               </Box>
-              <Chip
-                label="Super Admin Wewenang Penuh"
-                size="small"
-                sx={{ bgcolor: '#DCFCE7', color: '#166534', fontWeight: 700, border: '1px solid #86EFAC' }}
-              />
+              <Chip label={currentTemplateDef.stage} color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
             </Box>
-
             <CardContent sx={{ p: 3 }}>
-              {/* Template Selector */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                  Pilih Tahapan Seleksi yang Ingin Disesuaikan:
-                </Typography>
                 <TextField
                   select
                   fullWidth
+                  label="Pilih Template Berdasarkan Tahapan Seleksi"
                   value={selectedTemplateKey}
                   onChange={(e) => setSelectedTemplateKey(e.target.value)}
-                  sx={{ bgcolor: '#F8FAFC' }}
+                  helperText="Pilih tahapan seleksi yang ingin Anda sesuaikan narasi subjek dan isi pesannya."
                 >
-                  {Object.entries(DEFAULT_EMAIL_TEMPLATES).map(([key, tpl]) => (
-                    <MenuItem key={key} value={key} sx={{ py: 1.2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                          {tpl.name}
-                        </Typography>
-                        <Chip label={tpl.stage} size="small" sx={{ fontSize: 11, bgcolor: '#E0F2FE', color: '#0369A1' }} />
+                  {Object.entries(DEFAULT_EMAIL_TEMPLATES).map(([key, item]) => (
+                    <MenuItem key={key} value={key}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                        <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.name}</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', ml: 2 }}>{item.stage}</Typography>
                       </Box>
                     </MenuItem>
                   ))}
                 </TextField>
               </Box>
 
-              <Divider sx={{ my: 3 }} />
-
-              {/* Edit Subject & Body */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 3.5 }}>
-                {/* Form Kolom Kiri: Input Editor */}
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SaveIcon sx={{ fontSize: 18, color: '#018730' }} /> Redaksi Template Surat
-                  </Typography>
-
-                  <TextField
-                    fullWidth
-                    label="Subjek Email Resmi"
-                    value={currentTemplateVal.subject}
-                    onChange={(e) =>
-                      setEmailTemplates({
-                        ...emailTemplates,
-                        [selectedTemplateKey]: { ...currentTemplateVal, subject: e.target.value },
-                      })
-                    }
-                    sx={{ mb: 2.5 }}
-                    helperText="Mendukung variabel otomatis seperti {posisi} atau {nama}"
-                  />
-
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={12}
-                    label="Isi Narasi Pesan / Surat Resmi"
-                    value={currentTemplateVal.body}
-                    onChange={(e) =>
-                      setEmailTemplates({
-                        ...emailTemplates,
-                        [selectedTemplateKey]: { ...currentTemplateVal, body: e.target.value },
-                      })
-                    }
-                    sx={{ mb: 2, fontFamily: 'monospace' }}
-                  />
-
-                  {/* Variable Chips Helper */}
-                  <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 3 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
-                      <VariableIcon sx={{ fontSize: 14 }} /> Variabel Otomatis yang Didukung untuk Tahap Ini:
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                      {currentTemplateDef.variables.map((v) => (
-                        <Chip
-                          key={v}
-                          label={v}
-                          size="small"
-                          onClick={() => {
-                            // Append variable to body
-                            setEmailTemplates({
-                              ...emailTemplates,
-                              [selectedTemplateKey]: {
-                                ...currentTemplateVal,
-                                body: currentTemplateVal.body + ' ' + v,
-                              },
-                            });
-                          }}
-                          title="Klik untuk menyisipkan variabel ini ke pesan"
-                          sx={{ bgcolor: '#FFFFFF', border: '1px solid #CBD5E1', cursor: 'pointer', '&:hover': { bgcolor: '#DCFCE7', borderColor: '#16A34A' } }}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-
-                  {/* Actions Bar */}
-                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="contained"
-                      onClick={handleSaveEmailTemplate}
-                      disabled={saving}
-                      startIcon={<SaveIcon />}
-                      sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, py: 1.2, '&:hover': { bgcolor: '#005c21' } }}
-                    >
-                      {saving ? 'Menyimpan...' : 'Simpan Semua Template'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      onClick={handleResetCurrentTemplateToDefault}
-                      sx={{ textTransform: 'none', fontWeight: 600, color: '#64748B' }}
-                    >
-                      Reset ke Format Standar Pabrik
-                    </Button>
-                  </Box>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <VariableIcon sx={{ fontSize: 18, color: '#018730' }} /> Variabel Dinamis yang Tersedia untuk Tahapan Ini:
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {currentTemplateDef.variables.map((v) => (
+                    <Chip
+                      key={v}
+                      label={v}
+                      size="small"
+                      sx={{ bgcolor: '#EFF6FF', color: '#1E40AF', fontWeight: 600, fontFamily: 'monospace', border: '1px solid #BFDBFE' }}
+                    />
+                  ))}
                 </Box>
+              </Box>
 
-                {/* Kolom Kanan: Live Preview Resmi */}
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PreviewIcon sx={{ fontSize: 18, color: '#0369A1' }} /> Pratinjau Tampilan Email di Inbox Pelamar:
-                  </Typography>
+              <TextField
+                fullWidth
+                label="Subjek Email Resmi"
+                value={currentTemplateVal.subject}
+                onChange={(e) => {
+                  setEmailTemplates({
+                    ...emailTemplates,
+                    [selectedTemplateKey]: {
+                      ...currentTemplateVal,
+                      subject: e.target.value,
+                    },
+                  });
+                }}
+                sx={{ mb: 3 }}
+              />
 
-                  {/* Mock Email Card Client */}
-                  <Paper
-                    elevation={3}
-                    sx={{
-                      borderRadius: 3,
-                      border: '1px solid #CBD5E1',
-                      overflow: 'hidden',
-                      bgcolor: '#F1F5F9',
-                      p: 2,
-                    }}
-                  >
-                    <Box sx={{ maxWidth: 500, mx: 'auto', bgcolor: '#FFFFFF', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', border: '1px solid #E2E8F0' }}>
-                      {/* Kop Surat Berlogo */}
-                      <Box sx={{ background: 'linear-gradient(135deg, #018730 0%, #005c21 100%)', p: 2.5, borderBottom: '3px solid #FC4509' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-                          <Box>
-                            <Typography sx={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#FED7AA', fontWeight: 700 }}>
-                              Human Capital Management
-                            </Typography>
-                            <Typography sx={{ fontSize: 14, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
-                              PT INDONESIA THAI SUMMIT PLASTECH
-                            </Typography>
-                            <Typography sx={{ fontSize: 10, color: '#D1FAE5' }}>
-                              Sistem Rekrutmen Terpadu & Portal Karir Resmi
-                            </Typography>
-                          </Box>
-                          <Box sx={{ bgcolor: '#FFFFFF', p: 0.6, borderRadius: 1.5, boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}>
-                            <Box
-                              component="img"
-                              src="/logo-plastech.jpg"
-                              alt="PT ITSP Logo"
-                              sx={{ height: 32, maxWidth: 85, objectFit: 'contain', display: 'block' }}
-                            />
-                          </Box>
-                        </Box>
-                      </Box>
+              <TextField
+                fullWidth
+                multiline
+                rows={10}
+                label="Badan Pesan Email (Body Message)"
+                value={currentTemplateVal.body}
+                onChange={(e) => {
+                  setEmailTemplates({
+                    ...emailTemplates,
+                    [selectedTemplateKey]: {
+                      ...currentTemplateVal,
+                      body: e.target.value,
+                    },
+                  });
+                }}
+                helperText="Gunakan variabel di atas seperti {nama} atau {posisi} yang akan otomatis digantikan sesuai profil kandidat."
+                sx={{ mb: 3 }}
+              />
 
-                      {/* Isi Pesan */}
-                      <Box sx={{ p: 2.5, fontSize: 13, color: '#334155', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                        <Typography variant="caption" sx={{ display: 'block', color: '#94A3B8', mb: 1, borderBottom: '1px dashed #CBD5E1', pb: 0.5 }}>
-                          <strong>Subjek:</strong> {currentTemplateVal.subject.replace('{posisi}', 'Staff IT & Enterprise System')}
-                        </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                disabled={saving}
+                onClick={handleSaveEmailTemplate}
+                startIcon={<SaveIcon />}
+                sx={{
+                  bgcolor: '#018730',
+                  fontWeight: 800,
+                  px: 4,
+                  py: 1.4,
+                  borderRadius: 2,
+                  fontSize: 15,
+                  '&:hover': { bgcolor: '#005c21' },
+                }}
+              >
+                {saving ? 'Menyimpan Template...' : 'Simpan Seluruh Template Email'}
+              </Button>
+            </CardContent>
+          </Card>
 
-                        {currentTemplateVal.body
-                          .replace(/{nama}/g, 'Muhammad Rifqi Alfaridzi')
-                          .replace(/{posisi}/g, 'Staff IT & Enterprise System')
-                          .replace(/{email}/g, 'alfaridzi.rifqi28@gmail.com')
-                          .replace(/{password}/g, `Itsp@${new Date().getFullYear()}`)
-                          .replace(/{jadwal}/g, 'Senin, 15 September 2026 pukul 09:00 WIB')
-                          .replace(/{token}/g, 'PSIKO-2026')
-                          .replace(/{lokasi}/g, 'Plant 1 KIIC Karawang Barat')
-                          .replace(/{klinik_mcu}/g, mcuPartnerName || 'Klinik Kimia Farma Karawang')
-                          .replace(/{alamat_mcu}/g, mcuPartnerAddress || 'Jl. Galuh Mas Raya, Karawang')
-                          .replace(/{biaya_mcu}/g, mcuEstimatedCost || 'Rp 300.000')
-                          .replace(/{gaji_offer}/g, 'Rp 6.500.000 / bulan')
-                          .replace(/{tanggal_masuk}/g, '1 Oktober 2026')
-                          .replace(/{tahap_gagal}/g, 'Tahap Screening Dokumen')
-                          .replace(/{link_portal}/g, 'http://localhost:3001/login')}
-                      </Box>
-
-                      {/* Footer Pabrik */}
-                      <Box sx={{ bgcolor: '#0F172A', p: 2, color: '#94A3B8', fontSize: 10, textAlign: 'center', lineHeight: 1.5 }}>
-                        <strong style={{ color: '#F8FAFC' }}>PT Indonesia Thai Summit Plastech (Thai Summit Group)</strong><br />
-                        Plant 1: Kawasan Industri KIIC, Karawang Barat 41361<br />
-                        Plant 2: GIIC Deltamas, Cikarang Pusat 17530
-                      </Box>
-                    </Box>
-                  </Paper>
-
-                  {/* Uji Coba Pengiriman Langsung */}
-                  <Box sx={{ mt: 3, p: 2.5, bgcolor: '#FFFFFF', borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <SendIcon sx={{ fontSize: 16, color: '#018730' }} /> Kirim Email Uji Coba Pratinjau:
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <TextField
-                        size="small"
-                        fullWidth
-                        placeholder="Alamat email penerima uji coba"
-                        value={testEmailTarget}
-                        onChange={(e) => setTestEmailTarget(e.target.value)}
-                      />
-                      <Button
-                        variant="contained"
-                        onClick={handleSendTestEmail}
-                        disabled={testingEmail}
-                        sx={{ bgcolor: '#0F172A', fontWeight: 700, whiteSpace: 'nowrap', px: 2.5, '&:hover': { bgcolor: '#1E293B' } }}
-                      >
-                        {testingEmail ? 'Mengirim...' : 'Kirim Uji Coba'}
-                      </Button>
-                    </Box>
-                  </Box>
-                </Box>
+          {/* TEST DISPATCH SECTION */}
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', bgcolor: '#F8FAFC' }}>
+            <Box sx={{ p: 2.5, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SendIcon sx={{ color: '#018730' }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 16 }}>
+                Uji Coba Pengiriman Template ke Email Pribadi
+              </Typography>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                <TextField
+                  size="small"
+                  label="Alamat Email Tujuan Uji Coba"
+                  value={testEmailTarget}
+                  onChange={(e) => setTestEmailTarget(e.target.value)}
+                  sx={{ minWidth: 320, flexGrow: 1, bgcolor: '#FFFFFF' }}
+                />
+                <Button
+                  variant="outlined"
+                  disabled={testingEmail}
+                  onClick={handleSendTestEmail}
+                  startIcon={testingEmail ? <CircularProgress size={16} /> : <SendIcon />}
+                  sx={{ fontWeight: 700, borderColor: '#018730', color: '#018730', px: 3, py: 1 }}
+                >
+                  {testingEmail ? 'Mengirim...' : 'Kirim Email Uji Coba'}
+                </Button>
               </Box>
             </CardContent>
           </Card>
         </Box>
       )}
 
-      {/* TAB 1: MCU & PLANT SETTINGS */}
+      {/* TAB 1: MCU REKANAN & ALAMAT PABRIK */}
       {activeTab === 1 && (
         <form onSubmit={handleSaveMcuAndPlant}>
-          {/* SECTION 1: MASTER DEFAULT MCU REKANAN */}
           <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-            <Box sx={{ p: 2.5, bgcolor: '#F0FDF4', borderBottom: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <McuIcon sx={{ color: '#16A34A' }} />
-              <Typography variant="h6" sx={{ fontWeight: 800, color: '#166534', fontSize: 17 }}>
-                Master Fasilitas Kesehatan Rekanan MCU
+            <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <McuIcon sx={{ color: '#018730' }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
+                Master Fasilitas Kesehatan & MCU Rekanan PT ITSP
               </Typography>
             </Box>
             <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5, mb: 2.5 }}>
                 <TextField
                   fullWidth
                   required
-                  label="Nama Klinik / RS Rekanan Default"
+                  label="Nama Rumah Sakit / Klinik Rekanan MCU"
                   value={mcuPartnerName}
                   onChange={(e) => setMcuPartnerName(e.target.value)}
-                  helperText="Contoh: Klinik Kimia Farma Karawang / RS Permata Cikarang"
                 />
                 <TextField
                   fullWidth
                   required
-                  label="Estimasi Kisaran Biaya Pemeriksaan"
+                  label="Estimasi Tarif Paket Pemeriksaan MCU"
                   value={mcuEstimatedCost}
                   onChange={(e) => setMcuEstimatedCost(e.target.value)}
-                  helperText="Contoh: Rp 250.000 – Rp 350.000 (Paket Fit to Work ITSP)"
                 />
-                <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
-                  <TextField
-                    fullWidth
-                    required
-                    label="Alamat Lengkap & Nomor Kontak Rujukan"
-                    value={mcuPartnerAddress}
-                    onChange={(e) => setMcuPartnerAddress(e.target.value)}
-                    helperText="Alamat ini otomatis menjadi tautan Google Maps yang bisa diklik di portal & email."
-                  />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
-                  <TextField
-                    fullWidth
-                    label="Link Google Maps Klinik / RS (Opsional - iframe atau URL)"
-                    value={mcuPartnerMaps}
-                    onChange={(e) => setMcuPartnerMaps(e.target.value)}
-                    placeholder="Kosongkan untuk auto-deteksi dari alamat, atau paste link https://maps.google.com/... / tag <iframe ...>"
-                    helperText="Link ini diprioritaskan sebagai tombol & alamat yang bisa diklik di dashboard portal dan email MCU."
-                  />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={2.5}
-                    label="Petunjuk Medis & Puasa (Tampil di Dashboard & Email)"
-                    value={mcuInstructions}
-                    onChange={(e) => setMcuInstructions(e.target.value)}
-                  />
-                </Box>
+                <TextField
+                  fullWidth
+                  required
+                  multiline
+                  rows={3}
+                  label="Alamat Lengkap Fasilitas MCU"
+                  value={mcuPartnerAddress}
+                  onChange={(e) => setMcuPartnerAddress(e.target.value)}
+                  sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}
+                />
+                <TextField
+                  fullWidth
+                  required
+                  multiline
+                  rows={3}
+                  label="Instruksi & Persiapan Medis Pelamar"
+                  value={mcuInstructions}
+                  onChange={(e) => setMcuInstructions(e.target.value)}
+                  sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}
+                />
               </Box>
             </CardContent>
           </Card>
 
-          {/* SECTION 2: MASTER DEFAULT ALAMAT PABRIK */}
           <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
             <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
               <PlantIcon sx={{ color: '#018730' }} />
@@ -698,6 +778,430 @@ export default function AdminSettingsPage() {
             {saving ? 'Menyimpan Perubahan...' : 'Simpan Pengaturan Default'}
           </Button>
         </form>
+      )}
+
+      {/* TAB 2: SERVER EMAIL & MULTI-KANAL (SUPER ADMIN ONLY) */}
+      {activeTab === 2 && isSuperAdmin && (
+        <Box>
+          {/* SECTION 1: SERVER SMTP INDUK */}
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#0F172A', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <ServerIcon sx={{ color: '#10B981' }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17 }}>
+                  1. Server Mail SMTP Induk (Zimbra / Gmail / Corporate Server)
+                </Typography>
+              </Box>
+              <Chip label="Super Admin Only" size="small" sx={{ bgcolor: '#10B981', color: '#FFFFFF', fontWeight: 800 }} />
+            </Box>
+
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                Konfigurasikan akun server email induk perusahaan. Seluruh website (Web Karir, Web Perusahaan, dll.) akan mengirim email melalui server ini dengan identitas nama pengirim yang disesuaikan.
+              </Typography>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2.5, mb: 2.5 }}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Host Server SMTP"
+                  placeholder="mail.thaisummit.co.id atau smtp.gmail.com"
+                  value={smtpServer.host}
+                  onChange={(e) => setSmtpServer({ ...smtpServer, host: e.target.value })}
+                />
+                <TextField
+                  fullWidth
+                  required
+                  type="number"
+                  label="Port SMTP"
+                  placeholder="587 / 465 / 25"
+                  value={smtpServer.port}
+                  onChange={(e) => setSmtpServer({ ...smtpServer, port: Number(e.target.value) })}
+                />
+              </Box>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5, mb: 3 }}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Username Akun / Email Otentikasi"
+                  placeholder="info.itsp@thaisummit.co.id"
+                  value={smtpServer.username}
+                  onChange={(e) => setSmtpServer({ ...smtpServer, username: e.target.value })}
+                />
+                <TextField
+                  fullWidth
+                  required
+                  type={showSmtpPassword ? 'text' : 'password'}
+                  label="Password / App Password Akun"
+                  value={smtpServer.password}
+                  onChange={(e) => setSmtpServer({ ...smtpServer, password: e.target.value })}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowSmtpPassword(!showSmtpPassword)} edge="end">
+                          {showSmtpPassword ? <VisibilityOffIcon /> : <PreviewIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', mb: 3 }}>
+                <TextField
+                  select
+                  size="small"
+                  label="Protokol Enkripsi"
+                  value={smtpServer.encryption || 'tls'}
+                  onChange={(e) => setSmtpServer({ ...smtpServer, encryption: e.target.value })}
+                  sx={{ minWidth: 200 }}
+                >
+                  <MenuItem value="tls">TLS / STARTTLS (Port 587)</MenuItem>
+                  <MenuItem value="ssl">SSL Direct (Port 465)</MenuItem>
+                  <MenuItem value="none">Tanpa Enkripsi (Port 25)</MenuItem>
+                </TextField>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={smtpServer.isActive}
+                      onChange={(e) => setSmtpServer({ ...smtpServer, isActive: e.target.checked })}
+                      color="success"
+                    />
+                  }
+                  label="Server Aktif"
+                />
+              </Box>
+
+              {/* UJI COBA KONEKSI SMTP */}
+              <Box sx={{ p: 2.5, bgcolor: '#F1F5F9', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+                  Uji Koneksi Server Email (Verifikasi Langsung ke Inbox)
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <TextField
+                    select
+                    size="small"
+                    label="Pilih Kanal Pengirim"
+                    value={testSmtpChannel}
+                    onChange={(e) => setTestSmtpChannel(e.target.value)}
+                    sx={{ minWidth: 200, bgcolor: '#FFFFFF' }}
+                  >
+                    {channels.map((ch) => (
+                      <MenuItem key={ch.appCode} value={ch.appCode}>
+                        {ch.senderName} ({ch.appCode})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    size="small"
+                    label="Email Tujuan Verifikasi"
+                    value={testSmtpTarget}
+                    onChange={(e) => setTestSmtpTarget(e.target.value)}
+                    sx={{ minWidth: 280, flexGrow: 1, bgcolor: '#FFFFFF' }}
+                  />
+                  <Button
+                    variant="contained"
+                    disabled={testingSmtp}
+                    onClick={handleTestSmtpConnection}
+                    startIcon={testingSmtp ? <CircularProgress size={16} sx={{ color: '#fff' }} /> : <SendIcon />}
+                    sx={{ bgcolor: '#0F172A', color: '#fff', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#1E293B' } }}
+                  >
+                    {testingSmtp ? 'Menguji Koneksi...' : 'Tes Koneksi SMTP'}
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* SECTION 2: MULTI-KANAL IDENTITAS PENGIRIM */}
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', mb: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <EmailIcon sx={{ color: '#018730' }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
+                  2. Identitas Nama Pengirim Multi-Kanal (Per Aplikasi / Web)
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setDialogChannelOpen(true)}
+                sx={{ fontWeight: 700, borderColor: '#018730', color: '#018730' }}
+              >
+                + Tambah Kanal Web Baru
+              </Button>
+            </Box>
+
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                Satu akun server mail di atas dapat mengirim email dengan identitas nama pengirim (*Sender Display Name*) dan alamat balasan (*Reply-To*) yang berbeda sesuai website pemanggil.
+              </Typography>
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {channels.map((ch, idx) => (
+                  <Paper key={ch.appCode} sx={{ p: 2.5, borderRadius: 2, border: '1px solid #E2E8F0', bgcolor: ch.isActive ? '#FFFFFF' : '#F8FAFC' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Chip label={ch.appCode} size="small" sx={{ fontWeight: 800, bgcolor: '#EFF6FF', color: '#1E40AF' }} />
+                        <Typography sx={{ fontWeight: 700, fontSize: 15, color: '#0F172A' }}>{ch.appName}</Typography>
+                      </Box>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={ch.isActive}
+                            onChange={(e) => {
+                              const updated = [...channels];
+                              updated[idx].isActive = e.target.checked;
+                              setChannels(updated);
+                            }}
+                            color="success"
+                          />
+                        }
+                        label="Kanal Aktif"
+                      />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                      <TextField
+                        size="small"
+                        label="Nama Pengirim Resmi"
+                        value={ch.senderName}
+                        onChange={(e) => {
+                          const updated = [...channels];
+                          updated[idx].senderName = e.target.value;
+                          setChannels(updated);
+                        }}
+                        helperText="Tampil di inbox (misal: PT ITSP Recruitment)"
+                      />
+                      <TextField
+                        size="small"
+                        label="Alamat Email Pengirim"
+                        value={ch.senderEmail}
+                        onChange={(e) => {
+                          const updated = [...channels];
+                          updated[idx].senderEmail = e.target.value;
+                          setChannels(updated);
+                        }}
+                        helperText="Alamat email header pengirim"
+                      />
+                      <TextField
+                        size="small"
+                        label="Alamat Balasan (Reply-To)"
+                        value={ch.replyTo}
+                        onChange={(e) => {
+                          const updated = [...channels];
+                          updated[idx].replyTo = e.target.value;
+                          setChannels(updated);
+                        }}
+                        helperText="Kemana penerima membalas pesan"
+                      />
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* TOMBOL SIMPAN UTAMA */}
+          <Button
+            variant="contained"
+            size="large"
+            disabled={saving}
+            onClick={handleSaveSmtpAndChannels}
+            startIcon={<SaveIcon />}
+            sx={{
+              bgcolor: '#018730',
+              fontWeight: 800,
+              px: 5,
+              py: 1.6,
+              borderRadius: 2,
+              fontSize: 16,
+              '&:hover': { bgcolor: '#005c21' },
+            }}
+          >
+            {saving ? 'Menyimpan Seluruh Konfigurasi...' : 'Simpan Seluruh Pengaturan Server & Multi-Kanal'}
+          </Button>
+
+          {/* DIALOG TAMBAH KANAL BARU */}
+          <Dialog open={dialogChannelOpen} onClose={() => setDialogChannelOpen(false)} maxWidth="sm" fullWidth>
+            <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>
+              Tambah Kanal Identitas Pengirim Web Baru
+            </DialogTitle>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+              <TextField
+                required
+                label="Kode Aplikasi Unik (app_code)"
+                placeholder="misal: web_procurement atau mobile_app"
+                value={newChannel.appCode}
+                onChange={(e) => setNewChannel({ ...newChannel, appCode: e.target.value })}
+                helperText="Hanya huruf kecil, angka, dan underscore."
+              />
+              <TextField
+                required
+                label="Nama Aplikasi / Web Tampilan"
+                placeholder="misal: Portal Procurement & Supplier"
+                value={newChannel.appName}
+                onChange={(e) => setNewChannel({ ...newChannel, appName: e.target.value })}
+              />
+              <TextField
+                required
+                label="Nama Pengirim Resmi"
+                placeholder="misal: PT ITSP Purchasing Center"
+                value={newChannel.senderName}
+                onChange={(e) => setNewChannel({ ...newChannel, senderName: e.target.value })}
+              />
+              <TextField
+                label="Email Pengirim"
+                value={newChannel.senderEmail}
+                onChange={(e) => setNewChannel({ ...newChannel, senderEmail: e.target.value })}
+              />
+              <TextField
+                label="Alamat Balasan (Reply-To)"
+                placeholder="purchasing@itsp.co.id"
+                value={newChannel.replyTo}
+                onChange={(e) => setNewChannel({ ...newChannel, replyTo: e.target.value })}
+              />
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5 }}>
+              <Button onClick={() => setDialogChannelOpen(false)}>Batal</Button>
+              <Button variant="contained" onClick={handleAddChannel} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
+                Tambahkan Kanal
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      )}
+
+      {/* TAB 3: MONITORING & LOG GRAFANA CLOUD (SUPER ADMIN ONLY) */}
+      {activeTab === 3 && isSuperAdmin && (
+        <Box>
+          {/* BANNER OBSERVABILITY */}
+          <Paper sx={{ p: 3, borderRadius: 2.5, bgcolor: '#0F172A', color: '#FFFFFF', mb: 3, border: '1px solid #1E293B' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#10B981', mb: 0.5 }}>
+                  Observability & Live Log Pengiriman Email Terpusat (Grafana Cloud)
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                  Seluruh log pengiriman email dialirkan secara asinkron (non-blocking) ke Grafana Cloud Loki. Database PostgreSQL tetap bersih tanpa beban log besar.
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                target="_blank"
+                href={observability.grafanaDashboardUrl || 'https://rubylake3285.grafana.net'}
+                startIcon={<LaunchIcon />}
+                sx={{ bgcolor: '#10B981', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#059669', color: '#fff' } }}
+              >
+                Buka Dashboard Grafana
+              </Button>
+            </Box>
+          </Paper>
+
+          {/* QUICK CARDS */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
+            <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', p: 1 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                  <GrafanaIcon sx={{ color: '#018730', fontSize: 28 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 16 }}>
+                    Live Log Ingestion (OTLP Stream)
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
+                  Setiap kali ada email terkirim atau gagal (baik otomatis maupun manual), record lengkap langsung masuk ke Grafana Loki dalam hitungan milidetik.
+                </Typography>
+                <Chip label="Status: Terhubung & Live Stream Aktif" color="success" size="small" sx={{ fontWeight: 700 }} />
+              </CardContent>
+            </Card>
+
+            <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', p: 1 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                  <ShieldIcon sx={{ color: '#018730', fontSize: 28 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 16 }}>
+                    Grafana Alerting & Early Warning
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
+                  Peringatan otomatis aktif di Grafana Cloud untuk memantau jika ada error autentikasi SMTP atau server email mengalami down.
+                </Typography>
+                <Chip label="Auto-Purge 30 Hari: Aktif (Kapasitas Selalu Terjaga)" color="primary" size="small" sx={{ fontWeight: 700 }} />
+              </CardContent>
+            </Card>
+          </Box>
+
+          {/* EMBEDDED PREVIEW CONTAINER */}
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden', mb: 3 }}>
+            <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#334155' }}>
+                Pratinjau Dashboard Grafana Cloud: {observability.grafanaDashboardUrl}
+              </Typography>
+              <Button
+                size="small"
+                variant="text"
+                target="_blank"
+                href={observability.grafanaDashboardUrl}
+                endIcon={<LaunchIcon sx={{ fontSize: 16 }} />}
+                sx={{ fontWeight: 700, color: '#018730' }}
+              >
+                Buka Tab Penuh
+              </Button>
+            </Box>
+            <Box sx={{ width: '100%', height: 600, bgcolor: '#111217' }}>
+              <iframe
+                src={observability.grafanaDashboardUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 'none' }}
+                title="Grafana Observability Dashboard"
+              />
+            </Box>
+          </Card>
+
+          {/* FORM PENGATURAN KONEKSI GRAFANA */}
+          <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
+            <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 16, color: '#0F172A' }}>
+                Konfigurasi Teknis Endpoint Grafana Cloud
+              </Typography>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5, mb: 3 }}>
+                <TextField
+                  fullWidth
+                  label="URL Endpoint OTLP Gateway Grafana"
+                  value={observability.grafanaOtlpUrl}
+                  onChange={(e) => setObservability({ ...observability, grafanaOtlpUrl: e.target.value })}
+                />
+                <TextField
+                  fullWidth
+                  label="Header Autentikasi Grafana (Basic Token)"
+                  value={observability.grafanaAuthHeader}
+                  onChange={(e) => setObservability({ ...observability, grafanaAuthHeader: e.target.value })}
+                />
+                <TextField
+                  fullWidth
+                  label="URL Instance / Dashboard Grafana"
+                  value={observability.grafanaDashboardUrl}
+                  onChange={(e) => setObservability({ ...observability, grafanaDashboardUrl: e.target.value })}
+                />
+              </Box>
+
+              <Button
+                variant="contained"
+                disabled={saving}
+                onClick={handleSaveSmtpAndChannels}
+                startIcon={<SaveIcon />}
+                sx={{ bgcolor: '#018730', fontWeight: 800, px: 4, py: 1.2, '&:hover': { bgcolor: '#005c21' } }}
+              >
+                Simpan Endpoint Grafana
+              </Button>
+            </CardContent>
+          </Card>
+        </Box>
       )}
     </Box>
   );

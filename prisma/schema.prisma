@@ -185,3 +185,49 @@ model RecruitmentSetting {
 
   @@map("recruitment_settings")
 }
+
+// 9. Server SMTP Induk
+model SmtpServer {
+  id         Int            @id @default(autoincrement())
+  name       String         @default("Server Email Utama")
+  host       String
+  port       Int            @default(587)
+  username   String
+  password   String
+  encryption String         @default("tls") // tls, ssl, none
+  isActive   Boolean        @default(true) @map("is_active")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+  channels   EmailChannel[]
+
+  @@map("smtp_servers")
+}
+
+// 10. Kanal Identitas Pengirim Email Per Aplikasi
+model EmailChannel {
+  id           Int         @id @default(autoincrement())
+  smtpServerId Int?        @map("smtp_server_id")
+  smtpServer   SmtpServer? @relation(fields: [smtpServerId], references: [id], onDelete: SetNull)
+  appCode      String      @unique @map("app_code") // 'web_karir', 'web_perusahaan', dll.
+  appName      String      @map("app_name") // 'Portal Karir & Rekrutmen', 'Website Profil Perusahaan'
+  senderName   String      @map("sender_name") // 'PT ITSP Recruitment', 'PT ITSP Marketing'
+  senderEmail  String?     @map("sender_email") // info.itsp@thaisummit.co.id
+  replyTo      String?     @map("reply_to") // recruitment@itsp.co.id, marketing@itsp.co.id
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("email_channels")
+}
+
+// 11. Pengaturan Observability Grafana Cloud
+model ObservabilitySetting {
+  id                  Int      @id @default(autoincrement())
+  grafanaOtlpUrl      String   @default("https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs") @map("grafana_otlp_url")
+  grafanaAuthHeader   String   @map("grafana_auth_header") @db.Text
+  grafanaDashboardUrl String   @default("https://rubylake3285.grafana.net") @map("grafana_dashboard_url")
+  isEnabled           Boolean  @default(true) @map("is_enabled")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@map("observability_settings")
+}
