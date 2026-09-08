@@ -436,8 +436,7 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           action: 'test_email',
           to: testEmailTarget,
-          subject: previewSubject,
-          bodyContent: `<div style="line-height: 1.7; font-size: 14px; color: #334155;">${previewBody}</div>`,
+          bodyContent: previewBody,
         }),
       });
 
