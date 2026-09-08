@@ -103,8 +103,20 @@ export async function sendMailDirect({
   try {
     const isSecure = encryption === 'ssl' || port === 465;
 
+    let targetHost = host;
+    let servername: string | undefined = undefined;
+
+    // Failsafe DNS Jaringan Kantor Thai Summit:
+    // DNS lokal kantor (192.168.5.2) meresolve 'mail.thaisummit.co.id' ke IP intranet '172.10.10.9' / '172.10.10.10'
+    // yang tidak bisa dijangkau dari Wi-Fi kantor (timeout ETIMEDOUT).
+    // Arahkan ke IP publik resmi 182.253.29.83 dengan SNI servername 'mail.thaisummit.co.id' agar 100% instan & stabil.
+    if (host === 'mail.thaisummit.co.id' || host === '172.10.10.9' || host === '172.10.10.10') {
+      targetHost = '182.253.29.83';
+      servername = 'mail.thaisummit.co.id';
+    }
+
     const transporter = nodemailer.createTransport({
-      host,
+      host: targetHost,
       port,
       secure: isSecure,
       auth: {
@@ -113,6 +125,7 @@ export async function sendMailDirect({
       },
       tls: {
         rejectUnauthorized: false, // Aman untuk mail server korporat on-premise seperti Zimbra
+        servername,
       },
     });
 
