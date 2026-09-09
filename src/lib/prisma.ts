@@ -1,12 +1,6 @@
-import { PrismaClient } from "@prisma/client";
-
-const globalForPrisma = global as unknown as { prisma?: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
+// prisma.ts - Deprecated. All database operations now go through backend-api.
+export const prisma: any = new Proxy({}, {
+  get(_target, prop) {
+    throw new Error(`Direct Prisma database access (${String(prop)}) is disabled in frontend. All requests must go through backend-api.`);
+  }
+});

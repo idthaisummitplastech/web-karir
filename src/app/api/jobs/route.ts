@@ -1,22 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { fetchFromBackend } from "@/lib/api-client";
 
 export async function GET() {
   try {
-    const now = new Date();
-    const jobs = await prisma.jobPosting.findMany({
-      where: {
-        isOpen: true,
-        AND: [
-          { OR: [{ openingDate: null }, { openingDate: { lte: now } }] },
-          { OR: [{ closingDate: null }, { closingDate: { gte: now } }] },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
+    const jobs = await fetchFromBackend("/jobs");
     return NextResponse.json({ success: true, jobs });
   } catch (error: any) {
+    console.error("Failed to fetch jobs from backend:", error.message);
     return NextResponse.json({ error: "Gagal memuat lowongan." }, { status: 500 });
   }
 }

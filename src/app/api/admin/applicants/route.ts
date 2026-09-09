@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { fetchFromBackend } from "@/lib/api-client";
 
 export async function GET(req: Request) {
   try {
@@ -14,40 +14,21 @@ export async function GET(req: Request) {
     const status = searchParams.get("status");
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
-    if (stage) where.currentStage = parseInt(stage);
-    if (status) where.stageStatus = status;
-    if (search) {
-      where.OR = [
-        { fullName: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { schoolName: { contains: search, mode: "insensitive" } },
-        { major: { contains: search, mode: "insensitive" } },
-      ];
-    }
+    const params = new URLSearchParams();
+    if (stage) params.set("stage", stage);
+    if (status) params.set("status_filter", status);
+    if (search) params.set("search", search);
 
-    // Jika admin adalah user departemen tertentu, filter lowongan sesuai departemennya
-    if (session.role === "user_dept" && session.department) {
-      where.jobPosting = {
-        department: { contains: session.department, mode: "insensitive" },
-      };
-    }
-
-    const applicants = await prisma.applicant.findMany({
-      where,
-      include: {
-        jobPosting: true,
-        testSubmissions: true,
-        interviews: { orderBy: { createdAt: "desc" } },
-        karyawanData: true,
+    const applicants = await fetchFromBackend(`/applicants?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${session.adminId}`,
       },
-      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({
       success: true,
-      total: applicants.length,
-      applicants,
+      total: Array.isArray(applicants) ? applicants.length : 0,
+      applicants: applicants || [],
     });
   } catch (error: any) {
     console.error("Fetch applicants error:", error);

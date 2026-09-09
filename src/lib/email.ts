@@ -52,33 +52,7 @@ export async function sendMailDirect({
     senderEmail = user;
     replyTo = user;
   } else {
-    // 1. Coba baca dari Database Terpusat (Dedicated SmtpServer & EmailChannel)
-    try {
-      const { prisma } = await import('./prisma');
-      const client = (prisma as any).smtpServer ? prisma : null;
-      const [dbServer, dbChannel] = client
-        ? await Promise.all([
-            client.smtpServer.findFirst({ where: { isActive: true }, orderBy: { id: 'asc' } }),
-            client.emailChannel.findUnique({ where: { appCode: channel } }),
-          ])
-        : [null, null];
-
-      if (dbServer && dbServer.host && dbServer.username && dbServer.password) {
-        host = dbServer.host;
-        port = dbServer.port;
-        user = dbServer.username;
-        pass = dbServer.password;
-        if (dbServer.encryption) encryption = dbServer.encryption;
-      }
-
-      if (dbChannel && dbChannel.isActive) {
-        if (dbChannel.senderName) senderName = dbChannel.senderName;
-        if (dbChannel.senderEmail) senderEmail = dbChannel.senderEmail;
-        if (dbChannel.replyTo) replyTo = dbChannel.replyTo;
-      }
-    } catch {
-      // Gunakan fallback environment jika query database belum siap
-    }
+    // Use environment variables for SMTP configuration
   }
 
   const from = `"${senderName}" <${senderEmail}>`;

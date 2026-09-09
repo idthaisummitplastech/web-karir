@@ -1,5 +1,3 @@
-import { prisma } from '@/lib/prisma';
-
 export interface EmailLogPayload {
   channel: 'web_karir' | 'web_perusahaan' | string;
   senderName: string;
@@ -9,30 +7,17 @@ export interface EmailLogPayload {
   errorMessage?: string;
 }
 
-const DEFAULT_OTLP_URL = 'https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs';
-const DEFAULT_AUTH_HEADER = 'Basic MTgyMTkyOTpnbGNfZXlKdklqb2lNVGt3TXpRM01DSXNJbTRpT2lKcGRITndMV1Z0WVdsc0xXeHZaM01pTENKcklqb2lRMVp0VWt0Vk1VazFaVE0wT0RjMk1tVjFVM3B3VURrMUlpd2liU0k2ZXlKeUlqb2ljSEp2WkMxaGNDMXpiM1YwYUdWaGMzUXRNaUo5ZlE9PQ==';
+const DEFAULT_OTLP_URL = process.env.GRAFANA_OTLP_URL || 'https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs';
+const DEFAULT_AUTH_HEADER = process.env.GRAFANA_AUTH_HEADER || 'Basic MTgyMTkyOTpnbGNfZXlKdklqb2lNVGt3TXpRM01DSXNJbTRpT2lKcGRITndMV1Z0WVdsc0xXeHZaM01pTENKcklqb2lRMVp0VWt0Vk1VazFaVE0wT0RjMk1tVjFVM3B3VURrMUlpd2liU0k2ZXlKeUlqb2ljSEp2WkMxaGNDMXpiM1YwYUdWaGMzUXRNaUo5ZlE9PQ==';
 
 /**
  * Kirim log pengiriman email secara asinkron (Non-Blocking) ke Grafana Cloud Loki via OTLP Gateway.
- * Tidak membebani database PostgreSQL dan log otomatis terhapus setelah 30 hari di Grafana.
+ * Tidak membebani database dan log otomatis terhapus setelah 30 hari di Grafana.
  */
 export async function pushEmailLogToGrafana(log: EmailLogPayload): Promise<void> {
   try {
-    let otlpUrl = DEFAULT_OTLP_URL;
-    let authHeader = DEFAULT_AUTH_HEADER;
-
-    // Coba baca pengaturan kustom dari database jika ada
-    try {
-      const setting = await prisma.observabilitySetting.findFirst({
-        where: { isEnabled: true },
-      });
-      if (setting?.grafanaOtlpUrl && setting?.grafanaAuthHeader) {
-        otlpUrl = setting.grafanaOtlpUrl;
-        authHeader = setting.grafanaAuthHeader;
-      }
-    } catch {
-      // Fallback ke default
-    }
+    const otlpUrl = DEFAULT_OTLP_URL;
+    const authHeader = DEFAULT_AUTH_HEADER;
 
     const timestampNano = (BigInt(Date.now()) * BigInt(1_000_000)).toString();
 

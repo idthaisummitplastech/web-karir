@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getApplicantSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { fetchFromBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -9,47 +9,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sesi tidak valid." }, { status: 401 });
     }
 
-    const { testType } = await req.json(); // 'psikotes' or 'user_test'
+    const { testType } = await req.json();
 
-    let submission = await prisma.testSubmission.findFirst({
-      where: {
-        applicantId: session.applicantId,
-        testType,
-      },
+    const data = await fetchFromBackend<{
+      success: boolean;
+      violationsCount: number;
+      violations_count?: number;
+      isLocked: boolean;
+      is_locked?: boolean;
+      message: string;
+    }>("/api/v1/tests/violation", {
+      method: "POST",
+      body: JSON.stringify({
+        applicant_id: session.applicantId,
+        test_type: testType,
+      }),
     });
-
-    if (!submission) {
-      submission = await prisma.testSubmission.create({
-        data: {
-          applicantId: session.applicantId,
-          testType,
-          answers: "{}",
-          violationsCount: 1,
-          startedAt: new Date(),
-        },
-      });
-    } else {
-      submission = await prisma.testSubmission.update({
-        where: { id: submission.id },
-        data: {
-          violationsCount: submission.violationsCount + 1,
-          isLocked: submission.violationsCount + 1 >= 2, // 2 strikes then lock
-        },
-      });
-    }
-
-    const isLocked = submission.violationsCount >= 2;
 
     return NextResponse.json({
       success: true,
-      violationsCount: submission.violationsCount,
-      isLocked,
-      message: isLocked
-        ? "Ujian Anda telah dihentikan dan dikunci secara otomatis karena terdeteksi berpindah aplikasi/tab sebanyak 2 kali. Silakan hubungi Tim HR untuk permohonan reset."
-        : "Peringatan Keamanan: Terdeteksi perpindahan tab/jendela. Pelanggaran 1 dari maksimal 2 kali. Jika terulang, ujian akan otomatis dikunci!",
+      violationsCount: data.violationsCount ?? data.violations_count ?? 1,
+      isLocked: data.isLocked ?? data.is_locked ?? false,
+      message: data.message,
     });
   } catch (error: any) {
     console.error("Record violation error:", error);
-    return NextResponse.json({ error: "Gagal mencatat pelanggaran." }, { status: 500 });
+    return NextResponse.json(
+      { error: error?.message || "Gagal mencatat pelanggaran." },
+      { status: error?.status || 500 }
+    );
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { fetchRawFromBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -8,37 +8,14 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-
-    const { applicantId, testType } = await req.json();
-
-    const submission = await prisma.testSubmission.findFirst({
-      where: {
-        applicantId: Number(applicantId),
-        testType,
-      },
+    const body = await req.json();
+    const result = await fetchRawFromBackend("/recruitment/reset-test", {
+      method: "POST",
+      body: JSON.stringify({ ...body, admin_id: session.adminId }),
     });
-
-    if (!submission) {
-      return NextResponse.json({ error: "Data sesi ujian peserta tidak ditemukan." }, { status: 404 });
-    }
-
-    // Reset status kunci dan pelanggaran
-    const updated = await prisma.testSubmission.update({
-      where: { id: submission.id },
-      data: {
-        isLocked: false,
-        violationsCount: 0,
-        submittedAt: null, // Buka kembali pengiriman jika sebelumnya tersubmit paksa
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: `Sesi ujian ${testType.toUpperCase()} berhasil di-reset! Calon karyawan kini dapat kembali login dan melanjutkan ujian tanpa hambatan.`,
-      submission: updated,
-    });
+    return NextResponse.json({ success: true, message: result.message || "Tes berhasil direset." });
   } catch (error: any) {
     console.error("Reset test error:", error);
-    return NextResponse.json({ error: "Gagal mereset sesi ujian." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Gagal mereset tes." }, { status: 400 });
   }
 }

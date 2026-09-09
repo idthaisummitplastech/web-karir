@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { comparePassword, signApplicantToken } from "@/lib/auth";
+import { signApplicantToken } from "@/lib/auth";
+import { fetchRawFromBackend } from "@/lib/api-client";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -14,31 +14,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const applicant = await prisma.applicant.findUnique({
-      where: { email: email.trim().toLowerCase() },
-      include: { jobPosting: true },
-    });
-
-    if (!applicant) {
+    let result: any;
+    try {
+      result = await fetchRawFromBackend("/auth/applicant-login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+    } catch (err: any) {
       return NextResponse.json(
-        { error: "Akun pelamar dengan email tersebut tidak ditemukan." },
+        { error: err.message || "Akun pelamar tidak ditemukan atau password salah." },
         { status: 401 }
       );
     }
 
-    const isMatch = await comparePassword(password, applicant.password);
-    if (!isMatch) {
-      return NextResponse.json(
-        { error: "Password yang Anda masukkan salah. Silakan periksa email konfirmasi pendaftaran Anda." },
-        { status: 401 }
-      );
-    }
+    const applicantData = result.data || result;
 
-    // Sign JWT
+    // Sign JWT for Next.js cookie session
     const token = await signApplicantToken({
-      applicantId: applicant.id,
-      email: applicant.email,
-      fullName: applicant.fullName,
+      applicantId: applicantData.id,
+      email: applicantData.email,
+      fullName: applicantData.fullName || applicantData.full_name,
       role: "applicant",
     });
 
@@ -54,12 +52,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       applicant: {
-        id: applicant.id,
-        fullName: applicant.fullName,
-        email: applicant.email,
-        currentStage: applicant.currentStage,
-        stageStatus: applicant.stageStatus,
-        jobTitle: applicant.jobPosting.title,
+        id: applicantData.id,
+        fullName: applicantData.fullName || applicantData.full_name,
+        email: applicantData.email,
+        currentStage: applicantData.currentStage || applicantData.current_stage,
+        stageStatus: applicantData.stageStatus || applicantData.stage_status,
       },
     });
   } catch (error: any) {
