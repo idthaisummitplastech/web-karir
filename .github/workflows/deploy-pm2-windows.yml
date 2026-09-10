@@ -1,0 +1,40 @@
+name: Deploy web-karir to D PM2
+
+# FULL OTOMATIS: push ke main -> server D:\itsp-karir langsung update (:3009).
+# Butuh 1x pasang GitHub Self-Hosted Runner Windows di server (lihat PANDUAN_DEPLOY_D_PM2.md S8b).
+# .env.production di D:\itsp-karir AMAN (di-ignore git, tidak tertimpa reset).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-itsp-karir
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Pull + build + pm2 restart :3009
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - name: Update D:\itsp-karir dari GitHub
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location D:\itsp-karir
+          git fetch origin main
+          git reset --hard origin/main
+          npm ci --legacy-peer-deps
+          npm run build
+          pm2 restart itsp-karir
+          pm2 save
+          pm2 list
+
+      - name: Health check :3009
+        run: |
+          $ErrorActionPreference = "Stop"
+          Start-Sleep -Seconds 10
+          Invoke-WebRequest http://localhost:3009/ -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
