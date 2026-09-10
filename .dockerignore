@@ -1,0 +1,14 @@
+# Jangan pernah copy .env asli / secrets / build cache ke image.
+.env
+.env.local
+.env.production
+.env.production.local
+*.env
+node_modules
+.next
+out
+coverage
+.git/
+.gitignore
+*.pem
+*.key

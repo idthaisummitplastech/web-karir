@@ -3,9 +3,15 @@ import bcrypt from "bcryptjs";
 import * as OTPAuth from "otpauth";
 import { cookies } from "next/headers";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "pt-itsp-recruitment-ats-jwt-secret-key-2026"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      'JWT_SECRET belum diisi via env (min 32 karakter). Isi file .env — lihat .env.example. Dilarang fallback hardcoded di code.'
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export interface ApplicantTokenPayload {
   applicantId: number;
@@ -39,12 +45,12 @@ export async function signApplicantToken(payload: ApplicantTokenPayload): Promis
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyApplicantToken(token: string): Promise<ApplicantTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     if (payload.role !== "applicant") return null;
     return payload as unknown as ApplicantTokenPayload;
   } catch {
@@ -58,12 +64,12 @@ export async function signAdminToken(payload: AdminTokenPayload): Promise<string
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("1d")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifyAdminToken(token: string): Promise<AdminTokenPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     if (!payload.adminId) return null;
     return payload as unknown as AdminTokenPayload;
   } catch {

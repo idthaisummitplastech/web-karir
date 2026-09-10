@@ -109,8 +109,9 @@ export default function AdminApplicantsPage() {
   const [interviewType, setInterviewType] = useState<'hr' | 'user'>('hr');
   const [locationMode, setLocationMode] = useState<'online' | 'onsite'>('online');
   const [meetingPlatform, setMeetingPlatform] = useState('teams');
-  const [meetingLink, setMeetingLink] = useState('https://teams.microsoft.com/meet/itsp-interview');
-  const [meetingPasscode, setMeetingPasscode] = useState('ITSP123');
+  // 100% via input user/backend — tanpa link/passcode hardcoded di code (lihat .env.example).
+  const [meetingLink, setMeetingLink] = useState('');
+  const [meetingPasscode, setMeetingPasscode] = useState('');
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewPlantChoice, setInterviewPlantChoice] = useState<'kiic' | 'giic' | 'custom'>('kiic');
   const [interviewCustomAddress, setInterviewCustomAddress] = useState('');

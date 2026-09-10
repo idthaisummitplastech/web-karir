@@ -124,12 +124,14 @@ export default function AdminSettingsPage() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Server SMTP Induk (Khusus Super Admin)
+  // Nilai awal dikosongkan — 100% via env/backend, tanpa email/host hardcoded di code.
+  // Isi resmi via env: SMTP_HOST/SMTP_USER (lihat .env.example) atau data dari /api/admin/settings.
   const [smtpServer, setSmtpServer] = useState({
     id: 1,
     name: 'Server Email Resmi PT ITSP',
-    host: 'smtp.gmail.com',
+    host: '',
     port: 587,
-    username: 'rifqi.alfaridzi22@gmail.com',
+    username: '',
     password: '',
     encryption: 'tls',
     isActive: true,
@@ -140,6 +142,8 @@ export default function AdminSettingsPage() {
   const [testSmtpChannel, setTestSmtpChannel] = useState('web_karir');
 
   // Multi-Kanal Pengirim Email (Multi-Web)
+  // Default dikosongkan — 100% via backend/env, tanpa email/domain hardcoded di code.
+  // Nilai resmi dimuat dari /api/admin/settings (lihat .env.example: SMTP_FROM_EMAIL).
   const [channels, setChannels] = useState<Array<{
     id?: number;
     appCode: string;
@@ -153,16 +157,16 @@ export default function AdminSettingsPage() {
       appCode: 'web_karir',
       appName: 'Portal Karir & Rekrutmen ATS',
       senderName: 'PT ITSP Recruitment',
-      senderEmail: 'info.itsp@thaisummit.co.id',
-      replyTo: 'recruitment@itsp.co.id',
+      senderEmail: '',
+      replyTo: '',
       isActive: true,
     },
     {
       appCode: 'web_perusahaan',
       appName: 'Website Profil Perusahaan',
       senderName: 'PT ITSP Marketing',
-      senderEmail: 'info.itsp@thaisummit.co.id',
-      replyTo: 'marketing@itsp.co.id',
+      senderEmail: '',
+      replyTo: '',
       isActive: true,
     },
   ]);
@@ -173,15 +177,18 @@ export default function AdminSettingsPage() {
     appCode: '',
     appName: '',
     senderName: '',
-    senderEmail: 'info.itsp@thaisummit.co.id',
+    senderEmail: '',
     replyTo: '',
   });
 
   // Observability Grafana Cloud
+  // Default dikosongkan — 100% via env/backend, tanpa URL/token hardcoded di code.
+  // Isi resmi via env: GRAFANA_OTLP_URL / GRAFANA_AUTH_HEADER / GRAFANA_DASHBOARD_URL
+  // (lihat .env.example) atau data dari /api/admin/settings.
   const [observability, setObservability] = useState({
-    grafanaOtlpUrl: 'https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs',
-    grafanaAuthHeader: 'Basic MTgyMTkyOTpnbGNfZXlKdklqb2lNVGt3TXpRM01DSXNJbTRpT2lKcGRITndMV1Z0WVdsc0xXeHZaM01pTENKcklqb2lRMVp0VWt0Vk1VazFaVE0wT0RjMk1tVjFVM3B3VURrMUlpd2liU0k2ZXlKeUlqb2ljSEp2WkMxaGNDMXpiM1YwYUdWaGMzUXRNaUo5ZlE9PQ==',
-    grafanaDashboardUrl: 'https://rubylake3285.grafana.net',
+    grafanaOtlpUrl: '',
+    grafanaAuthHeader: '',
+    grafanaDashboardUrl: '',
     isEnabled: true,
   });
 
@@ -428,7 +435,8 @@ export default function AdminSettingsPage() {
         .replace(/{gaji_offer}/g, 'Rp 6.500.000 / bulan + Tunjangan')
         .replace(/{tanggal_masuk}/g, '1 Oktober 2026')
         .replace(/{tahap_gagal}/g, 'Tahap Screening Dokumen')
-        .replace(/{link_portal}/g, 'http://localhost:3001/login');
+        // Preview portal 100% via env — tanpa localhost hardcoded (client: NEXT_PUBLIC_APP_URL).
+        .replace(/{link_portal}/g, `${(process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/+$/, '')}/login`);
 
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
@@ -805,7 +813,7 @@ export default function AdminSettingsPage() {
                   fullWidth
                   required
                   label="Host Server SMTP"
-                  placeholder="mail.thaisummit.co.id atau smtp.gmail.com"
+                  placeholder="mail.perusahaan.co.id atau smtp.example.com"
                   value={smtpServer.host}
                   onChange={(e) => setSmtpServer({ ...smtpServer, host: e.target.value })}
                 />
@@ -1104,7 +1112,7 @@ export default function AdminSettingsPage() {
               <Button
                 variant="contained"
                 target="_blank"
-                href={observability.grafanaDashboardUrl || 'https://rubylake3285.grafana.net'}
+                href={observability.grafanaDashboardUrl || '#'}
                 startIcon={<LaunchIcon />}
                 sx={{ bgcolor: '#10B981', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#059669', color: '#fff' } }}
               >

@@ -1,7 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
+
+function getSeedPassword(envName: string): string {
+  const v = process.env[envName];
+  if (v && v.length >= 12) return v;
+  // Tanpa hardcoded di code: generate acak aman bila env tidak diisi.
+  return `Seed-${crypto.randomBytes(12).toString("hex")}!Aa1`;
+}
 
 async function main() {
   console.log("Seeding web-karir database...");
@@ -24,8 +32,8 @@ async function main() {
     });
   }
 
-  // 2. Default Admins (HR, User Dept, Super Admin)
-  const hashedPass = await bcrypt.hash("admin123", 10);
+  // 2. Default Admins (HR, User Dept, Super Admin) — password WAJIB via env (SEED_ADMIN_PASSWORD).
+  const hashedPass = await bcrypt.hash(getSeedPassword("SEED_ADMIN_PASSWORD"), 10);
   const admins = [
     {
       username: "hr.recruitment",

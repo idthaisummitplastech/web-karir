@@ -1,19 +1,33 @@
 /**
  * Central Enterprise API Client for PT Indonesia Thai Summit Plastech (Career Portal / ATS)
  * Routes all data access to Python FastAPI Backend (Zero Direct DB Touch)
+ * URL 100% via env (lihat src/lib/urls.ts) — tanpa hardcoded localhost/domain.
  */
+import { getBackendBaseUrl } from './urls';
 
-const FALLBACK_BACKEND_URL = 'http://localhost:8000';
-const INTERNAL_SECRET = process.env.BACKEND_INTERNAL_SECRET || 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
+function getInternalSecret(): string {
+  const s = process.env.BACKEND_INTERNAL_SECRET;
+  if (!s) {
+    throw new Error(
+      'BACKEND_INTERNAL_SECRET belum diisi via env. Isi file .env — lihat .env.example. Dilarang fallback hardcoded di code.'
+    );
+  }
+  return s;
+}
 
 /**
- * Normalise backend base URL:
+ * Normalise backend base URL (100% via env):
  * - trim whitespace, remove trailing slashes
  * - always ensure single `/api/v1` suffix (no double prefix)
+ * Ganti backend cukup via env BACKEND_API_URL — tanpa ubah code.
  */
 function getBackendBase(): string {
-  const raw = (process.env.BACKEND_API_URL || FALLBACK_BACKEND_URL).trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+  return getBackendBaseUrl();
+}
+
+/** Lazy getter (fail-fast via env, tanpa evaluasi saat import). */
+export function getBackendApiUrl(): string {
+  return getBackendBase();
 }
 
 /** Build full backend URL consistently (handles trailing slash + optional /api/v1 prefix). */
@@ -24,9 +38,6 @@ export function buildBackendUrl(endpoint: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${base}${normalizedPath}`;
 }
-
-// Kept for backward-compat; always normalised (no trailing slash, includes /api/v1).
-export const BACKEND_API_URL = getBackendBase();
 
 // Recursively ensures both camelCase and snake_case properties are available
 function dualCaseObject(obj: any): any {
@@ -61,13 +72,14 @@ export async function fetchFromBackend<T = any>(
 ): Promise<T> {
   const url = buildBackendUrl(endpoint);
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const internalSecret = getInternalSecret();
 
   try {
     const res = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        'X-Internal-Secret': INTERNAL_SECRET,
+        'X-Internal-Secret': internalSecret,
         ...options?.headers,
       },
       cache: 'no-store',
@@ -95,12 +107,13 @@ export async function fetchRawFromBackend<T = any>(
   options?: RequestInit
 ): Promise<T> {
   const url = buildBackendUrl(endpoint);
+  const internalSecret = getInternalSecret();
 
   const res = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'X-Internal-Secret': INTERNAL_SECRET,
+      'X-Internal-Secret': internalSecret,
       ...options?.headers,
     },
     cache: 'no-store',

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchFromBackend } from "@/lib/api-client";
+import { getAppUrl } from "@/lib/urls";
 import { emailAccountCreated, sendMailDirect, generateCorporateEmailWrapper } from "@/lib/email";
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly
@@ -112,7 +113,7 @@ export async function POST(req: Request) {
     // Send email with credentials
     if (result.success && result.applicant) {
       const tempPassword = result.temp_password || `Itsp@${new Date().getFullYear()}`;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+      const appUrl = getAppUrl();
       const jobTitle = result.applicant.job_posting?.title || "Posisi Pilihan";
 
       const emailSubject = `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${jobTitle}`;

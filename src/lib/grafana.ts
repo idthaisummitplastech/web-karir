@@ -7,8 +7,16 @@ export interface EmailLogPayload {
   errorMessage?: string;
 }
 
-const DEFAULT_OTLP_URL = process.env.GRAFANA_OTLP_URL || 'https://otlp-gateway-prod-ap-southeast-2.grafana.net/otlp/v1/logs';
-const DEFAULT_AUTH_HEADER = process.env.GRAFANA_AUTH_HEADER || 'Basic MTgyMTkyOTpnbGNfZXlKdklqb2lNVGt3TXpRM01DSXNJbTRpT2lKcGRITndMV1Z0WVdsc0xXeHZaM01pTENKcklqb2lRMVp0VWt0Vk1VazFaVE0wT0RjMk1tVjFVM3B3VURrMUlpd2liU0k2ZXlKeUlqb2ljSEp2WkMxaGNDMXpiM1YwYUdWaGMzUXRNaUo5ZlE9PQ==';
+/**
+ * Ambil OTLP URL + auth murni via env (tanpa hardcoded di code).
+ * Ganti/rotasi cukup via env: GRAFANA_OTLP_URL, GRAFANA_AUTH_HEADER.
+ * Return '' bila belum dikonfigurasi -> caller no-op (skip kirim).
+ */
+function getOtlpConfig(): { url: string; auth: string } {
+  const url = (process.env.GRAFANA_OTLP_URL ?? '').trim();
+  const auth = (process.env.GRAFANA_AUTH_HEADER ?? '').trim();
+  return { url, auth };
+}
 
 /**
  * Kirim log pengiriman email secara asinkron (Non-Blocking) ke Grafana Cloud Loki via OTLP Gateway.
@@ -16,8 +24,9 @@ const DEFAULT_AUTH_HEADER = process.env.GRAFANA_AUTH_HEADER || 'Basic MTgyMTkyOT
  */
 export async function pushEmailLogToGrafana(log: EmailLogPayload): Promise<void> {
   try {
-    const otlpUrl = DEFAULT_OTLP_URL;
-    const authHeader = DEFAULT_AUTH_HEADER;
+    const { url: otlpUrl, auth: authHeader } = getOtlpConfig();
+    // Tanpa konfigurasi via env -> no-op agar tidak crash & tidak kirim ke URL hardcoded.
+    if (!otlpUrl || !authHeader) return;
 
     const timestampNano = (BigInt(Date.now()) * BigInt(1_000_000)).toString();
 

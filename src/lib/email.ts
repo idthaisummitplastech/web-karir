@@ -32,14 +32,17 @@ export async function sendMailDirect({
   channel?: 'web_karir' | 'web_perusahaan' | string;
   customSmtp?: SmtpConfigOverride;
 }): Promise<{ success: boolean; error?: string }> {
-  // Default values
-  let host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  // SMTP 100% via env — tanpa host/email hardcoded di code (lihat .env.example).
+  // Ganti/rotasi cukup via env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
+  // SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_TARGET_HOST (opsional override),
+  // SMTP_TLS_SNI (opsional override SNI).
+  let host = (process.env.SMTP_HOST ?? '').trim();
   let port = parseInt(process.env.SMTP_PORT || '587');
-  let user = process.env.SMTP_USER;
+  let user = (process.env.SMTP_USER ?? '').trim() || undefined;
   let pass = process.env.SMTP_PASS;
   let encryption = 'tls';
-  let senderName = 'PT ITSP Recruitment';
-  let senderEmail = user || 'recruitment@itsp.co.id';
+  let senderName = (process.env.SMTP_FROM_NAME ?? '').trim() || 'PT ITSP Recruitment';
+  let senderEmail = (process.env.SMTP_FROM_EMAIL ?? '').trim() || user || '';
   let replyTo = senderEmail;
 
   if (customSmtp && customSmtp.host && customSmtp.username) {
@@ -55,11 +58,11 @@ export async function sendMailDirect({
     // Use environment variables for SMTP configuration
   }
 
-  const from = `"${senderName}" <${senderEmail}>`;
+  const from = senderName && senderEmail ? `"${senderName}" <${senderEmail}>` : senderEmail || user || '';
 
-  if (!user || !pass) {
-    console.warn('[EMAIL WARNING] Kredensial SMTP belum dikonfigurasi di database maupun .env');
-    const err = 'Kredensial SMTP belum diset (Username / Password kosong).';
+  if (!host || !user || !pass || !senderEmail) {
+    console.warn('[EMAIL WARNING] Konfigurasi SMTP belum lengkap via env (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM_EMAIL)');
+    const err = 'Konfigurasi SMTP belum lengkap via env (SMTP_HOST / SMTP_USER / SMTP_PASS / SMTP_FROM_EMAIL kosong). Isi file .env — lihat .env.example.';
     // Log ke Grafana
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
       pushEmailLogToGrafana({
@@ -77,17 +80,11 @@ export async function sendMailDirect({
   try {
     const isSecure = encryption === 'ssl' || port === 465;
 
-    let targetHost = host;
-    let servername: string | undefined = undefined;
+    let targetHost = (process.env.SMTP_TARGET_HOST ?? '').trim() || host;
+    let servername: string | undefined = (process.env.SMTP_TLS_SNI ?? '').trim() || undefined;
 
-    // Failsafe DNS Jaringan Kantor Thai Summit:
-    // DNS lokal kantor (192.168.5.2) meresolve 'mail.thaisummit.co.id' ke IP intranet '172.10.10.9' / '172.10.10.10'
-    // yang tidak bisa dijangkau dari Wi-Fi kantor (timeout ETIMEDOUT).
-    // Arahkan ke IP publik resmi 182.253.29.83 dengan SNI servername 'mail.thaisummit.co.id' agar 100% instan & stabil.
-    if (host === 'mail.thaisummit.co.id' || host === '172.10.10.9' || host === '172.10.10.10') {
-      targetHost = '182.253.29.83';
-      servername = 'mail.thaisummit.co.id';
-    }
+    // Opsional override via env (mis. split-DNS kantor):
+    // SMTP_TARGET_HOST + SMTP_TLS_SNI — tanpa IP/host hardcoded di code.
 
     const transporter = nodemailer.createTransport({
       host: targetHost,
