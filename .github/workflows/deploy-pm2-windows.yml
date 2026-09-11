@@ -28,20 +28,55 @@ jobs:
           Set-Location D:\itsp-karir
           git config --global --add safe.directory D:/itsp-karir
           git fetch origin main
+          if ($LASTEXITCODE -ne 0) { throw "git fetch gagal (exit $LASTEXITCODE). Kemungkinan permission: D:\itsp-karir milik Administrator tapi runner service jalan sebagai NETWORK SERVICE. Fix di server: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T  ATAU ganti service Log On ke Administrator." }
           git reset --hard origin/main
+          if ($LASTEXITCODE -ne 0) { throw "git reset --hard gagal (exit $LASTEXITCODE). Cek permission D:\itsp-karir untuk NETWORK SERVICE." }
           Write-Host "--- VERSIONS ---"
           node -v
           npm.cmd -v
-          pm2.cmd -v
+          whoami
+          Write-Host "PATH=$env:PATH"
+          Write-Host "APPDATA=$env:APPDATA"
+          # Fix: service jalan sebagai NETWORK SERVICE -> pm2 global milik Administrator tidak terlihat.
+          # Jangan pakai try/catch untuk deteksi command (tidak andal saat ErrorAction=Stop),
+          # pakai Get-Command + path absolut.
+          $extraPaths = @(
+            (Join-Path $env:APPDATA "npm"),
+            "C:\Users\Administrator\AppData\Roaming\npm",
+            "C:\Program Files\nodejs"
+          )
+          foreach ($p in $extraPaths) {
+            if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
+          }
+          Write-Host "PATH (updated)=$env:Path"
+          $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
+          if (-not $pm2Cmd) {
+            foreach ($p in $extraPaths) {
+              $cand = Join-Path $p "pm2.cmd"
+              if (Test-Path $cand) { $pm2Cmd = $cand; break }
+            }
+          }
+          if (-not $pm2Cmd) {
+            Write-Host "pm2.cmd tidak ditemukan, install global untuk NETWORK SERVICE..."
+            npm.cmd i -g pm2
+            $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
+            if (-not $pm2Cmd) {
+              $maybe = Join-Path (Join-Path $env:APPDATA "npm") "pm2.cmd"
+              if (Test-Path $maybe) { $pm2Cmd = $maybe }
+            }
+          }
+          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Cek manual di server: npm.cmd i -g pm2" }
+          Write-Host "pm2 at: $pm2Cmd"
+          & $pm2Cmd -v
           npm.cmd ci --legacy-peer-deps
           npm.cmd run build
-          try { pm2.cmd restart itsp-karir }
-          catch {
-            Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
-            pm2.cmd start npm --name "itsp-karir" -- start
+          & $pm2Cmd restart itsp-karir
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "pm2 restart gagal (exit $LASTEXITCODE), coba pm2 start pertama kali..."
+            & $pm2Cmd start npm --name "itsp-karir" -- start
           }
-          pm2.cmd save
-          pm2.cmd list
+          & $pm2Cmd save
+          & $pm2Cmd list
 
       - name: Health check :3009
         run: |
