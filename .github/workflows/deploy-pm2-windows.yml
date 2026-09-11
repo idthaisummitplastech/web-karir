@@ -88,6 +88,11 @@ jobs:
           if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Cek manual di server: npm.cmd i -g pm2" }
           Write-Host "pm2 at: $pm2Cmd"
           & $pm2Cmd -v
+          Write-Host "--- STOP app agar lepas lock node_modules/.next (fix EPERM) ---"
+          try { & $pm2Cmd stop itsp-karir 2>&1 | Out-String | Write-Host } catch {}
+          Start-Sleep -Seconds 3
+          try { icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-Null } catch {}
+          if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
           npm.cmd ci --legacy-peer-deps
           npm.cmd run build
           & $pm2Cmd restart itsp-karir
