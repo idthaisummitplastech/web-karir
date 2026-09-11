@@ -8,6 +8,14 @@ export const metadata: Metadata = {
     template: '%s | Karir PT ITSP',
   },
   description: 'Sistem Penerimaan Karyawan Resmi & Portal Karir Terpadu PT Indonesia Thai Summit Plastech (Thai Summit Group).',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
+      { url: '/icon.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
+    shortcut: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
