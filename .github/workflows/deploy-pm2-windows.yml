@@ -27,10 +27,30 @@ jobs:
           if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone web-karir. Clone dulu di Server: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
           Set-Location D:\itsp-karir
           git config --global --add safe.directory D:/itsp-karir
+          git config --global --add safe.directory D:\itsp-karir
           git fetch origin main
-          if ($LASTEXITCODE -ne 0) { throw "git fetch gagal (exit $LASTEXITCODE). Kemungkinan permission: D:\itsp-karir milik Administrator tapi runner service jalan sebagai NETWORK SERVICE. Fix di server: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T  ATAU ganti service Log On ke Administrator." }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING fetch gagal, coba self-heal FETCH_HEAD..."
+            Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue
+            try { icacls D:\itsp-karir\.git /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-String | Write-Host } catch {}
+            git fetch origin main
+          }
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING fetch masih gagal, RE-CLONE darurat..."
+            $stamp = Get-Date -Format yyyyMMdd_HHmmss
+            $backup = Join-Path $env:TEMP "itsp-karir-env-$stamp"
+            New-Item -ItemType Directory -Path $backup -Force | Out-Null
+            Copy-Item D:\itsp-karir\.env* $backup -Force -ErrorAction SilentlyContinue
+            Set-Location D:\
+            Rename-Item D:\itsp-karir "itsp-karir.bak_$stamp"
+            git clone https://github.com/idthaisummitplastech/web-karir.git itsp-karir
+            if ($LASTEXITCODE -ne 0) { throw "clone darurat gagal. Fix manual: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T. Folder lama: D:\itsp-karir.bak_$stamp" }
+            Copy-Item (Join-Path $backup '.env*') D:\itsp-karir\ -Force -ErrorAction SilentlyContinue
+            Set-Location D:\itsp-karir
+            git config --global --add safe.directory D:/itsp-karir
+          }
           git reset --hard origin/main
-          if ($LASTEXITCODE -ne 0) { throw "git reset --hard gagal (exit $LASTEXITCODE). Cek permission D:\itsp-karir untuk NETWORK SERVICE." }
+          if ($LASTEXITCODE -ne 0) { throw "git reset gagal. Fix: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T" }
           Write-Host "--- VERSIONS ---"
           node -v
           npm.cmd -v
