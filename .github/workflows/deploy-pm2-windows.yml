@@ -40,11 +40,15 @@ jobs:
 
           $extraPaths = @(
             (Join-Path $env:APPDATA "npm"),
+            "C:\Users\IT-PLASTECH\AppData\Roaming\npm",
             "C:\Users\Administrator\AppData\Roaming\npm",
             "C:\Program Files\nodejs"
           )
           foreach ($p in $extraPaths) {
             if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
+          }
+          if (-not $env:PM2_HOME) {
+            if (Test-Path "C:\Users\IT-PLASTECH\.pm2") { $env:PM2_HOME = "C:\Users\IT-PLASTECH\.pm2" }
           }
           $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
           if (-not $pm2Cmd) {
