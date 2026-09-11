@@ -29,15 +29,19 @@ jobs:
           git config --global --add safe.directory D:/itsp-karir
           git fetch origin main
           git reset --hard origin/main
-          npm ci --legacy-peer-deps
-          npm run build
-          try { pm2 restart itsp-karir }
+          Write-Host "--- VERSIONS ---"
+          node -v
+          npm.cmd -v
+          pm2.cmd -v
+          npm.cmd ci --legacy-peer-deps
+          npm.cmd run build
+          try { pm2.cmd restart itsp-karir }
           catch {
             Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
-            pm2 start npm --name "itsp-karir" -- start
+            pm2.cmd start npm --name "itsp-karir" -- start
           }
-          pm2 save
-          pm2 list
+          pm2.cmd save
+          pm2.cmd list
 
       - name: Health check :3009
         run: |
