@@ -1,7 +1,8 @@
 name: Deploy web-karir to D PM2
 
 # FULL OTOMATIS: push ke main -> server D:\itsp-karir langsung update (:3009).
-# Butuh 1x pasang GitHub Self-Hosted Runner Windows di server (lihat PANDUAN_DEPLOY_D_PM2.md S8b).
+# Syarat 1x di server (terakhir sentuh): runner jalan sebagai Administrator + pm2 global.
+# Setelah itu: tidak perlu RDP lagi, cukup git push.
 # .env.production di D:\itsp-karir AMAN (di-ignore git, tidak tertimpa reset).
 
 on:
@@ -24,42 +25,19 @@ jobs:
       - name: Update D:\itsp-karir dari GitHub
         run: |
           $ErrorActionPreference = "Stop"
-          if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone web-karir. Clone dulu di Server: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
+          if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone web-karir. Clone dulu di Server sebagai Administrator: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
           Set-Location D:\itsp-karir
-          git config --global --add safe.directory D:/itsp-karir
-          git config --global --add safe.directory D:\itsp-karir
-          git fetch origin main
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "WARNING fetch gagal, coba self-heal FETCH_HEAD..."
-            Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue
-            try { icacls D:\itsp-karir\.git /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-String | Write-Host } catch {}
-            git fetch origin main
-          }
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "WARNING fetch masih gagal, RE-CLONE darurat..."
-            $stamp = Get-Date -Format yyyyMMdd_HHmmss
-            $backup = Join-Path $env:TEMP "itsp-karir-env-$stamp"
-            New-Item -ItemType Directory -Path $backup -Force | Out-Null
-            Copy-Item D:\itsp-karir\.env* $backup -Force -ErrorAction SilentlyContinue
-            Set-Location D:\
-            Rename-Item D:\itsp-karir "itsp-karir.bak_$stamp"
-            git clone https://github.com/idthaisummitplastech/web-karir.git itsp-karir
-            if ($LASTEXITCODE -ne 0) { throw "clone darurat gagal. Fix manual: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T. Folder lama: D:\itsp-karir.bak_$stamp" }
-            Copy-Item (Join-Path $backup '.env*') D:\itsp-karir\ -Force -ErrorAction SilentlyContinue
-            Set-Location D:\itsp-karir
-            git config --global --add safe.directory D:/itsp-karir
-          }
-          git reset --hard origin/main
-          if ($LASTEXITCODE -ne 0) { throw "git reset gagal. Fix: icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T" }
+          # Anti dubious-ownership (wajib bila runner ganti user)
+          git config --global --add safe.directory D:/itsp-karir 2>$null
+          git config --global --add safe.directory D:\itsp-karir 2>$null
+          git config --global --add safe.directory '*' 2>$null
+
           Write-Host "--- VERSIONS ---"
           node -v
           npm.cmd -v
           whoami
-          Write-Host "PATH=$env:PATH"
-          Write-Host "APPDATA=$env:APPDATA"
-          # Fix: service jalan sebagai NETWORK SERVICE -> pm2 global milik Administrator tidak terlihat.
-          # Jangan pakai try/catch untuk deteksi command (tidak andal saat ErrorAction=Stop),
-          # pakai Get-Command + path absolut.
+          Write-Host "USERPROFILE=$env:USERPROFILE APPDATA=$env:APPDATA"
+
           $extraPaths = @(
             (Join-Path $env:APPDATA "npm"),
             "C:\Users\Administrator\AppData\Roaming\npm",
@@ -68,7 +46,6 @@ jobs:
           foreach ($p in $extraPaths) {
             if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
           }
-          Write-Host "PATH (updated)=$env:Path"
           $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
           if (-not $pm2Cmd) {
             foreach ($p in $extraPaths) {
@@ -77,7 +54,7 @@ jobs:
             }
           }
           if (-not $pm2Cmd) {
-            Write-Host "pm2.cmd tidak ditemukan, install global untuk NETWORK SERVICE..."
+            Write-Host "pm2.cmd tidak ditemukan, install global..."
             npm.cmd i -g pm2
             $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
             if (-not $pm2Cmd) {
@@ -85,19 +62,36 @@ jobs:
               if (Test-Path $maybe) { $pm2Cmd = $maybe }
             }
           }
-          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Cek manual di server: npm.cmd i -g pm2" }
+          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Fix 1x di server sebagai Administrator: npm i -g pm2" }
           Write-Host "pm2 at: $pm2Cmd"
           & $pm2Cmd -v
-          Write-Host "--- STOP app agar lepas lock node_modules/.next (fix EPERM) ---"
+
+          Write-Host "--- STOP app dulu agar lepas lock node_modules/.next (wajib untuk full-otomatis) ---"
           try { & $pm2Cmd stop itsp-karir 2>&1 | Out-String | Write-Host } catch {}
           Start-Sleep -Seconds 3
-          try { icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-Null } catch {}
+
+          Write-Host "--- GIT FETCH + RESET (best-effort self-heal, tanpa butuh RDP) ---"
+          try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
+          git fetch origin main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING fetch gagal, coba hapus FETCH_HEAD sekali lagi..."
+            try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
+            Start-Sleep -Seconds 2
+            git fetch origin main
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "git fetch gagal terus: 'cannot open .git/FETCH_HEAD: Permission denied'. Artinya folder D:\itsp-karir\.git milik Administrator tapi runner jalan sebagai NETWORK SERVICE. Fix 1x TERAKHIR di server (Administrator CMD): takeown /F D:\itsp-karir /R /D Y + icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T ATAU (disarankan untuk full-otomatis) ganti service runner jadi Administrator."
+          }
+          git reset --hard origin/main
+          if ($LASTEXITCODE -ne 0) { throw "git reset gagal (unable to unlink package-lock.json). File dikunci / permission. Pastikan pm2 stop sukses + runner sudah Administrator. Coba Re-run jobs sekali lagi." }
+
+          Write-Host "--- BUILD (hapus .next dulu, tanpa sentuh server) ---"
           if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
           npm.cmd ci --legacy-peer-deps
           npm.cmd run build
           & $pm2Cmd restart itsp-karir
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "pm2 restart gagal (exit $LASTEXITCODE), coba pm2 start pertama kali..."
+            Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
             & $pm2Cmd start npm --name "itsp-karir" -- start
           }
           & $pm2Cmd save
