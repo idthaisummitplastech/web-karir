@@ -24,12 +24,18 @@ jobs:
       - name: Update D:\itsp-karir dari GitHub
         run: |
           $ErrorActionPreference = "Stop"
+          if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone web-karir. Clone dulu di Server: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
           Set-Location D:\itsp-karir
+          git config --global --add safe.directory D:/itsp-karir
           git fetch origin main
           git reset --hard origin/main
           npm ci --legacy-peer-deps
           npm run build
-          pm2 restart itsp-karir
+          try { pm2 restart itsp-karir }
+          catch {
+            Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
+            pm2 start npm --name "itsp-karir" -- start
+          }
           pm2 save
           pm2 list
 
