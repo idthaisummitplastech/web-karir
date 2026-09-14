@@ -49,3 +49,5 @@ v1.0/
 KREDENSIAL_AKSES_SISTEM*
 SOP_CMS_WEBSITE*
 *.pdf
+!public/**/*.pdf
+
