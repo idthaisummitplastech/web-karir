@@ -39,6 +39,9 @@ next-env.d.ts
 scratch/
 test_verify.js
 
+# GitHub Runner (if placed inside app)
+runner/
+
 # Private Documentation, SOP, & Credentials (STRICTLY DO NOT PUSH)
 docs/
 *docs*
