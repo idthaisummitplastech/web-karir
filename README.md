@@ -2,6 +2,8 @@
 
 Sistem Informasi Rekrutmen Karyawan & Applicant Tracking System (ATS) berbasis Next.js 15, React 19, TypeScript, Material-UI (MUI v6), dan PostgreSQL dengan Prisma ORM.
 
+<!-- Continuous Deployment: PM2 Windows Runner Active -->
+
 ## Fitur Utama
 
 - **7 Tahap Seleksi Komprehensif**:
