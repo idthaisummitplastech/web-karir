@@ -37,15 +37,15 @@ export default function BrandLogo({
       {/* Official TS Plastech Logo Mark */}
       <Box
         sx={{
-          height: dimensions.imgHeight,
-          width: dimensions.imgHeight,
-          minWidth: dimensions.imgHeight,
+          height: { xs: 34, sm: 38, md: dimensions.imgHeight },
+          width: { xs: 34, sm: 38, md: dimensions.imgHeight },
+          minWidth: { xs: 34, sm: 38, md: dimensions.imgHeight },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           bgcolor: '#FFFFFF',
           p: 0.4,
-          borderRadius: '10px',
+          borderRadius: '8px',
           boxShadow: lightText ? '0 2px 8px rgba(0,0,0,0.25)' : '0 2px 6px rgba(0,0,0,0.06)',
           border: lightText ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(1, 135, 48, 0.2)',
           flexShrink: 0,
@@ -65,17 +65,18 @@ export default function BrandLogo({
       </Box>
 
       {/* Corporate Typography */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, overflow: 'hidden' }}>
         <Typography
           variant="h6"
           sx={{
             fontWeight: 800,
             letterSpacing: '-0.02em',
             color: lightText ? '#FFFFFF' : '#018730',
-            fontSize: dimensions.titleSize,
-            lineHeight: 1.25,
-            wordBreak: 'break-word',
-            whiteSpace: 'normal',
+            fontSize: { xs: '0.78rem', sm: '0.86rem', md: dimensions.titleSize },
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           {title}
@@ -88,13 +89,14 @@ export default function BrandLogo({
             textTransform: 'uppercase',
             color: lightText ? '#4ade80' : '#64748B',
             fontSize: dimensions.subSize,
-            display: 'flex',
+            display: { xs: 'none', sm: 'flex' },
             alignItems: 'center',
             gap: 0.6,
             mt: 0.3,
-            lineHeight: 1.25,
-            wordBreak: 'break-word',
-            whiteSpace: 'normal',
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
           <Box component="span" sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: '#fc4509', flexShrink: 0 }} />

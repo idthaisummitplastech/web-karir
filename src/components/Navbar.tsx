@@ -16,6 +16,7 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Typography,
 } from '@mui/material';
 import {
   Work as WorkIcon,
@@ -48,10 +49,10 @@ export default function Navbar() {
         borderBottom: '1px solid #E2E8F0',
       }}
     >
-      <Container maxWidth="lg">
-        <Toolbar disableGutters sx={{ height: 74, display: 'flex', justifyContent: 'space-between' }}>
+      <Container maxWidth="lg" sx={{ px: { xs: 1.5, sm: 2.5, md: 3 } }}>
+        <Toolbar disableGutters sx={{ height: { xs: 62, sm: 68, md: 74 }, display: 'flex', justifyContent: 'space-between', gap: { xs: 1, sm: 2 } }}>
           {/* Logo & Brand matching CMS */}
-          <Link href="/" style={{ textDecoration: 'none' }}>
+          <Link href="/" style={{ textDecoration: 'none', minWidth: 0, flex: 1, display: 'flex', alignItems: 'center' }}>
             <BrandLogo
               title="PT INDONESIA THAI SUMMIT PLASTECH"
               subtitle="PORTAL KARIR RESMI & ATS"
@@ -60,7 +61,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav Items */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Button
               component={Link}
               href="/#lowongan"
@@ -111,21 +112,27 @@ export default function Navbar() {
 
             {/* Language Switcher Toggle */}
             <Box sx={{ ml: 1 }}>
-              <LanguageToggle />
+              <LanguageToggle size="small" />
             </Box>
           </Box>
 
           {/* Mobile Actions: Language Toggle + Hamburger Button */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1 }}>
-            <LanguageToggle />
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: { xs: 0.75, sm: 1 }, flexShrink: 0 }}>
+            <LanguageToggle size="small" />
             <IconButton
               color="inherit"
               aria-label="open drawer"
-              edge="start"
+              edge="end"
               onClick={handleDrawerToggle}
-              sx={{ color: '#0F172A' }}
+              sx={{
+                color: '#018730',
+                p: { xs: 0.75, sm: 1 },
+                bgcolor: 'rgba(1, 135, 48, 0.08)',
+                borderRadius: '10px',
+                '&:hover': { bgcolor: 'rgba(1, 135, 48, 0.16)' },
+              }}
             >
-              <MenuIcon />
+              <MenuIcon sx={{ fontSize: { xs: 24, sm: 26 } }} />
             </IconButton>
           </Box>
         </Toolbar>
@@ -137,13 +144,47 @@ export default function Navbar() {
         open={mobileOpen}
         onClose={handleDrawerToggle}
         ModalProps={{ keepMounted: true }}
-        slotProps={{ paper: { sx: { width: 280, p: 2 } } }}
+        slotProps={{ paper: { sx: { width: { xs: '85%', sm: 320 }, p: 2.5 } } }}
       >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <BrandLogo size="small" />
-          <IconButton onClick={handleDrawerToggle}>
-            <CloseIcon />
+        {/* Drawer Header: Brand Logo & Close Button */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+            <BrandLogo size="small" />
+          </Box>
+          <IconButton
+            onClick={handleDrawerToggle}
+            aria-label="close drawer"
+            sx={{
+              color: '#475569',
+              p: 1,
+              bgcolor: '#F1F5F9',
+              borderRadius: '10px',
+              flexShrink: 0,
+              '&:hover': { bgcolor: '#E2E8F0', color: '#0F172A' },
+            }}
+          >
+            <CloseIcon fontSize="small" />
           </IconButton>
+        </Box>
+
+        {/* Drawer Language Switcher Row */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            py: 1,
+            px: 1.5,
+            borderRadius: 2,
+            mb: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569', fontSize: '0.85rem' }}>
+            Language / Bahasa
+          </Typography>
+          <LanguageToggle size="small" />
         </Box>
         <Divider sx={{ mb: 2 }} />
 
