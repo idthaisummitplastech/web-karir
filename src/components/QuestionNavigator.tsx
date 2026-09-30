@@ -63,7 +63,7 @@ export default function QuestionNavigator({ open, onClose, questions, answers, c
   };
   const answered = countAnswered(questions, answers);
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth PaperProps={{ translate: 'no', className: 'notranslate' }}>
       <DialogTitle sx={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
         <GridIcon sx={{ color: accent }} /> {title}
       </DialogTitle>

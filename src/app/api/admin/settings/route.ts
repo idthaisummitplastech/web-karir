@@ -9,13 +9,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const isSuperAdmin = session.role === "superadmin" || session.role === "admin";
-    if (!isSuperAdmin) {
-      return NextResponse.json({ error: "Hanya Super Admin yang dapat mengakses pengaturan." }, { status: 403 });
+    const canAccess = session.role === "superadmin" || session.role === "admin" || session.role === "hr";
+    if (!canAccess) {
+      return NextResponse.json({ error: "Hanya Tim HR & Admin yang dapat mengakses pengaturan." }, { status: 403 });
     }
 
+    const isSuperAdmin = session.role === "superadmin" || session.role === "admin";
     const settings = await fetchFromBackend("/recruitment/settings");
-    return NextResponse.json({ success: true, settings: settings || {} });
+    return NextResponse.json({ success: true, isSuperAdmin, settings: settings || {} });
   } catch (error: any) {
     console.error("Fetch settings error:", error);
     return NextResponse.json({ error: "Gagal memuat pengaturan." }, { status: 500 });
@@ -29,9 +30,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const isSuperAdmin = session.role === "superadmin" || session.role === "admin";
-    if (!isSuperAdmin) {
-      return NextResponse.json({ error: "Hanya Super Admin." }, { status: 403 });
+    const canAccess = session.role === "superadmin" || session.role === "admin" || session.role === "hr";
+    if (!canAccess) {
+      return NextResponse.json({ error: "Hanya Tim HR & Admin yang dapat menyimpan pengaturan." }, { status: 403 });
     }
 
     const body = await req.json();

@@ -29,6 +29,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const applyLanguage = (lang: Language) => {
     if (typeof document !== 'undefined') {
+      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/portal/test')) {
+        return;
+      }
       document.documentElement.lang = lang;
 
       const targetTrans = lang === 'en' ? '/id/en' : '/id/id';

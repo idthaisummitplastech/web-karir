@@ -145,19 +145,27 @@ export function getPlantMapsUrl(locationOrInput?: string | null): string {
     return str;
   }
 
-  // 4. Deteksi kata kunci nama pabrik / klinik (klinik/MCU diprioritaskan agar alamat MCU tidak tertukar ke peta pabrik)
   const s = str.toLowerCase();
-  if (s.includes("kimia farma") || s.includes("galuh mas") || s.includes("klinik") || s.includes("mcu") || s.includes("rumah sakit") || s.includes("rs ") || s.includes(" hospital")) {
-    return DEFAULT_MCU_LOCATION.mapsUrl;
+
+  // 4. Deteksi apakah input adalah nama/alamat spesifik klinik atau alamat jalan
+  const isAddress = s.includes("jalan") || s.includes("jl.") || s.includes("rt.") || s.includes("rw.") || s.includes("no.") || s.includes("blok");
+  const isMedical = s.includes("klinik") || s.includes("mcu") || s.includes("rumah sakit") || s.includes("rs ") || s.includes("hospital") || s.includes("medis") || s.includes("kimia farma") || s.includes("pramita") || s.includes("prodia");
+
+  if (isMedical || isAddress) {
+    // Arahkan langsung ke pencarian nama klinik / alamat spesifik tersebut di Google Maps
+    return `https://maps.google.com/?q=${encodeURIComponent(str)}`;
   }
-  if (s.includes("kiic") || s.includes("karawang") || s.includes("plant 1")) {
+
+  // 5. Deteksi pabrik spesifik PT ITSP bila hanya menyebutkan kata kunci plant
+  if (s.includes("kiic") || (s.includes("plant 1") && !isAddress)) {
     return PLANT_LOCATIONS.kiic.mapsUrl;
   }
-  if (s.includes("giic") || s.includes("cikarang") || s.includes("deltamas") || s.includes("plant 2")) {
+  if (s.includes("giic") || (s.includes("plant 2") && !isAddress)) {
     return PLANT_LOCATIONS.giic.mapsUrl;
   }
 
-  return "";
+  // 6. Jika input berupa nama tempat atau teks lainnya, gunakan sebagai query Google Maps
+  return `https://maps.google.com/?q=${encodeURIComponent(str)}`;
 }
 
 /**
@@ -179,23 +187,31 @@ export function getEmbedMapsUrl(locationOrInput?: string | null): string {
     return embedMatch[1];
   }
 
-  const s = str.toLowerCase();
-  if (s.includes("kimia farma") || s.includes("galuh mas") || s.includes("klinik") || s.includes("mcu") || s.includes("rumah sakit") || s.includes("rs ") || s.includes(" hospital")) {
-    return DEFAULT_MCU_LOCATION.embedUrl;
+  // 3. Jika berupa URL maps biasa (misal https://maps.google.com/?q=...)
+  if (str.includes("google.com/maps") || str.includes("maps.google.com")) {
+    const qMatch = str.match(/[?&]q=([^&]+)/);
+    if (qMatch && qMatch[1]) {
+      return `https://maps.google.com/maps?q=${qMatch[1]}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
   }
-  if (s.includes("kiic") || s.includes("karawang") || s.includes("plant 1")) {
+
+  const s = str.toLowerCase();
+  const isAddress = s.includes("jalan") || s.includes("jl.") || s.includes("rt.") || s.includes("rw.") || s.includes("no.") || s.includes("blok");
+  const isMedical = s.includes("klinik") || s.includes("mcu") || s.includes("rumah sakit") || s.includes("rs ") || s.includes("hospital") || s.includes("medis") || s.includes("kimia farma") || s.includes("pramita") || s.includes("prodia");
+
+  // Jika input berupa alamat atau fasilitas medis, buat query embed untuk alamat tersebut!
+  if (isMedical || isAddress) {
+    return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  }
+
+  // Jika hanya kata kunci pabrik tanpa alamat
+  if (s.includes("kiic") || (s.includes("plant 1") && !isAddress)) {
     return PLANT_LOCATIONS.kiic.embedUrl;
   }
-  if (s.includes("giic") || s.includes("cikarang") || s.includes("deltamas") || s.includes("plant 2")) {
+  if (s.includes("giic") || (s.includes("plant 2") && !isAddress)) {
     return PLANT_LOCATIONS.giic.embedUrl;
   }
 
-  // Jika berupa URL maps biasa, ubah ke query embed
-  if (str.startsWith("https://maps.google.com/?q=")) {
-    const query = str.replace("https://maps.google.com/?q=", "");
-    return `https://maps.google.com/maps?q=${query}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-  }
-
-  return "";
+  return `https://maps.google.com/maps?q=${encodeURIComponent(str)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
 }
 

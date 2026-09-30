@@ -22,14 +22,64 @@ export async function POST(req: Request) {
       otherLanguages,
       cvBase64,
       cvFileSize,
+      // Extended Identity
+      nik,
+      firstName,
+      lastName,
+      gender,
+      religion,
+      ethnic,
+      heightCm,
+      weightKg,
+      marriageStatus,
+      birthPlace,
+      // Extended Address
+      addressKtp,
+      provinceKtp,
+      cityKtp,
+      districtKtp,
+      villageKtp,
+      rtKtp,
+      rwKtp,
+      streetKtp,
+      postalCodeKtp,
+      domicileSameAsKtp,
+      addressDomicile,
+      provinceDomicile,
+      cityDomicile,
+      districtDomicile,
+      villageDomicile,
+      rtDomicile,
+      rwDomicile,
+      streetDomicile,
+      postalCodeDomicile,
+      // Extended Documents
+      photoFile,
+      ktpFile,
+      kkFile,
+      ijazahFile,
+      transkripFile,
+      certNonformalFile,
+      bpjsKesehatanFile,
+      bpjsKetenagakerjaanFile,
+      npwpFile,
+      aktaFile,
+      skckFile,
+      // History & Family
+      educationHistory,
+      workHistory,
+      familyParents,
+      familySiblings,
+      familySpouse,
+      familyChildren,
     } = body;
 
-    const cleanFullName = fullName ? String(fullName).trim() : "";
+    const cleanFullName = (fullName || `${firstName || ''} ${lastName || ''}`).trim();
     const cleanEmail = email ? String(email).trim().toLowerCase() : "";
     const cleanPhone = phone ? String(phone).trim() : "";
-    const cleanSchoolName = schoolName ? String(schoolName).trim() : "";
-    const cleanMajor = major ? String(major).trim() : "";
-    const cleanLastEducation = lastEducation ? String(lastEducation).trim() : "";
+    const cleanSchoolName = schoolName ? String(schoolName).trim() : "-";
+    const cleanMajor = major ? String(major).trim() : "-";
+    const cleanLastEducation = lastEducation ? String(lastEducation).trim() : "SMA/SMK";
 
     // 1. Validation
     if (
@@ -37,14 +87,11 @@ export async function POST(req: Request) {
       !cleanEmail ||
       !cleanPhone ||
       !birthDate ||
-      !cleanLastEducation ||
-      !cleanSchoolName ||
-      !cleanMajor ||
       !jobPostingId ||
       !cvBase64
     ) {
       return NextResponse.json(
-        { error: "Mohon lengkapi seluruh formulir pendaftaran yang bertanda bintang (*)." },
+        { error: "Mohon lengkapi seluruh data wajib bertanda bintang (*), termasuk identitas, kontak, tanggal lahir, dan CV." },
         { status: 400 }
       );
     }
@@ -58,7 +105,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. File size validation (100 KB limit)
+    // 2. File size validation (100 KB limit for CV)
     let calculatedSize = cvFileSize || 0;
     if (!calculatedSize && cvBase64) {
       const base64Data = cvBase64.replace(/^data:application\/pdf;base64,/, "");
@@ -107,6 +154,54 @@ export async function POST(req: Request) {
         other_languages: otherLanguages || "-",
         cv_file: cvBase64,
         cv_file_size: calculatedSize,
+        // Extended Identity
+        nik: nik || "",
+        first_name: firstName || "",
+        last_name: lastName || "",
+        gender: gender || "",
+        religion: religion || "",
+        ethnic: ethnic || "",
+        height_cm: heightCm ? Number(heightCm) : null,
+        weight_kg: weightKg ? Number(weightKg) : null,
+        marriage_status: marriageStatus || "",
+        birth_place: birthPlace || "",
+        // Extended Address
+        address_ktp: addressKtp || "",
+        province_ktp: provinceKtp || "",
+        city_ktp: cityKtp || "",
+        district_ktp: districtKtp || "",
+        village_ktp: villageKtp || "",
+        rt_ktp: rtKtp || "",
+        rw_ktp: rwKtp || "",
+        street_ktp: streetKtp || "",
+        domicile_same_as_ktp: domicileSameAsKtp ?? true,
+        address_domicile: addressDomicile || "",
+        province_domicile: provinceDomicile || "",
+        city_domicile: cityDomicile || "",
+        district_domicile: districtDomicile || "",
+        village_domicile: villageDomicile || "",
+        rt_domicile: rtDomicile || "",
+        rw_domicile: rwDomicile || "",
+        street_domicile: streetDomicile || "",
+        // Extended Documents
+        photo_file: photoFile || "",
+        ktp_file: ktpFile || "",
+        kk_file: kkFile || "",
+        ijazah_file: ijazahFile || "",
+        transkrip_file: transkripFile || "",
+        cert_nonformal_file: certNonformalFile || "",
+        bpjs_kesehatan_file: bpjsKesehatanFile || "",
+        bpjs_ketenagakerjaan_file: bpjsKetenagakerjaanFile || "",
+        npwp_file: npwpFile || "",
+        akta_file: aktaFile || "",
+        skck_file: skckFile || "",
+        // History & Family
+        education_history: educationHistory || [],
+        work_history: workHistory || [],
+        family_parents: familyParents || {},
+        family_siblings: familySiblings || [],
+        family_spouse: familySpouse || null,
+        family_children: familyChildren || [],
       }),
     });
 

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useEffect } from 'react';
-import Script from 'next/script';
+import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/lib/LanguageContext';
 
 declare global {
@@ -14,8 +14,23 @@ declare global {
 
 export default function AutoTranslatorInit() {
   const { language } = useLanguage();
+  const pathname = usePathname();
+  const isTestPage = pathname?.startsWith('/portal/test');
 
   useEffect(() => {
+    // If on test pages, prevent translation injection and ensure default id language
+    if (isTestPage) {
+      try {
+        document.cookie = 'googtrans=/id/id; path=/;';
+        const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+        if (select && select.value !== 'id') {
+          select.value = 'id';
+          select.dispatchEvent(new Event('change'));
+        }
+      } catch (e) {}
+      return;
+    }
+
     window.googleTranslateElementInit = () => {
       if (window.google && window.google.translate) {
         new window.google.translate.TranslateElement(
@@ -28,10 +43,29 @@ export default function AutoTranslatorInit() {
         );
       }
     };
-  }, []);
+
+    if (!document.getElementById('google-translate-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  }, [isTestPage]);
 
   // Sync Google Translate dropdown whenever language changes
   useEffect(() => {
+    if (isTestPage) {
+      try {
+        const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+        if (select && select.value !== 'id') {
+          select.value = 'id';
+          select.dispatchEvent(new Event('change'));
+        }
+      } catch (e) {}
+      return;
+    }
+
     const syncTranslate = () => {
       try {
         const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
@@ -52,7 +86,7 @@ export default function AutoTranslatorInit() {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [language]);
+  }, [language, isTestPage]);
 
   return (
     <>
@@ -65,43 +99,45 @@ export default function AutoTranslatorInit() {
       />
 
       {/* Global CSS to suppress Google Translate banner, top bars, tooltips & styling clashes */}
-      <style jsx global>{`
-        .goog-te-banner-frame,
-        .goog-te-banner-frame.skiptranslate,
-        iframe.goog-te-banner-frame,
-        .VIpgJd-ZVi9od-OR9QNe-Oxf9uv,
-        .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
-        .VIpgJd-ZVi9od-aZ2wEe-OiiCO,
-        .VIpgJd-ZVi9od-SmfZ-Ouevl,
-        body > .skiptranslate:first-child,
-        #goog-gt-tt,
-        .goog-te-balloon-frame {
-          display: none !important;
-          visibility: hidden !important;
-          height: 0 !important;
-          max-height: 0 !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-        body {
-          top: 0px !important;
-          position: static !important;
-        }
-        .goog-tooltip,
-        .goog-tooltip:hover {
-          display: none !important;
-        }
-        .goog-text-highlight {
-          background-color: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-      `}</style>
-
-      {/* Load Google Translate Script asynchronously */}
-      <Script
-        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-        strategy="afterInteractive"
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            .goog-te-banner-frame,
+            .goog-te-banner-frame.skiptranslate,
+            iframe.goog-te-banner-frame,
+            .VIpgJd-ZVi9od-OR9QNe-Oxf9uv,
+            .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+            .VIpgJd-ZVi9od-aZ2wEe-OiiCO,
+            .VIpgJd-ZVi9od-SmfZ-Ouevl,
+            body > .skiptranslate:first-child,
+            #goog-gt-tt,
+            .goog-te-balloon-frame {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              max-height: 0 !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+            }
+            body {
+              top: 0px !important;
+              position: static !important;
+            }
+            .goog-tooltip,
+            .goog-tooltip:hover {
+              display: none !important;
+            }
+            .goog-text-highlight {
+              background-color: transparent !important;
+              border: none !important;
+              box-shadow: none !important;
+            }
+            .notranslate, [translate="no"], .itsp-idcard-card, #itsp-idcard-printable-container {
+              -webkit-translate: no !important;
+              translate: no !important;
+            }
+          `,
+        }}
       />
     </>
   );

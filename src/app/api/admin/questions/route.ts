@@ -26,6 +26,32 @@ export async function GET(req: Request) {
   }
 }
 
+function formatQuestionPayload(body: any) {
+  const options = Array.isArray(body.options)
+    ? JSON.stringify(body.options)
+    : typeof body.options === 'string'
+    ? body.options
+    : JSON.stringify([]);
+
+  const payload: Record<string, any> = {
+    category: body.category,
+    department: body.department || 'General',
+    question: body.question,
+    question_type: body.question_type || body.questionType || 'single_choice',
+    image_url: body.image_url !== undefined ? body.image_url : (body.imageUrl || null),
+    options: options,
+    points: Number(body.points ?? 10),
+    sort_order: Number(body.sort_order ?? body.sortOrder ?? 0),
+  };
+
+  const correctKey = body.correct_key !== undefined ? body.correct_key : body.correctKey;
+  if (correctKey !== undefined) {
+    payload.correct_key = correctKey;
+  }
+
+  return payload;
+}
+
 // POST: Create question
 export async function POST(req: Request) {
   try {
@@ -35,12 +61,23 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+    const payload = formatQuestionPayload(body);
+
     const result = await fetchRawFromBackend('/tests/questions', {
       method: 'POST',
-      body: JSON.stringify(body),
+      headers: {
+        'x-admin-id': String(admin.adminId),
+        'x-admin-role': admin.role,
+        'x-admin-department': admin.department || '',
+      },
+      body: JSON.stringify(payload),
     });
 
-    return NextResponse.json({ success: true, question: result.data || result });
+    return NextResponse.json({
+      success: true,
+      message: 'Soal ujian berhasil ditambahkan ke bank soal.',
+      question: result.data || result,
+    });
   } catch (error: any) {
     console.error('Create question error:', error);
     return NextResponse.json({ error: error.message || 'Gagal menambah soal.' }, { status: 500 });
@@ -56,15 +93,26 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, ...updateData } = body;
+    const { id, ...rest } = body;
     if (!id) return NextResponse.json({ error: 'ID soal wajib disertakan.' }, { status: 400 });
+
+    const payload = formatQuestionPayload(rest);
 
     const result = await fetchRawFromBackend(`/tests/questions/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(updateData),
+      headers: {
+        'x-admin-id': String(admin.adminId),
+        'x-admin-role': admin.role,
+        'x-admin-department': admin.department || '',
+      },
+      body: JSON.stringify(payload),
     });
 
-    return NextResponse.json({ success: true, question: result.data || result });
+    return NextResponse.json({
+      success: true,
+      message: 'Soal ujian berhasil diperbarui.',
+      question: result.data || result,
+    });
   } catch (error: any) {
     console.error('Update question error:', error);
     return NextResponse.json({ error: error.message || 'Gagal memperbarui soal.' }, { status: 500 });
@@ -83,10 +131,18 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID soal wajib disertakan.' }, { status: 400 });
 
-    await fetchRawFromBackend(`/tests/questions/${id}`, { method: 'DELETE' });
+    await fetchRawFromBackend(`/tests/questions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'x-admin-id': String(admin.adminId),
+        'x-admin-role': admin.role,
+        'x-admin-department': admin.department || '',
+      },
+    });
     return NextResponse.json({ success: true, message: 'Soal berhasil dihapus.' });
   } catch (error: any) {
     console.error('Delete question error:', error);
     return NextResponse.json({ error: error.message || 'Gagal menghapus soal.' }, { status: 500 });
   }
 }
+

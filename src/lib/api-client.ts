@@ -66,6 +66,26 @@ function dualCaseObject(obj: any): any {
   return obj;
 }
 
+function extractBackendErrorMessage(errorJson: any, status: number): string {
+  if (!errorJson) return `Backend API error (HTTP ${status})`;
+  if (typeof errorJson.detail === 'string') return errorJson.detail;
+  if (Array.isArray(errorJson.detail)) {
+    return errorJson.detail
+      .map((d: any) => {
+        if (typeof d === 'string') return d;
+        const loc = Array.isArray(d.loc) ? d.loc.filter((x: any) => x !== 'body').join('.') : '';
+        const msg = d.msg || d.message || JSON.stringify(d);
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .join(', ');
+  }
+  if (errorJson.detail && typeof errorJson.detail === 'object') {
+    return errorJson.detail.msg || errorJson.detail.message || JSON.stringify(errorJson.detail);
+  }
+  if (typeof errorJson.message === 'string') return errorJson.message;
+  return `Backend API error (HTTP ${status})`;
+}
+
 export async function fetchFromBackend<T = any>(
   endpoint: string,
   options?: RequestInit
@@ -87,7 +107,7 @@ export async function fetchFromBackend<T = any>(
 
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
-      throw new Error(errorJson.detail || errorJson.message || `Backend API error (HTTP ${res.status})`);
+      throw new Error(extractBackendErrorMessage(errorJson, res.status));
     }
 
     const json = await res.json();
@@ -121,7 +141,7 @@ export async function fetchRawFromBackend<T = any>(
 
   if (!res.ok) {
     const errorJson = await res.json().catch(() => ({}));
-    throw new Error(errorJson.detail || errorJson.message || `Backend API error (HTTP ${res.status})`);
+    throw new Error(extractBackendErrorMessage(errorJson, res.status));
   }
 
   const json = await res.json();

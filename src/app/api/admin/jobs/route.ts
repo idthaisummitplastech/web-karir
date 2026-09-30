@@ -29,7 +29,12 @@ export async function GET() {
       return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
     }
     const jobs = await fetchFromBackend("/jobs/all");
-    const enriched = (jobs || []).map((j: any) => ({ ...j, ...resolveJobStatus(j) }));
+    const enriched = (jobs || []).map((j: any) => ({
+      ...j,
+      ...resolveJobStatus(j),
+      _count: j._count || { applicants: j.applicants_count ?? j.applicantsCount ?? 0 },
+      applicantsCount: j.applicants_count ?? j.applicantsCount ?? j._count?.applicants ?? 0,
+    }));
     return NextResponse.json({ success: true, jobs: enriched });
   } catch (e: any) {
     console.error("Fetch admin jobs error:", e);

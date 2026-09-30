@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { getApplicantSession } from "@/lib/auth";
 import { fetchFromBackend } from "@/lib/api-client";
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const session = await getApplicantSession();
     if (!session) {
       return NextResponse.json({ error: "Sesi tidak valid atau telah berakhir." }, { status: 401 });
     }
+
+    const body = await req.json().catch(() => ({}));
 
     const data = await fetchFromBackend<{
       success: boolean;
@@ -15,7 +17,10 @@ export async function POST() {
       nik?: string;
     }>("/api/v1/applicants/accept-offer", {
       method: "POST",
-      body: JSON.stringify({ applicant_id: session.applicantId }),
+      body: JSON.stringify({
+        applicant_id: session.applicantId,
+        signed_contract_file: body.signed_contract_file || body.signedContractFile || body.signedFile || undefined,
+      }),
     });
 
     return NextResponse.json(data);

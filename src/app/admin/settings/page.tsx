@@ -42,6 +42,7 @@ import {
   Launch as LaunchIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
+import { getPlantMapsUrl, getEmbedMapsUrl } from '@/lib/constants';
 
 // Master Template Email Default Per Tahapan
 const DEFAULT_EMAIL_TEMPLATES: Record<
@@ -728,6 +729,15 @@ export default function AdminSettingsPage() {
                 />
                 <TextField
                   fullWidth
+                  label="Tautan Google Maps / Embed Peta Fasilitas MCU (URL / Kode <iframe...>)"
+                  value={mcuPartnerMaps}
+                  onChange={(e) => setMcuPartnerMaps(e.target.value)}
+                  placeholder="Contoh: https://maps.app.goo.gl/... atau paste kode embed iframe klinik"
+                  helperText="Dapat berupa URL share Google Maps, link biasa, atau tag iframe embed. Jika dikosongkan, sistem otomatis menghasilkan link rute dari nama & alamat klinik di atas."
+                  sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}
+                />
+                <TextField
+                  fullWidth
                   required
                   multiline
                   rows={3}
@@ -736,6 +746,46 @@ export default function AdminSettingsPage() {
                   onChange={(e) => setMcuInstructions(e.target.value)}
                   sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}
                 />
+
+                {/* Pratinjau Peta Interaktif Fasilitas MCU Rekanan */}
+                {(() => {
+                  const resolvedMaps = getPlantMapsUrl(mcuPartnerMaps || mcuPartnerAddress || mcuPartnerName);
+                  const resolvedEmbed = getEmbedMapsUrl(mcuPartnerMaps || mcuPartnerAddress || mcuPartnerName);
+                  if (!resolvedMaps && !resolvedEmbed) return null;
+                  return (
+                    <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, p: 2, bgcolor: '#F0FDF4', borderRadius: 2, border: '1.5px solid #86EFAC' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                          🗺️ Pratinjau Peta Klinik MCU (Akan Tampil di Surat Rujukan Calon Karyawan)
+                        </Typography>
+                        {resolvedMaps && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            href={resolvedMaps}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', '&:hover': { bgcolor: '#005c21' } }}
+                          >
+                            Uji Buka Google Maps &rarr;
+                          </Button>
+                        )}
+                      </Box>
+                      {resolvedEmbed && (
+                        <Box sx={{ borderRadius: 1.5, overflow: 'hidden', border: '1px solid #BBF7D0', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                          <iframe
+                            title="Pratinjau Peta Fasilitas MCU"
+                            src={resolvedEmbed}
+                            width="100%"
+                            height="260"
+                            style={{ border: 0, display: 'block' }}
+                            loading="lazy"
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })()}
               </Box>
             </CardContent>
           </Card>
@@ -1158,32 +1208,65 @@ export default function AdminSettingsPage() {
           <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden', mb: 3 }}>
             <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography sx={{ fontWeight: 700, fontSize: 14, color: '#334155' }}>
-                Pratinjau Dashboard Grafana Cloud: {observability.grafanaDashboardUrl}
+                Pratinjau Dashboard Grafana Cloud: {observability.grafanaDashboardUrl || <span style={{ color: '#94A3B8', fontStyle: 'italic', fontWeight: 500 }}>(Belum Dikonfigurasi)</span>}
               </Typography>
               <Button
                 size="small"
                 variant="text"
                 target="_blank"
-                href={observability.grafanaDashboardUrl}
+                disabled={!observability.grafanaDashboardUrl}
+                href={observability.grafanaDashboardUrl || '#'}
                 endIcon={<LaunchIcon sx={{ fontSize: 16 }} />}
                 sx={{ fontWeight: 700, color: '#018730' }}
               >
                 Buka Tab Penuh
               </Button>
             </Box>
-            <Box sx={{ width: '100%', height: 600, bgcolor: '#111217' }}>
-              <iframe
-                src={observability.grafanaDashboardUrl}
-                width="100%"
-                height="100%"
-                style={{ border: 'none' }}
-                title="Grafana Observability Dashboard"
-              />
-            </Box>
+            {observability.grafanaDashboardUrl ? (
+              <Box sx={{ position: 'relative' }}>
+                <Box sx={{ p: 1.5, bgcolor: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 600 }}>
+                    💡 <strong>Tips Tampilan:</strong> Jika pratinjau di bawah tampak hitam/kosong, hal ini disebabkan oleh kebijakan keamanan <em>X-Frame-Options (Clickjacking Protection)</em> Grafana Cloud. Gunakan tombol <strong>Buka Tab Penuh</strong> di kanan atas untuk memantau log secara langsung.
+                  </Typography>
+                </Box>
+                <Box sx={{ width: '100%', height: 600, bgcolor: '#111217' }}>
+                  <iframe
+                    src={observability.grafanaDashboardUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 'none' }}
+                    title="Grafana Observability Dashboard"
+                  />
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ width: '100%', minHeight: 380, bgcolor: '#0F172A', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4, textAlign: 'center' }}>
+                <Box sx={{ width: 64, height: 64, borderRadius: '50%', bgcolor: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                  <GrafanaIcon sx={{ color: '#10B981', fontSize: 36 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: '#F8FAFC', mb: 1 }}>
+                  URL Dashboard Grafana Cloud Belum Dikonfigurasi
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#94A3B8', maxWidth: 520, mb: 3, lineHeight: 1.6 }}>
+                  Pratinjau dashboard saat ini belum dapat ditampilkan karena URL Dashboard Grafana masih kosong. Silakan lengkapi <strong>URL Instance / Dashboard Grafana</strong> pada formulir konfigurasi di bawah ini, lalu klik <strong>Simpan Pengaturan</strong>.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    const el = document.getElementById('grafana-endpoint-config');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  sx={{ color: '#10B981', borderColor: '#10B981', fontWeight: 700, borderRadius: 2, '&:hover': { bgcolor: 'rgba(16, 185, 129, 0.08)', borderColor: '#059669' } }}
+                >
+                  Isi Konfigurasi di Bawah &darr;
+                </Button>
+              </Box>
+            )}
           </Card>
 
           {/* FORM PENGATURAN KONEKSI GRAFANA */}
-          <Card sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
+          <Card id="grafana-endpoint-config" sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
             <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 16, color: '#0F172A' }}>
                 Konfigurasi Teknis Endpoint Grafana Cloud

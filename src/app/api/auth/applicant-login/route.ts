@@ -34,9 +34,9 @@ export async function POST(req: Request) {
 
     // Sign JWT for Next.js cookie session
     const token = await signApplicantToken({
-      applicantId: applicantData.id,
+      applicantId: applicantData.id || applicantData.applicant_id,
       email: applicantData.email,
-      fullName: applicantData.fullName || applicantData.full_name,
+      fullName: applicantData.fullName || applicantData.full_name || applicantData.name || '',
       role: "applicant",
     });
 
@@ -52,11 +52,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       applicant: {
-        id: applicantData.id,
-        fullName: applicantData.fullName || applicantData.full_name,
+        id: applicantData.id || applicantData.applicant_id,
+        fullName: applicantData.fullName || applicantData.full_name || applicantData.name || '',
         email: applicantData.email,
-        currentStage: applicantData.currentStage || applicantData.current_stage,
-        stageStatus: applicantData.stageStatus || applicantData.stage_status,
+        currentStage: applicantData.currentStage || applicantData.current_stage || 1,
+        stageStatus: applicantData.stageStatus || applicantData.stage_status || 'in_progress',
       },
     });
   } catch (error: any) {

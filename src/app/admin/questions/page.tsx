@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Typography,
@@ -53,7 +54,42 @@ interface QuestionItem {
   createdAt: string;
 }
 
+function isDeptMatch(deptA?: string | null, deptB?: string | null): boolean {
+  if (!deptA || !deptB) return false;
+  const a = deptA.trim().toLowerCase();
+  const b = deptB.trim().toLowerCase();
+  if (a === b) return true;
+
+  const itAliases = [
+    'it',
+    'information technology',
+    'teknologi informasi',
+    'it & systems',
+    'it & enterprise system',
+    'sistem informasi',
+    'ti',
+  ];
+  const aIsIt = itAliases.some((k) => a === k || ` ${a} `.includes(` ${k} `) || a.startsWith(k + ' ') || a.endsWith(' ' + k));
+  const bIsIt = itAliases.some((k) => b === k || ` ${b} `.includes(` ${k} `) || b.startsWith(k + ' ') || b.endsWith(' ' + k));
+  if (aIsIt && bIsIt) return true;
+
+  const engAliases = ['engineering', 'rekayasa', 'teknik'];
+  if (engAliases.some((k) => a.includes(k)) && engAliases.some((k) => b.includes(k))) return true;
+
+  const prodAliases = ['produksi', 'production', 'manufaktur', 'manufacturing'];
+  if (prodAliases.some((k) => a.includes(k)) && prodAliases.some((k) => b.includes(k))) return true;
+
+  const qaAliases = ['quality', 'qa', 'qc', 'mutu'];
+  if (qaAliases.some((k) => a.includes(k)) && qaAliases.some((k) => b.includes(k))) return true;
+
+  const hseAliases = ['hse', 'k3', 'she', 'safety'];
+  if (hseAliases.some((k) => a.includes(k)) && hseAliases.some((k) => b.includes(k))) return true;
+
+  return a.includes(b) || b.includes(a);
+}
+
 export default function AdminQuestionsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(0); // 0: Psikotes, 1: User Test
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +97,22 @@ export default function AdminQuestionsPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Helper izin CRUD soal: User Dept hanya berwenang CRUD soal departemennya sendiri, soal departemen lain View-Only
+  const canEditQuestion = (q: QuestionItem) => {
+    if (!adminSession) return false;
+    if (adminSession.role === 'admin') return true;
+    if (adminSession.role === 'hr') {
+      return q.category === 'psikotes';
+    }
+    if (adminSession.role === 'user_dept') {
+      if (q.category !== 'user_test') return false;
+      // Soal berstatus 'General' atau tanpa departemen adalah wewenang HR / Admin, BUKAN User Dept
+      if (!q.department || q.department.trim().toLowerCase() === 'general') return false;
+      return isDeptMatch(adminSession.department, q.department);
+    }
+    return false;
+  };
 
   // Dialog Add/Edit state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,8 +157,15 @@ export default function AdminQuestionsPage() {
 
   useEffect(() => {
     fetch('/api/admin/session')
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 401) {
+          router.push('/login');
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (!data) return;
         if (data && data.success) {
           setAdminSession(data);
           if (data.role === 'user_dept') {
@@ -118,23 +177,39 @@ export default function AdminQuestionsPage() {
           } else if (data.role === 'hr') {
             setActiveTab(0); // HR default to Tab 0 (Psikotes)
           }
+        } else {
+          router.push('/login');
         }
       })
       .catch((err) => console.error('Session fetch error in questions:', err));
-  }, []);
+  }, [router]);
 
   const fetchQuestions = () => {
     setLoading(true);
     const category = activeTab === 0 ? 'psikotes' : 'user_test';
     const params = new URLSearchParams({ category });
-    if (departmentFilter !== 'All') params.append('department', departmentFilter);
+    if (departmentFilter && departmentFilter !== 'All') params.append('department', departmentFilter);
 
     fetch(`/api/admin/questions?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.questions) setQuestions(data.questions);
+      .then(async (res) => {
+        if (res.status === 401) {
+          router.push('/login');
+          return null;
+        }
+        return res.json();
       })
-      .catch((err) => console.error(err))
+      .then((data) => {
+        if (!data) return;
+        if (data.questions) {
+          setQuestions(data.questions);
+        } else if (data.error) {
+          setFeedback({ type: 'error', text: data.error });
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setFeedback({ type: 'error', text: 'Gagal memuat bank soal dari server.' });
+      })
       .finally(() => setLoading(false));
   };
 
@@ -201,6 +276,10 @@ export default function AdminQuestionsPage() {
 
   // Open Create Dialog
   const handleOpenCreate = () => {
+    if (adminSession?.role === 'user_dept' && activeTab === 0) {
+      alert('Soal Psikotes Online & Profiling Karakteristik Diri merupakan wewenang Tim HR Recruitment. User Departemen hanya berwenang menambah soal teknis kejuruan di Tab 2.');
+      return;
+    }
     setEditingId(null);
     const category =
       adminSession?.role === 'user_dept'
@@ -214,7 +293,7 @@ export default function AdminQuestionsPage() {
         ? adminSession.department
         : category === 'psikotes'
         ? 'General'
-        : 'Engineering';
+        : 'Information Technology';
     setFormDepartment(defaultDept);
     setFormQuestion('');
     setFormImageUrl(null);
@@ -233,6 +312,10 @@ export default function AdminQuestionsPage() {
 
   // Open Edit Dialog
   const handleOpenEdit = (q: QuestionItem) => {
+    if (!canEditQuestion(q)) {
+      alert(`Akses Ditolak: Soal ini milik Departemen '${q.department || 'lain'}'. Anda hanya memiliki wewenang Melihat (View Only) dan tidak berwenang mengedit soal departemen lain.`);
+      return;
+    }
     let parsedOpts: string[] = ['', '', '', ''];
     try {
       parsedOpts = JSON.parse(q.options);
@@ -300,13 +383,16 @@ export default function AdminQuestionsPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+        throw new Error(errorMsg || 'Gagal menyimpan soal ujian.');
+      }
 
-      setFeedback({ type: 'success', text: data.message });
+      setFeedback({ type: 'success', text: data.message || 'Soal ujian berhasil disimpan ke bank soal.' });
       setDialogOpen(false);
       fetchQuestions();
     } catch (err: any) {
-      alert(err.message);
+      alert(err.message || 'Terjadi kesalahan sistem.');
     } finally {
       setSubmitting(false);
     }
@@ -314,6 +400,11 @@ export default function AdminQuestionsPage() {
 
   // Delete Question
   const handleDeleteQuestion = async (id: number) => {
+    const q = questions.find((item) => item.id === id);
+    if (q && !canEditQuestion(q)) {
+      alert(`Akses Ditolak: Anda hanya berwenang menghapus soal departemen Anda sendiri (${adminSession?.department}). Soal departemen lain bersifat Hanya Lihat (View Only).`);
+      return;
+    }
     if (!confirm('Apakah Anda yakin ingin menghapus soal ujian ini dari bank soal?')) return;
 
     try {
@@ -331,6 +422,7 @@ export default function AdminQuestionsPage() {
     const uniqueDepts: string[] = Array.from(
       new Set([
         'General',
+        'Information Technology',
         'Engineering',
         'IT',
         'Produksi',
@@ -355,22 +447,34 @@ export default function AdminQuestionsPage() {
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreate}
-          sx={{
-            bgcolor: '#018730',
-            fontWeight: 700,
-            px: 3,
-            py: 1.2,
-            borderRadius: 2,
-            boxShadow: '0 4px 14px rgba(1, 135, 48, 0.25)',
-            '&:hover': { bgcolor: '#005c21' },
-          }}
+        <Tooltip
+          title={
+            adminSession?.role === 'user_dept' && activeTab === 0
+              ? 'Wewenang HR: Soal Psikotes dikelola oleh Tim HR. User Departemen hanya berwenang menambah soal teknis di Tab 2.'
+              : 'Tambah Soal Ujian Baru'
+          }
         >
-          Tambah Soal Baru
-        </Button>
+          <span>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+              disabled={adminSession?.role === 'user_dept' && activeTab === 0}
+              sx={{
+                bgcolor: '#018730',
+                fontWeight: 700,
+                px: 3,
+                py: 1.2,
+                borderRadius: 2,
+                boxShadow: '0 4px 14px rgba(1, 135, 48, 0.25)',
+                '&:hover': { bgcolor: '#005c21' },
+                '&.Mui-disabled': { bgcolor: '#E2E8F0', color: '#94A3B8' },
+              }}
+            >
+              Tambah Soal Baru
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
       {/* PENGATURAN JUMLAH SOAL YANG DIUJIKAN */}
       <Card sx={{ mb: 3, borderRadius: 2.5, border: '1.5px solid #BBF7D0', bgcolor: '#F0FDF4' }}>
@@ -484,10 +588,10 @@ export default function AdminQuestionsPage() {
                   {adminSession.role === 'admin' ? (
                     'Anda dapat membuat, menyunting, atau menghapus seluruh jenis soal untuk Psikotes Umum maupun Tes Teknis seluruh departemen pabrik.'
                   ) : adminSession.role === 'hr' ? (
-                    'HR berwenang membuat dan mengelola soal Psikotes Online serta Profiling Karakteristik Diri (soal kualitatif dengan pilihan maksimal 2 jawaban). Soal tes teknis kejuruan dikelola oleh masing-masing User Departemen.'
+                    'HR berwenang membuat dan mengelola soal Psikotes Online serta Profiling Karakteristik Diri. Anda juga dapat meninjau soal teknis departemen lain dalam mode Hanya Lihat (View Only).'
                   ) : (
                     <span>
-                      Anda berwenang mengelola Bank Soal Tes Teknis Kejuruan (Pilihan Ganda & Soal Essay/Studi Kasus Teknis) untuk lowongan departemen <strong>{adminSession.department}</strong>. Soal psikotes dikelola secara independen oleh Tim HR.
+                      Anda dapat melihat seluruh bank soal dari departemen lain (Mode Hanya Lihat / View Only). Wewenang Tambah, Edit, dan Hapus (CRUD) hanya berlaku untuk soal teknis departemen Anda (<strong>{adminSession.department}</strong>).
                     </span>
                   )}
                 </Typography>
@@ -508,12 +612,10 @@ export default function AdminQuestionsPage() {
         <Tabs
           value={activeTab}
           onChange={(_, val) => {
-            if (adminSession?.role === 'user_dept' && val === 0) {
-              alert('Soal Psikotes Online & Profiling Karakteristik Diri merupakan wewenang Tim HR Recruitment.');
-              return;
-            }
             setActiveTab(val);
-            if (adminSession?.role === 'user_dept' && adminSession.department) {
+            if (val === 0) {
+              setDepartmentFilter('All');
+            } else if (adminSession?.role === 'user_dept' && adminSession.department) {
               setDepartmentFilter(adminSession.department);
             } else {
               setDepartmentFilter('All');
@@ -531,10 +633,9 @@ export default function AdminQuestionsPage() {
             iconPosition="start"
             label={
               adminSession?.role === 'user_dept'
-                ? '1. Soal Tes Psikotes Online (Wewenang HR)'
+                ? '1. Soal Tes Psikotes Online (Mode Hanya Lihat / View Only)'
                 : '1. Soal Tes Psikotes Online & Profiling Diri (Tahap 2)'
             }
-            disabled={adminSession?.role === 'user_dept'}
           />
           <Tab
             icon={<EngineeringIcon />}
@@ -679,17 +780,36 @@ export default function AdminQuestionsPage() {
                       )}
                     </Box>
 
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="Edit Soal">
-                        <IconButton size="small" onClick={() => handleOpenEdit(q)} sx={{ color: '#0F172A' }}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Hapus Soal">
-                        <IconButton size="small" onClick={() => handleDeleteQuestion(q.id)} sx={{ color: '#EF4444' }}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {canEditQuestion(q) ? (
+                        <>
+                          <Tooltip title="Edit Soal">
+                            <IconButton size="small" onClick={() => handleOpenEdit(q)} sx={{ color: '#0F172A' }}>
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Hapus Soal">
+                            <IconButton size="small" onClick={() => handleDeleteQuestion(q.id)} sx={{ color: '#EF4444' }}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      ) : (
+                        <Tooltip title={`Soal ini milik Departemen '${q.department || 'lain'}'. Anda hanya memiliki akses Melihat (View Only).`}>
+                          <Chip
+                            size="small"
+                            icon={<ViewIcon sx={{ fontSize: '15px !important' }} />}
+                            label="Hanya Lihat (View Only)"
+                            sx={{
+                              bgcolor: '#F1F5F9',
+                              color: '#64748B',
+                              fontWeight: 700,
+                              fontSize: 11,
+                              border: '1px solid #CBD5E1',
+                            }}
+                          />
+                        </Tooltip>
+                      )}
                     </Box>
                   </Box>
 

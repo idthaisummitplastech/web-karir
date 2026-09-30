@@ -30,9 +30,11 @@ import {
   Security as SecurityIcon,
   Email as EmailIcon,
 } from '@mui/icons-material';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { language } = useLanguage();
   const [tabIndex, setTabIndex] = useState(0); // 0: Applicant, 1: Admin HR/User
 
   // Applicant fields
@@ -188,6 +190,8 @@ export default function LoginPage() {
               setAdminMfaCode('');
             }}
             variant="fullWidth"
+            className="notranslate"
+            translate="no"
             sx={{
               borderBottom: '1px solid #E2E8F0',
               bgcolor: '#F8FAFC',
@@ -195,8 +199,28 @@ export default function LoginPage() {
               '& .MuiTabs-indicator': { bgcolor: '#018730', height: 3 },
             }}
           >
-            <Tab icon={<PersonIcon />} iconPosition="start" label="Portal Pelamar" />
-            <Tab icon={<AdminIcon />} iconPosition="start" label="HR & User Admin" />
+            <Tab
+              icon={<PersonIcon />}
+              iconPosition="start"
+              className="notranslate"
+              translate="no"
+              label={
+                <span className="notranslate" translate="no">
+                  {language === 'id' ? 'Portal Pelamar' : 'Applicant Portal'}
+                </span>
+              }
+            />
+            <Tab
+              icon={<AdminIcon />}
+              iconPosition="start"
+              className="notranslate"
+              translate="no"
+              label={
+                <span className="notranslate" translate="no">
+                  {language === 'id' ? 'HR & User Admin' : 'HR & User Admin'}
+                </span>
+              }
+            />
           </Tabs>
 
           <CardContent sx={{ p: { xs: 3, md: 4 } }}>
@@ -212,7 +236,7 @@ export default function LoginPage() {
                 <form onSubmit={handleApplicantLogin}>
                   <Box sx={{ mb: 2.5 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                      Email Terdaftar Pelamar
+                      {language === 'id' ? 'Email Terdaftar Pelamar' : 'Registered Applicant Email'}
                     </Typography>
                     <TextField
                       fullWidth
@@ -235,13 +259,13 @@ export default function LoginPage() {
 
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                      Password Akun Pelamar
+                      {language === 'id' ? 'Password Akun Pelamar' : 'Applicant Account Password'}
                     </Typography>
                     <TextField
                       fullWidth
                       required
                       type={showApplicantPassword ? 'text' : 'password'}
-                      placeholder="Masukkan password akun pelamar"
+                      placeholder={language === 'id' ? 'Masukkan password akun pelamar' : 'Enter applicant password'}
                       value={applicantPassword}
                       onChange={(e) => setApplicantPassword(e.target.value)}
                       slotProps={{
@@ -262,7 +286,9 @@ export default function LoginPage() {
                       }}
                     />
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.8 }}>
-                      *Password awal digenerate otomatis saat Anda mendaftar lowongan atau diberikan/direset oleh HR Admin.
+                      {language === 'id'
+                        ? '*Password awal digenerate otomatis saat Anda mendaftar lowongan atau diberikan/direset oleh HR Admin.'
+                        : '*Initial password is generated when applying or provided/reset by HR Admin.'}
                     </Typography>
                   </Box>
 
@@ -272,6 +298,8 @@ export default function LoginPage() {
                     variant="contained"
                     size="large"
                     disabled={loading}
+                    className="notranslate"
+                    translate="no"
                     sx={{
                       bgcolor: '#018730',
                       color: '#FFFFFF',
@@ -279,10 +307,17 @@ export default function LoginPage() {
                       py: 1.3,
                       borderRadius: 2,
                       fontSize: 15,
+                      textTransform: 'none',
                       '&:hover': { bgcolor: '#005c21' },
                     }}
                   >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Masuk ke Portal Pelamar'}
+                    {loading ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      <span className="notranslate" translate="no">
+                        {language === 'id' ? 'Masuk ke Portal Pelamar' : 'Login to Applicant Portal'}
+                      </span>
+                    )}
                   </Button>
 
                   <Box sx={{ textAlign: 'center', mt: 3 }}>
@@ -401,15 +436,21 @@ export default function LoginPage() {
                           setIsMfaRequired(false);
                           setAdminMfaCode('');
                         }}
+                        className="notranslate"
+                        translate="no"
                         sx={{ py: 1.3, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
                       >
-                        Batal
+                        <span className="notranslate" translate="no">
+                          {language === 'id' ? 'Batal' : 'Cancel'}
+                        </span>
                       </Button>
                       <Button
                         type="submit"
                         fullWidth
                         variant="contained"
                         disabled={loading || adminMfaCode.length < 6}
+                        className="notranslate"
+                        translate="no"
                         sx={{
                           bgcolor: '#018730',
                           color: '#FFFFFF',
@@ -417,10 +458,17 @@ export default function LoginPage() {
                           py: 1.3,
                           borderRadius: 2,
                           fontSize: 15,
+                          textTransform: 'none',
                           '&:hover': { bgcolor: '#005c21' },
                         }}
                       >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Aktifkan MFA'}
+                        {loading ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          <span className="notranslate" translate="no">
+                            {language === 'id' ? 'Verifikasi & Aktifkan MFA' : 'Verify & Enable MFA'}
+                          </span>
+                        )}
                       </Button>
                     </Box>
                   </Box>
@@ -428,12 +476,12 @@ export default function LoginPage() {
                   <>
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                        Username / Email HR / User
+                        {language === 'id' ? 'Username / Email HR / User' : 'Username / HR Email / User'}
                       </Typography>
                       <TextField
                         fullWidth
                         required
-                        placeholder="hr.recruitment / user.engineering / admin"
+                        placeholder="admin / recruitment@itsp.co.id"
                         value={adminUsername}
                         onChange={(e) => setAdminUsername(e.target.value)}
                         slotProps={{
@@ -446,17 +494,22 @@ export default function LoginPage() {
                           },
                         }}
                       />
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>
+                        {language === 'id'
+                          ? '*Gunakan username (misal: admin) atau email resmi (@itsp.co.id).'
+                          : '*Use username (e.g. admin) or company email (@itsp.co.id).'}
+                      </Typography>
                     </Box>
 
                     <Box sx={{ mb: isMfaRequired ? 2 : 3 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                        Password
+                        {language === 'id' ? 'Password Akun Admin' : 'Password'}
                       </Typography>
                       <TextField
                         fullWidth
                         required
                         type={showAdminPassword ? 'text' : 'password'}
-                        placeholder="Masukkan password admin"
+                        placeholder={language === 'id' ? 'Masukkan password admin' : 'Enter admin password'}
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
                         slotProps={{
@@ -510,6 +563,8 @@ export default function LoginPage() {
                       variant="contained"
                       size="large"
                       disabled={loading}
+                      className="notranslate"
+                      translate="no"
                       sx={{
                         bgcolor: '#0F172A',
                         color: '#FFFFFF',
@@ -517,10 +572,19 @@ export default function LoginPage() {
                         py: 1.3,
                         borderRadius: 2,
                         fontSize: 15,
+                        textTransform: 'none',
                         '&:hover': { bgcolor: '#1E293B' },
                       }}
                     >
-                      {loading ? <CircularProgress size={24} color="inherit" /> : isMfaRequired ? 'Verifikasi & Masuk' : 'Login Admin HR / User'}
+                      {loading ? (
+                        <CircularProgress size={24} color="inherit" />
+                      ) : (
+                        <span className="notranslate" translate="no">
+                          {isMfaRequired
+                            ? (language === 'id' ? 'Verifikasi & Masuk' : 'Verify & Sign In')
+                            : (language === 'id' ? 'Login Admin HR / User' : 'Login HR Admin / User')}
+                        </span>
+                      )}
                     </Button>
                   </>
                 )}

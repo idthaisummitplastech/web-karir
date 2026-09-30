@@ -38,6 +38,7 @@ next-env.d.ts
 # scratch directory
 scratch/
 test_verify.js
+test_files/
 
 # GitHub Runner (if placed inside app)
 runner/

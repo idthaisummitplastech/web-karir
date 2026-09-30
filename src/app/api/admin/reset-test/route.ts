@@ -11,6 +11,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const result = await fetchRawFromBackend("/recruitment/reset-test", {
       method: "POST",
+      headers: {
+        "x-admin-id": String(session.adminId),
+        "x-admin-role": session.role,
+        "x-admin-department": session.department || "",
+        Authorization: `Bearer ${session.adminId}`,
+      },
       body: JSON.stringify({ ...body, admin_id: session.adminId }),
     });
     return NextResponse.json({ success: true, message: result.message || "Tes berhasil direset." });

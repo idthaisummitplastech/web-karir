@@ -81,6 +81,39 @@ export default function PsikotesExamPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Suppress browser / Google translation during exam session
+  useEffect(() => {
+    document.documentElement.setAttribute('translate', 'no');
+    document.documentElement.classList.add('notranslate');
+
+    let meta = document.querySelector('meta[name="google"][content="notranslate"]');
+    let createdMeta = false;
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'google');
+      meta.setAttribute('content', 'notranslate');
+      document.head.appendChild(meta);
+      createdMeta = true;
+    }
+
+    try {
+      document.cookie = 'googtrans=/id/id; path=/;';
+      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+      if (select && select.value !== 'id') {
+        select.value = 'id';
+        select.dispatchEvent(new Event('change'));
+      }
+    } catch (e) {}
+
+    return () => {
+      document.documentElement.removeAttribute('translate');
+      document.documentElement.classList.remove('notranslate');
+      if (createdMeta && meta?.parentNode) {
+        meta.parentNode.removeChild(meta);
+      }
+    };
+  }, []);
+
   // Timer countdown
   useEffect(() => {
     if (loading || isExamCompleted || isLockedByAntiCheat) return;
@@ -99,7 +132,10 @@ export default function PsikotesExamPage() {
     return () => clearInterval(timer);
   }, [loading, isExamCompleted, isLockedByAntiCheat]);
 
-  // Anti-Cheat Listeners (Visibility Change & Window Blur)
+  // Anti-Cheat Listeners (Visibility Change strictly for tab/window switching)
+  const lastViolationTimeRef = useRef(0);
+  const isReportingViolationRef = useRef(false);
+
   useEffect(() => {
     if (loading || isExamCompleted || isLockedByAntiCheat) return;
 
@@ -109,22 +145,22 @@ export default function PsikotesExamPage() {
       }
     };
 
-    const handleWindowBlur = () => {
-      triggerViolation();
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
     };
   }, [loading, isExamCompleted, isLockedByAntiCheat, violationsCount]);
 
   // Trigger Violation Strike
   const triggerViolation = async () => {
-    if (isExamCompleted || isLockedByAntiCheat) return;
+    if (isExamCompleted || isLockedByAntiCheat || isReportingViolationRef.current) return;
+
+    const now = Date.now();
+    // 5-second cooldown to guarantee single tab switch only ever registers 1 strike
+    if (now - lastViolationTimeRef.current < 5000) return;
+    lastViolationTimeRef.current = now;
+    isReportingViolationRef.current = true;
 
     try {
       const res = await fetch('/api/test/violation', {
@@ -134,17 +170,22 @@ export default function PsikotesExamPage() {
       });
 
       const data = await res.json();
-      const currentCount = data.violationsCount || violationsCount + 1;
+      const currentCount = data.violationsCount ?? (violationsCount + 1);
       setViolationsCount(currentCount);
 
       if (data.isLocked || currentCount >= 2) {
+        // Strike 2: Lock exam & auto submit
         setIsLockedByAntiCheat(true);
-        handleSubmitExam(true); // Force submit immediately
+        setShowWarningModal(false);
+        handleSubmitExam(true);
       } else {
+        // Strike 1: strictly show warning modal & DO NOT submit
         setShowWarningModal(true);
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      isReportingViolationRef.current = false;
     }
   };
 
@@ -195,7 +236,11 @@ export default function PsikotesExamPage() {
   const essayTotal = examMeta?.essayCount ?? questions.filter((q: any) => (q.questionType || 'single_choice') === 'essay').length;
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F8FAFC' }}>
+    <Box
+      translate="no"
+      className="notranslate"
+      sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F8FAFC' }}
+    >
       {/* Exam Header */}
       <Box sx={{ bgcolor: '#018730', color: '#FFFFFF', py: 2, px: 3, borderBottom: '3px solid #fc4509' }}>
         <Container maxWidth="lg">
@@ -212,6 +257,8 @@ export default function PsikotesExamPage() {
             {!isExamCompleted && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Chip
+                  translate="no"
+                  className="notranslate"
                   icon={<TimerIcon sx={{ color: timeLeft < 300 ? '#EF4444' : '#FFFFFF !important' }} />}
                   label={`Sisa Waktu: ${formatTime(timeLeft)}`}
                   sx={{
@@ -223,6 +270,8 @@ export default function PsikotesExamPage() {
                   }}
                 />
                 <Chip
+                  translate="no"
+                  className="notranslate"
                   label={`Pelanggaran: ${violationsCount}/2`}
                   sx={{
                     bgcolor: violationsCount > 0 ? '#FEF2F2' : 'rgba(255,255,255,0.15)',
@@ -259,11 +308,16 @@ export default function PsikotesExamPage() {
             </Button>
           </Card>
         ) : (
-          <Card sx={{ borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <Card
+            key={`q-card-${currentQ?.id ?? currentIndex}`}
+            translate="no"
+            className="notranslate"
+            sx={{ borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}
+          >
             {/* Question Progress Header */}
             <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                <Typography key={`q-hdr-${currentQ?.id ?? currentIndex}`} variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
                   Soal Nomor {currentIndex + 1} dari {totalQuestions}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
@@ -288,8 +342,8 @@ export default function PsikotesExamPage() {
 
             <CardContent sx={{ p: { xs: 3, md: 4 } }}>
               {currentQ && (
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E293B', mb: 2, lineHeight: 1.6 }}>
+                <Box key={`q-body-${currentQ.id}`}>
+                  <Typography key={`q-txt-${currentQ.id}`} variant="h6" sx={{ fontWeight: 700, color: '#1E293B', mb: 2, lineHeight: 1.6 }}>
                     {currentQ.question}
                   </Typography>
 
@@ -350,7 +404,7 @@ export default function PsikotesExamPage() {
 
                         return (
                           <Box
-                            key={optKey}
+                            key={`mc-${currentQ.id}-${optKey}-${opt}`}
                             onClick={handleToggle}
                             sx={{
                               p: 2,
@@ -372,8 +426,8 @@ export default function PsikotesExamPage() {
                                 />
                               }
                               label={
-                                <Typography variant="body1" sx={{ color: '#334155', fontWeight: isChecked ? 700 : 500 }}>
-                                  <strong>{optKey}.</strong> {opt}
+                                <Typography key={`mc-txt-${currentQ.id}-${optKey}-${opt}`} variant="body1" sx={{ color: '#334155', fontWeight: isChecked ? 700 : 500 }}>
+                                  <strong>{optKey}.</strong> <span>{opt}</span>
                                 </Typography>
                               }
                               sx={{ width: '100%', m: 0 }}
@@ -393,6 +447,7 @@ export default function PsikotesExamPage() {
                         </Typography>
                       </Box>
                       <TextField
+                        key={`essay-${currentQ.id}`}
                         fullWidth
                         multiline
                         rows={6}
@@ -404,6 +459,7 @@ export default function PsikotesExamPage() {
                     </Box>
                   ) : (
                     <RadioGroup
+                      key={`rg-${currentQ.id}`}
                       value={typeof answers[currentQ.id] === 'string' ? answers[currentQ.id] : ''}
                       onChange={(e) => setAnswers({ ...answers, [currentQ.id]: e.target.value })}
                     >
@@ -411,7 +467,7 @@ export default function PsikotesExamPage() {
                         const optKey = String.fromCharCode(65 + idx); // A, B, C, D
                         return (
                           <Box
-                            key={optKey}
+                            key={`sc-${currentQ.id}-${optKey}-${opt}`}
                             onClick={() => setAnswers({ ...answers, [currentQ.id]: optKey })}
                             sx={{
                               p: 2,
@@ -429,8 +485,8 @@ export default function PsikotesExamPage() {
                               value={optKey}
                               control={<Radio sx={{ color: '#018730', '&.Mui-checked': { color: '#018730' } }} />}
                               label={
-                                <Typography variant="body1" sx={{ color: '#334155', fontWeight: answers[currentQ.id] === optKey ? 700 : 500 }}>
-                                  <strong>{optKey}.</strong> {opt}
+                                <Typography key={`sc-txt-${currentQ.id}-${optKey}-${opt}`} variant="body1" sx={{ color: '#334155', fontWeight: answers[currentQ.id] === optKey ? 700 : 500 }}>
+                                  <strong>{optKey}.</strong> <span>{opt}</span>
                                 </Typography>
                               }
                               sx={{ width: '100%', m: 0 }}
@@ -483,7 +539,12 @@ export default function PsikotesExamPage() {
       </Container>
 
       {/* ANTI-CHEAT STRIKE 1 WARNING MODAL */}
-      <Dialog open={showWarningModal} maxWidth="xs" fullWidth>
+      <Dialog
+        open={showWarningModal}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ translate: 'no', className: 'notranslate' }}
+      >
         <DialogTitle sx={{ color: '#DC2626', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
           <WarningIcon sx={{ fontSize: 26 }} /> PERINGATAN KEAMANAN (STRIKE 1)
         </DialogTitle>
@@ -508,7 +569,13 @@ export default function PsikotesExamPage() {
       </Dialog>
 
       {/* SUBMISSION CONFIRMATION MODAL */}
-      <Dialog open={showConfirmModal} onClose={() => setShowConfirmModal(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ translate: 'no', className: 'notranslate' }}
+      >
         <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>
           Konfirmasi Pengiriman Ujian
         </DialogTitle>

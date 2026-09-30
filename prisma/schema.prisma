@@ -68,6 +68,14 @@ model Applicant {
   offeringLetter      String?             @map("offering_letter") @db.Text
   offeringSalary      String?             @map("offering_salary")
   offeringStatus      String              @default("pending") @map("offering_status") // pending, issued, accepted, rejected
+  offeringAttachment  String?             @map("offering_attachment") @db.Text
+  offeringClauses     String?             @map("offering_clauses") @db.Text
+  offeringSignerName  String?             @map("offering_signer_name")
+  offeringSignerTitle String?             @map("offering_signer_title")
+  offeringSignerSignature String?         @map("offering_signer_signature") @db.Text
+  offeringJoinDate    String?             @map("offering_join_date")
+  offeringRefNumber   String?             @map("offering_ref_number")
+  signedContractFile  String?             @map("signed_contract_file") @db.Text
   contractSignedAt    DateTime?           @map("contract_signed_at")
   
   createdAt           DateTime            @default(now()) @map("created_at")
