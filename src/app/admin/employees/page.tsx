@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Box,
@@ -76,6 +76,29 @@ const parseJsonSafe = (val: any, fallback: any) => {
   }
 };
 
+const COMPANY_DEPARTMENTS = [
+  'Assembly',
+  'Quality Assurance',
+  'Interseat',
+  'Injection',
+  'Painting',
+  'Warehouse & Delivery',
+  'Store',
+  'Rack',
+  'Production Engineering',
+  'Maintenance',
+  'Planning',
+  'HR & GA',
+  'Purchasing',
+  'Accounting & Finance',
+  'Marketing',
+  'Production',
+  'SYD & IT',
+  'HQ Office',
+  'Thai Manager',
+  'Local Manager',
+];
+
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +107,15 @@ export default function AdminEmployeesPage() {
   const [contractFilter, setContractFilter] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // Compute available department options
+  const departmentOptions = useMemo(() => {
+    const set = new Set(COMPANY_DEPARTMENTS);
+    employees.forEach((emp) => {
+      if (emp.department) set.add(emp.department);
+    });
+    return Array.from(set).sort();
+  }, [employees]);
 
   // Admin Session
   const [adminSession, setAdminSession] = useState<{
@@ -735,14 +767,11 @@ export default function AdminEmployeesPage() {
               onChange={(e) => setDeptFilter(e.target.value)}
             >
               <MenuItem value="">Semua Departemen</MenuItem>
-              <MenuItem value="Information Technology">Information Technology</MenuItem>
-              <MenuItem value="Production">Production</MenuItem>
-              <MenuItem value="Mold & Die">Mold &amp; Die</MenuItem>
-              <MenuItem value="Quality Control">Quality Control</MenuItem>
-              <MenuItem value="Human Resources & GA">Human Resources &amp; GA</MenuItem>
-              <MenuItem value="Maintenance">Maintenance</MenuItem>
-              <MenuItem value="Accounting & Finance">Accounting &amp; Finance</MenuItem>
-              <MenuItem value="Supply Chain / Warehouse">Supply Chain / Warehouse</MenuItem>
+              {departmentOptions.map((dept) => (
+                <MenuItem key={dept} value={dept}>
+                  {dept}
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
 
