@@ -946,7 +946,7 @@ export default function AdminEmployeesPage() {
       </Paper>
 
       {/* Main Table */}
-      <Paper elevation={0} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden', bgcolor: '#FFFFFF' }}>
+      <Paper elevation={0} className="notranslate" translate="no" sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden', bgcolor: '#FFFFFF' }}>
         <TableContainer>
           <Table sx={{ minWidth: 900 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
@@ -1296,7 +1296,7 @@ export default function AdminEmployeesPage() {
       </Dialog>
 
       {/* MODAL 2: EDIT LENGKAP PROFIL, FOTO & KONTRAK KARYAWAN */}
-      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="md" fullWidth className="notranslate" translate="no">
         <DialogTitle sx={{ bgcolor: '#0F172A', color: '#FFFFFF', pb: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -1814,7 +1814,7 @@ export default function AdminEmployeesPage() {
       </Dialog>
 
       {/* MODAL 3: DETAIL PROFIL LENGKAP KARYAWAN (TABS) */}
-      <Dialog open={detailModalOpen} onClose={() => setDetailModalOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={detailModalOpen} onClose={() => setDetailModalOpen(false)} maxWidth="md" fullWidth className="notranslate" translate="no">
         <DialogTitle sx={{ pb: 1, bgcolor: '#0F172A', color: '#FFFFFF' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -1825,10 +1825,10 @@ export default function AdminEmployeesPage() {
                 {selectedEmp?.full_name?.charAt(0) || 'K'}
               </Avatar>
               <Box>
-                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, color: '#FFFFFF' }}>
+                <Typography variant="h6" className="notranslate" translate="no" sx={{ fontWeight: 800, fontSize: 18, color: '#FFFFFF' }}>
                   {selectedEmp?.full_name}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#4ADE80', fontFamily: 'monospace', fontWeight: 800, fontSize: 13 }}>
+                <Typography variant="caption" className="notranslate" translate="no" sx={{ color: '#4ADE80', fontFamily: 'monospace', fontWeight: 800, fontSize: 13 }}>
                   ID: {selectedEmp?.employee_id} • {selectedEmp?.job_title} ({selectedEmp?.department}{selectedEmp?.section ? ` - ${selectedEmp.section}` : ''}){selectedEmp?.level ? ` • Level ${selectedEmp.level}` : ''}
                 </Typography>
               </Box>
@@ -2233,19 +2233,19 @@ export default function AdminEmployeesPage() {
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ayah Kandung</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                        <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {selectedEmp.father_name || '-'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ibu Kandung</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                        <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {selectedEmp.mother_name || '-'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Pasangan (Suami / Istri)</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 700, color: selectedEmp.spouse_name ? '#0284C7' : '#64748B' }}>
+                        <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: selectedEmp.spouse_name ? '#0284C7' : '#64748B' }}>
                           {selectedEmp.spouse_name || '-'}
                         </Typography>
                       </Grid>
@@ -2276,7 +2276,7 @@ export default function AdminEmployeesPage() {
                                   <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 800, textTransform: 'uppercase' }}>
                                     Anak ke-{idx + 1}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
+                                  <Typography variant="body2" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
                                     {childName}
                                   </Typography>
                                 </Box>
@@ -2312,7 +2312,7 @@ export default function AdminEmployeesPage() {
                                   <Typography variant="caption" sx={{ color: '#7E22CE', fontWeight: 800, textTransform: 'uppercase' }}>
                                     Saudara ke-{idx + 1}
                                   </Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
+                                  <Typography variant="body2" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
                                     {sibName}
                                   </Typography>
                                 </Box>
