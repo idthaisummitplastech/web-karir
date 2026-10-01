@@ -60,6 +60,7 @@ import {
   UploadFile as UploadFileIcon,
   Delete as DeleteIcon,
   DeleteSweep as DeleteSweepIcon,
+  History as HistoryIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
@@ -773,8 +774,8 @@ export default function AdminEmployeesPage() {
                 <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>ID Karyawan</TableCell>
                 <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Nama &amp; Data Pribadi</TableCell>
                 <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Jabatan &amp; Departemen</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Status Kontrak</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Masa Kontrak</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Status Hubungan Kerja</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Masa Kontrak &amp; Masa Kerja</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800, color: '#334155', py: 2 }}>Aksi</TableCell>
               </TableRow>
             </TableHead>
@@ -842,8 +843,13 @@ export default function AdminEmployeesPage() {
                             {emp.employee_id}
                           </Typography>
                         </Box>
+                        {emp.level && (
+                          <Typography variant="caption" sx={{ display: 'block', color: '#334155', fontWeight: 800, fontSize: 11, mt: 0.4 }}>
+                            Level: <strong>{emp.level}</strong>
+                          </Typography>
+                        )}
                         {isTrainee && (
-                          <Typography variant="caption" sx={{ display: 'block', color: '#D97706', fontWeight: 800, fontSize: 10, mt: 0.3 }}>
+                          <Typography variant="caption" sx={{ display: 'block', color: '#D97706', fontWeight: 800, fontSize: 10, mt: 0.2 }}>
                             PEMAGANGAN
                           </Typography>
                         )}
@@ -853,10 +859,10 @@ export default function AdminEmployeesPage() {
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                           <Avatar
-                            src={emp.photo_profile || undefined}
+                            src={emp.photo_profile || emp.photo_file || undefined}
                             sx={{
-                              width: 40,
-                              height: 40,
+                              width: 42,
+                              height: 42,
                               bgcolor: isTrainee ? '#FEF3C7' : '#E2E8F0',
                               color: isTrainee ? '#B45309' : '#0F172A',
                               fontWeight: 800,
@@ -869,8 +875,8 @@ export default function AdminEmployeesPage() {
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {emp.full_name}
                             </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                              NIK: <strong>{emp.national_id || '-'}</strong> • {emp.gender === 'male' || emp.gender === 'Laki-laki' ? 'L' : 'P'}
+                            <Typography variant="caption" sx={{ color: '#475569', display: 'block' }}>
+                              NIK: <strong>{emp.national_id || emp.nik || '-'}</strong> • <strong>{emp.age ? `${emp.age} Thn` : '-'}</strong> • {emp.gender === 'male' || emp.gender === 'Laki-laki' ? 'L' : 'P'}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748B' }}>
                               {emp.phone || emp.email || '-'}
@@ -884,62 +890,69 @@ export default function AdminEmployeesPage() {
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {emp.job_title || '-'}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                          Divisi: <strong>{emp.department || '-'}</strong>
+                        <Typography variant="caption" sx={{ color: '#475569', display: 'block' }}>
+                          Divisi: <strong>{emp.department || '-'}</strong>{emp.section ? ` • Seksi: ${emp.section}` : ''}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                          {emp.work_location || 'Plant 1 KIIC Karawang'}
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>
+                          {emp.employee_type ? `${emp.employee_type} • ` : ''}{emp.factory_office || emp.work_location || 'Plant 1 KIIC Karawang'}
                         </Typography>
                       </TableCell>
 
                       {/* Status Kontrak */}
                       <TableCell>
-                        <Chip
-                          size="small"
-                          icon={isTrainee ? <SchoolIcon sx={{ fontSize: '13px !important', color: '#B45309' }} /> : undefined}
-                          label={
-                            isPermanent
-                              ? 'PKWTT (Tetap)'
-                              : isTrainee
-                              ? 'Trainee (Magang)'
-                              : isExpat
-                              ? 'Expatriate'
-                              : emp.contract_status || 'PKWT'
-                          }
-                          sx={{
-                            fontWeight: 800,
-                            fontSize: 11,
-                            bgcolor: isPermanent
-                              ? '#DCFCE7'
-                              : isTrainee
-                              ? '#FEF3C7'
-                              : isExpat
-                              ? '#F3E8FF'
-                              : '#E0F2FE',
-                            color: isPermanent
-                              ? '#15803D'
-                              : isTrainee
-                              ? '#B45309'
-                              : isExpat
-                              ? '#7E22CE'
-                              : '#0369A1',
-                            border: `1px solid ${
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.4 }}>
+                          <Chip
+                            size="small"
+                            icon={isTrainee ? <SchoolIcon sx={{ fontSize: '13px !important', color: '#B45309' }} /> : undefined}
+                            label={
                               isPermanent
-                                ? '#86EFAC'
+                                ? 'PKWTT (Tetap)'
                                 : isTrainee
-                                ? '#FCD34D'
+                                ? (emp.contract_status || 'Trainee')
                                 : isExpat
-                                ? '#DDD6FE'
-                                : '#BAE6FD'
-                            }`,
-                          }}
-                        />
+                                ? 'Expatriate'
+                                : (emp.contract_status || 'PKWT')
+                            }
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: 11,
+                              bgcolor: isPermanent
+                                ? '#DCFCE7'
+                                : isTrainee
+                                ? '#FEF3C7'
+                                : isExpat
+                                ? '#F3E8FF'
+                                : '#E0F2FE',
+                              color: isPermanent
+                                ? '#15803D'
+                                : isTrainee
+                                ? '#B45309'
+                                : isExpat
+                                ? '#7E22CE'
+                                : '#0369A1',
+                              border: `1px solid ${
+                                isPermanent
+                                  ? '#86EFAC'
+                                  : isTrainee
+                                  ? '#FCD34D'
+                                  : isExpat
+                                  ? '#DDD6FE'
+                                  : '#BAE6FD'
+                              }`,
+                            }}
+                          />
+                          {emp.contract_sequence && emp.contract_sequence > 1 && (
+                            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, fontSize: 10 }}>
+                              Kontrak Ke-{emp.contract_sequence}
+                            </Typography>
+                          )}
+                        </Box>
                       </TableCell>
 
-                      {/* Masa Kontrak */}
+                      {/* Masa Kontrak & Masa Kerja */}
                       <TableCell>
                         <Typography variant="caption" sx={{ color: '#334155', display: 'block', fontWeight: 600 }}>
-                          Mulai: <strong>{emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID') : '-'}</strong>
+                          Mulai: <strong>{emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID') : (emp.contract_start_date ? new Date(emp.contract_start_date).toLocaleDateString('id-ID') : '-')}</strong>
                         </Typography>
                         {isPermanent ? (
                           <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 800, display: 'block' }}>
@@ -963,13 +976,18 @@ export default function AdminEmployeesPage() {
                                   height: 20,
                                   fontSize: 10,
                                   fontWeight: 800,
-                                  mt: 0.5,
+                                  mt: 0.4,
                                   bgcolor: rem <= 0 ? '#FEE2E2' : isExpiring ? '#FEF3C7' : '#F1F5F9',
                                   color: rem <= 0 ? '#B91C1C' : isExpiring ? '#B45309' : '#475569',
                                 }}
                               />
                             )}
                           </>
+                        )}
+                        {emp.years_of_service != null && (
+                          <Typography variant="caption" sx={{ color: '#018730', fontWeight: 800, display: 'block', mt: 0.4 }}>
+                            Masa Kerja: {emp.years_of_service} Thn
+                          </Typography>
                         )}
                       </TableCell>
 
@@ -1205,7 +1223,7 @@ export default function AdminEmployeesPage() {
                   {selectedEmp?.full_name}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#4ADE80', fontFamily: 'monospace', fontWeight: 800, fontSize: 13 }}>
-                  ID: {selectedEmp?.employee_id} • {selectedEmp?.job_title} ({selectedEmp?.department})
+                  ID: {selectedEmp?.employee_id} • {selectedEmp?.job_title} ({selectedEmp?.department}{selectedEmp?.section ? ` - ${selectedEmp.section}` : ''}){selectedEmp?.level ? ` • Level ${selectedEmp.level}` : ''}
                 </Typography>
               </Box>
             </Box>
@@ -1233,7 +1251,13 @@ export default function AdminEmployeesPage() {
                 <Grid container spacing={2.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>NIK KTP</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.national_id || '-'}</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.national_id || selectedEmp.nik || '-'}</Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Usia / Umur</Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                      {selectedEmp.age ? `${selectedEmp.age} Tahun` : '-'}
+                    </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jenis Kelamin</Typography>
@@ -1280,57 +1304,155 @@ export default function AdminEmployeesPage() {
 
               {/* TAB 1: KEPEGAWAIAN & KONTRAK */}
               {detailTab === 1 && (
-                <Grid container spacing={2.5}>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor ID Karyawan</Typography>
-                    <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'monospace', color: '#018730' }}>
-                      {selectedEmp.employee_id}
-                    </Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Status Hubungan Kerja</Typography>
-                    <Box sx={{ mt: 0.5 }}>
-                      <Chip label={selectedEmp.contract_status || 'PKWT'} color="primary" sx={{ fontWeight: 800 }} />
-                    </Box>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jabatan Resmi</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.job_title || '-'}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Departemen / Divisi</Typography>
-                    <Typography variant="body1">{selectedEmp.department || '-'}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Lokasi Penempatan Pabrik</Typography>
-                    <Typography variant="body1">{selectedEmp.work_location || 'Plant 1 KIIC Karawang'}</Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Gaji &amp; Kompensasi Disepakati</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 800, color: '#018730' }}>{selectedEmp.agreed_salary || '-'}</Typography>
+                <Box>
+                  {/* Top Key Performance & Career Stats */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Masa Kerja (Years of Service)
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: '#15803D', mt: 0.5 }}>
+                          {selectedEmp.years_of_service != null ? `${selectedEmp.years_of_service} Tahun` : '-'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#166534', display: 'block', mt: 0.3 }}>
+                          Akumulasi durasi pengabdian kerja
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Status Hubungan Kerja
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: '#0284C7', mt: 0.5 }}>
+                          {selectedEmp.contract_status || 'PKWT'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#0369A1', display: 'block', mt: 0.3 }}>
+                          {selectedEmp.contract_sequence ? `Tahapan Kontrak ke-${selectedEmp.contract_sequence}` : 'Status Hubungan Kerja'}
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Level &amp; Seksi Penempatan
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: '#D97706', mt: 0.5 }}>
+                          Level: {selectedEmp.level || '-'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#92400E', display: 'block', mt: 0.3 }}>
+                          Seksi: {selectedEmp.section || '-'}
+                        </Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
 
-                  <Grid size={{ xs: 12 }}><Divider sx={{ my: 1 }} /></Grid>
+                  {/* Detail Grid */}
+                  <Grid container spacing={2.5}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor ID Karyawan</Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'monospace', color: '#018730' }}>
+                        {selectedEmp.employee_id}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Kategori &amp; Lingkungan</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {selectedEmp.employee_type || 'Direct'} ({selectedEmp.factory_office || 'Factory'})
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jabatan Resmi</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.job_title || '-'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Departemen / Divisi</Typography>
+                      <Typography variant="body1">{selectedEmp.department || '-'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Lokasi Penempatan Pabrik</Typography>
+                      <Typography variant="body1">{selectedEmp.work_location || 'Plant 1 KIIC Karawang'}</Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Gaji &amp; Kompensasi Disepakati</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 800, color: '#018730' }}>{selectedEmp.agreed_salary || selectedEmp.salary || '-'}</Typography>
+                    </Grid>
 
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Mulai Kontrak (Join Date)</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {selectedEmp.join_date ? new Date(selectedEmp.join_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : '-'}
-                    </Typography>
+                    <Grid size={{ xs: 12 }}><Divider sx={{ my: 1 }} /></Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Mulai Kontrak (Join Date)</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {selectedEmp.join_date ? new Date(selectedEmp.join_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : (selectedEmp.contract_start_date ? new Date(selectedEmp.contract_start_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : '-')}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Akhir Kontrak</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : 'Karyawan Tetap (PKWTT)'}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Catatan HR &amp; Registrasi SK</Typography>
+                      <Typography variant="body2" sx={{ color: '#334155', bgcolor: '#F8FAFC', p: 1.5, borderRadius: 1.5, mt: 0.5 }}>
+                        {selectedEmp.notes || 'Tidak ada catatan tambahan.'}
+                      </Typography>
+                    </Grid>
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Akhir Kontrak</Typography>
-                    <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                      {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : 'Karyawan Tetap (PKWTT)'}
-                    </Typography>
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Catatan HR &amp; Registrasi SK</Typography>
-                    <Typography variant="body2" sx={{ color: '#334155', bgcolor: '#F8FAFC', p: 1.5, borderRadius: 1.5, mt: 0.5 }}>
-                      {selectedEmp.notes || 'Tidak ada catatan tambahan.'}
-                    </Typography>
-                  </Grid>
-                </Grid>
+
+                  {/* Contract History Table (K1 - Kn) */}
+                  {(() => {
+                    const historyList = parseJsonSafe(selectedEmp.contract_history, []);
+                    if (!historyList || !Array.isArray(historyList) || historyList.length === 0) return null;
+                    return (
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <HistoryIcon sx={{ color: '#018730', fontSize: 20 }} /> Riwayat Seluruh Tahapan Masa Kontrak (K1 - Kn)
+                        </Typography>
+                        <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #E2E8F0', borderRadius: 2, overflow: 'hidden' }}>
+                          <Table size="small">
+                            <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tahap Kontrak</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tanggal Mulai</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tanggal Selesai</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Status Tahap</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {historyList.map((item: any, idx: number) => {
+                                const isCurrent = idx === historyList.length - 1;
+                                return (
+                                  <TableRow key={idx} sx={{ bgcolor: isCurrent ? '#F0FDF4' : 'inherit' }}>
+                                    <TableCell sx={{ fontWeight: 700 }}>
+                                      {item.contract_name || `Kontrak ${item.sequence || idx + 1}`}
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.start_date ? new Date(item.start_date).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.end_date ? new Date(item.end_date).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {isCurrent ? (
+                                        <Chip size="small" label="Kontrak Berjalan / Aktif" color="success" sx={{ fontWeight: 800, fontSize: 11 }} />
+                                      ) : (
+                                        <Chip size="small" label="Selesai" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 600, fontSize: 11 }} />
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    );
+                  })()}
+                </Box>
               )}
 
               {/* TAB 2: PENDIDIKAN & PENGALAMAN */}
