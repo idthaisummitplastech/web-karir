@@ -58,6 +58,7 @@ import {
   AssignmentTurnedIn as VerifiedIcon,
   VpnKey as KeyIcon,
   ContentCopy as CopyIcon,
+  ContentPaste as ContentPasteIcon,
   Casino as DiceIcon,
   EventNote as ScheduleIcon,
   Map as MapIcon,
@@ -122,6 +123,7 @@ const DigitalSignatureCanvas: React.FC<{
 }> = ({ value, onChange }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = React.useState(false);
+  const [feedback, setFeedback] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -140,6 +142,94 @@ const DigitalSignatureCanvas: React.FC<{
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   }, [value]);
+
+  const processImageFile = (file: Blob | File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('File atau konten clipboard yang ditempelkan harus berupa gambar (PNG/JPG).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const res = evt.target?.result as string;
+      if (res) {
+        onChange(res);
+        setFeedback('✓ Gambar tanda tangan berhasil ditempelkan (Paste)!');
+        setTimeout(() => setFeedback(null), 3500);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Global Ctrl+V listener
+  React.useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const blob = items[i].getAsFile();
+          if (blob) {
+            e.preventDefault();
+            processImageFile(blob);
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [onChange]);
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (!navigator.clipboard?.read) {
+        alert('Browser Anda memerlukan pintasan keyboard: Silakan tekan Ctrl + V pada keyboard untuk menempelkan gambar tanda tangan.');
+        return;
+      }
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find((t) => t.startsWith('image/'));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          processImageFile(blob);
+          return;
+        }
+      }
+      alert('Tidak ada gambar tanda tangan di clipboard. Silakan salin (Copy / Screenshot) gambar tanda tangan terlebih dahulu, lalu tekan tombol ini atau Ctrl + V.');
+    } catch (err: any) {
+      console.warn('Clipboard read error:', err);
+      alert('Akses clipboard otomatis dibatasi oleh browser. Silakan langsung tekan pintasan keyboard: Ctrl + V untuk menempelkan gambar.');
+    }
+  };
+
+  const handleCopySignature = async () => {
+    if (!value) return;
+    try {
+      const res = await fetch(value);
+      const blob = await res.blob();
+      if (navigator.clipboard?.write) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type || 'image/png']: blob }),
+        ]);
+        setFeedback('✓ Gambar tanda tangan berhasil disalin ke clipboard!');
+        setTimeout(() => setFeedback(null), 3000);
+        return;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    setFeedback('✓ Tanda tangan aktif siap digunakan.');
+    setTimeout(() => setFeedback(null), 3000);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processImageFile(e.dataTransfer.files[0]);
+    }
+  };
 
   const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -204,23 +294,75 @@ const DigitalSignatureCanvas: React.FC<{
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     onChange('');
+    setFeedback(null);
   };
 
   return (
-    <Box sx={{ border: '1.5px dashed #018730', borderRadius: 2, p: 1.5, bgcolor: '#FFFFFF' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          ✍️ Area Kanvas Tanda Tangan Digital (Gores dengan Mouse / Stylus / Touchscreen):
+    <Box
+      tabIndex={0}
+      onDrop={handleDrop}
+      onDragOver={(e) => e.preventDefault()}
+      sx={{
+        border: '1.5px dashed #018730',
+        borderRadius: 2,
+        p: 2,
+        bgcolor: '#FFFFFF',
+        outline: 'none',
+        '&:focus': { borderColor: '#15803D', boxShadow: '0 0 0 2px rgba(1, 135, 48, 0.15)' }
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          ✍️ Area Kanvas Tanda Tangan (Gores atau Tempel/Paste Gambar):
         </Typography>
-        <Button
-          size="small"
-          color="error"
-          onClick={handleClear}
-          sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none' }}
-        >
-          Hapus / Ulangi
-        </Button>
+        <Stack direction="row" spacing={0.8} sx={{ alignItems: 'center' }}>
+          <Button
+            size="small"
+            startIcon={<ContentPasteIcon sx={{ fontSize: 14 }} />}
+            onClick={handlePasteFromClipboard}
+            sx={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'none',
+              bgcolor: '#EFF6FF',
+              color: '#1D4ED8',
+              border: '1px solid #BFDBFE',
+              '&:hover': { bgcolor: '#DBEAFE' },
+            }}
+          >
+            Paste (Ctrl + V)
+          </Button>
+
+          {value && (
+            <Button
+              size="small"
+              startIcon={<CopyIcon sx={{ fontSize: 14 }} />}
+              onClick={handleCopySignature}
+              sx={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: 'none',
+                bgcolor: '#F0FDF4',
+                color: '#15803D',
+                border: '1px solid #BBF7D0',
+                '&:hover': { bgcolor: '#DCFCE7' },
+              }}
+            >
+              Salin (Copy)
+            </Button>
+          )}
+
+          <Button
+            size="small"
+            color="error"
+            onClick={handleClear}
+            sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none' }}
+          >
+            Hapus / Ulangi
+          </Button>
+        </Stack>
       </Box>
+
       <canvas
         ref={canvasRef}
         width={500}
@@ -243,6 +385,18 @@ const DigitalSignatureCanvas: React.FC<{
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
+
+      <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="caption" sx={{ color: '#0369A1', bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', px: 1, py: 0.3, borderRadius: 1, display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 700, fontSize: 11 }}>
+          📋 <strong>Dukungan Copy-Paste:</strong> Salin gambar tanda tangan lalu tekan <strong>Ctrl + V</strong> atau klik tombol Paste.
+        </Typography>
+
+        {feedback && (
+          <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 800, fontSize: 11, bgcolor: '#DCFCE7', px: 1, py: 0.3, borderRadius: 1, border: '1px solid #86EFAC' }}>
+            {feedback}
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };
