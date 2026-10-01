@@ -61,6 +61,7 @@ import {
   Delete as DeleteIcon,
   DeleteSweep as DeleteSweepIcon,
   History as HistoryIcon,
+  PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
@@ -130,8 +131,37 @@ export default function AdminEmployeesPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailTab, setDetailTab] = useState(0);
 
-  // Edit / Renew Contract Modal State
+  // Edit Employee Profile & Contract Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editTab, setEditTab] = useState(0);
+  const [editFullName, setEditFullName] = useState('');
+  const [editNik, setEditNik] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editBirthPlace, setEditBirthPlace] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
+  const [editAge, setEditAge] = useState<number | string>('');
+  const [editGender, setEditGender] = useState('Laki-laki');
+  const [editReligion, setEditReligion] = useState('Islam');
+  const [editPhoto, setEditPhoto] = useState<string | null>(null);
+  const [editAddressKtp, setEditAddressKtp] = useState('');
+  const [editAddressDomicile, setEditAddressDomicile] = useState('');
+  const [editPlant, setEditPlant] = useState('KIIC');
+  const [editPayrollId, setEditPayrollId] = useState('');
+  const [editLevel, setEditLevel] = useState('');
+  const [editSection, setEditSection] = useState('');
+  const [editEmployeeType, setEditEmployeeType] = useState('Direct');
+  const [editPtkp, setEditPtkp] = useState('TK');
+  const [editNpwp, setEditNpwp] = useState('');
+  const [editBpjsTk, setEditBpjsTk] = useState('');
+  const [editBankAcc, setEditBankAcc] = useState('');
+  const [editFather, setEditFather] = useState('');
+  const [editMother, setEditMother] = useState('');
+  const [editSpouse, setEditSpouse] = useState('');
+  const [editFamilyCount, setEditFamilyCount] = useState<number | string>(0);
+  const [editEduLevel, setEditEduLevel] = useState('');
+  const [editMajor, setEditMajor] = useState('');
+  const [editSchool, setEditSchool] = useState('');
   const [editJoinDate, setEditJoinDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editContractStatus, setEditContractStatus] = useState('PKWT');
@@ -253,21 +283,65 @@ export default function AdminEmployeesPage() {
     }
   };
 
-  // Open Edit / Renew Contract Modal
+  // Handle Photo Profile Upload
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      alert('Ukuran foto terlalu besar. Maksimal 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setEditPhoto(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Open Edit Profile & Contract Modal
   const handleOpenEditModal = (emp: any) => {
     setSelectedEmp(emp);
-    setEditJoinDate(emp.join_date || '');
-    setEditEndDate(emp.contract_end_date || '');
+    setEditTab(0);
+    setEditFullName(emp.full_name || '');
+    setEditNik(emp.national_id || emp.nik || '');
+    setEditPhone(emp.phone || '');
+    setEditEmail(emp.email || '');
+    setEditBirthPlace(emp.birth_place || '');
+    setEditBirthDate(emp.birth_date ? emp.birth_date.substring(0, 10) : '');
+    setEditAge(emp.age ?? '');
+    setEditGender(emp.gender || 'Laki-laki');
+    setEditReligion(emp.religion || 'Islam');
+    setEditPhoto(emp.photo_profile || emp.photo_file || null);
+    setEditAddressKtp(emp.ktp_street_address || emp.address_ktp || '');
+    setEditAddressDomicile(emp.domicile_street_address || emp.address_domicile || '');
+    setEditPlant(emp.plant || 'KIIC');
+    setEditPayrollId(emp.payroll_id || '');
+    setEditLevel(emp.level || '');
+    setEditSection(emp.section || '');
+    setEditEmployeeType(emp.employee_type || 'Direct');
+    setEditPtkp(emp.ptkp_status || 'TK');
+    setEditNpwp(emp.npwp || '');
+    setEditBpjsTk(emp.bpjs_tk_no || '');
+    setEditBankAcc(emp.bank_account_no || '');
+    setEditFather(emp.father_name || '');
+    setEditMother(emp.mother_name || '');
+    setEditSpouse(emp.spouse_name || '');
+    setEditFamilyCount(emp.family_members_count ?? 0);
+    setEditEduLevel(emp.education_level || emp.last_education || '');
+    setEditMajor(emp.major || '');
+    setEditSchool(emp.institution_name || emp.school_name || '');
+    setEditJoinDate(emp.join_date ? emp.join_date.substring(0, 10) : (emp.contract_start_date ? emp.contract_start_date.substring(0, 10) : ''));
+    setEditEndDate(emp.contract_end_date ? emp.contract_end_date.substring(0, 10) : '');
     setEditContractStatus(emp.contract_status || 'PKWT');
     setEditDept(emp.department || '');
     setEditJobTitle(emp.job_title || '');
     setEditLocation(emp.work_location || 'Plant 1 KIIC Karawang');
-    setEditSalary(emp.agreed_salary || '');
+    setEditSalary(emp.agreed_salary || emp.salary || '');
     setEditNotes(emp.notes || '');
     setEditModalOpen(true);
   };
 
-  // Save Contract Update
+  // Save Complete Employee Profile Update
   const handleSaveEditContract = async () => {
     if (!selectedEmp) return;
     setUpdatingEmp(true);
@@ -276,7 +350,36 @@ export default function AdminEmployeesPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          join_date: editJoinDate,
+          full_name: editFullName,
+          nik: editNik,
+          phone: editPhone,
+          email: editEmail,
+          birth_place: editBirthPlace,
+          birth_date: editBirthDate || null,
+          age: editAge ? Number(editAge) : null,
+          gender: editGender,
+          religion: editReligion,
+          photo_profile: editPhoto,
+          address_ktp: editAddressKtp,
+          address_domicile: editAddressDomicile,
+          plant: editPlant,
+          payroll_id: editPayrollId,
+          level: editLevel,
+          section: editSection,
+          employee_type: editEmployeeType,
+          ptkp_status: editPtkp,
+          npwp: editNpwp,
+          bpjs_tk_no: editBpjsTk,
+          bank_account_no: editBankAcc,
+          father_name: editFather,
+          mother_name: editMother,
+          spouse_name: editSpouse,
+          family_members_count: editFamilyCount ? Number(editFamilyCount) : 0,
+          last_education: editEduLevel,
+          major: editMajor,
+          school_name: editSchool,
+          join_date: editJoinDate || null,
+          contract_start_date: editJoinDate || null,
           contract_end_date: editEndDate || null,
           contract_status: editContractStatus,
           department: editDept,
@@ -288,11 +391,59 @@ export default function AdminEmployeesPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setFeedback({ type: 'success', message: `Data kontrak ${selectedEmp.full_name} berhasil diperbarui.` });
+        setFeedback({ type: 'success', message: `Data profil & kontrak ${editFullName || selectedEmp.full_name} berhasil diperbarui.` });
         setEditModalOpen(false);
         fetchEmployees();
+        // Update selectedEmp in case detail modal is open
+        setSelectedEmp((prev: any) => prev ? {
+          ...prev,
+          full_name: editFullName,
+          nik: editNik,
+          national_id: editNik,
+          phone: editPhone,
+          email: editEmail,
+          birth_place: editBirthPlace,
+          birth_date: editBirthDate,
+          age: editAge,
+          gender: editGender,
+          religion: editReligion,
+          photo_profile: editPhoto || prev.photo_profile,
+          photo_file: editPhoto || prev.photo_file,
+          address_ktp: editAddressKtp,
+          ktp_street_address: editAddressKtp,
+          address_domicile: editAddressDomicile,
+          domicile_street_address: editAddressDomicile,
+          plant: editPlant,
+          payroll_id: editPayrollId,
+          level: editLevel,
+          section: editSection,
+          employee_type: editEmployeeType,
+          ptkp_status: editPtkp,
+          npwp: editNpwp,
+          bpjs_tk_no: editBpjsTk,
+          bank_account_no: editBankAcc,
+          father_name: editFather,
+          mother_name: editMother,
+          spouse_name: editSpouse,
+          family_members_count: editFamilyCount,
+          education_level: editEduLevel,
+          last_education: editEduLevel,
+          major: editMajor,
+          institution_name: editSchool,
+          school_name: editSchool,
+          join_date: editJoinDate,
+          contract_start_date: editJoinDate,
+          contract_end_date: editEndDate,
+          contract_status: editContractStatus,
+          department: editDept,
+          job_title: editJobTitle,
+          work_location: editLocation,
+          agreed_salary: editSalary,
+          salary: editSalary,
+          notes: editNotes,
+        } : null);
       } else {
-        alert(data.detail || data.error || 'Gagal memperbarui kontrak.');
+        alert(data.detail || data.error || 'Gagal memperbarui data karyawan.');
       }
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan sistem.');
@@ -1144,94 +1295,520 @@ export default function AdminEmployeesPage() {
         </DialogActions>
       </Dialog>
 
-      {/* MODAL 2: PERPANJANG / EDIT KONTRAK */}
-      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>
-          Perbarui Kontrak: {selectedEmp?.full_name} ({selectedEmp?.employee_id})
-        </DialogTitle>
-        <DialogContent dividers sx={{ p: 2.5 }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Tanggal Mulai (Join Date)"
-                slotProps={{ inputLabel: { shrink: true } }}
-                value={editJoinDate}
-                onChange={(e) => setEditJoinDate(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                type="date"
-                label="Tanggal Berakhir Kontrak"
-                slotProps={{ inputLabel: { shrink: true } }}
-                value={editEndDate}
-                onChange={(e) => setEditEndDate(e.target.value)}
-                helperText="Kosongkan jika Karyawan Tetap (PKWTT)"
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                select
-                label="Status Kontrak"
-                value={editContractStatus}
-                onChange={(e) => setEditContractStatus(e.target.value)}
+      {/* MODAL 2: EDIT LENGKAP PROFIL, FOTO & KONTRAK KARYAWAN */}
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#0F172A', color: '#FFFFFF', pb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Avatar
+                src={editPhoto || selectedEmp?.photo_profile || undefined}
+                sx={{ width: 44, height: 44, bgcolor: '#018730', fontWeight: 800, border: '2px solid #4ADE80' }}
               >
-                <MenuItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</MenuItem>
-                <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
-                <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
-                <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
-                <MenuItem value="Probation">Probation (Percobaan)</MenuItem>
-              </TextField>
+                {editFullName?.charAt(0) || selectedEmp?.full_name?.charAt(0) || 'K'}
+              </Avatar>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, color: '#FFFFFF' }}>
+                  Edit Data Karyawan: {editFullName || selectedEmp?.full_name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#4ADE80', fontFamily: 'monospace', fontWeight: 800 }}>
+                  ID Karyawan: {selectedEmp?.employee_id} • Status: {editContractStatus}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton size="small" onClick={() => setEditModalOpen(false)} sx={{ color: '#94A3B8' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#F8FAFC' }}>
+          <Tabs
+            value={editTab}
+            onChange={(_, val) => setEditTab(val)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: 2,
+              '& .MuiTabs-scrollButtons': {
+                color: '#0F172A',
+                '&.Mui-disabled': { opacity: 0.3 }
+              }
+            }}
+          >
+            <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Data Diri & Foto" />
+            <Tab icon={<BusinessIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Kepegawaian & Kontrak" />
+            <Tab icon={<HomeIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Alamat & Pendidikan" />
+            <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Pajak, Bank & Keluarga" />
+          </Tabs>
+        </Box>
+
+        <DialogContent dividers sx={{ p: 3, maxHeight: '68vh', overflowY: 'auto', bgcolor: '#FFFFFF' }}>
+          {/* TAB 0: DATA DIRI & FOTO */}
+          {editTab === 0 && (
+            <Stack spacing={2.5}>
+              {/* Upload Foto Profil */}
+              <Paper elevation={0} sx={{ p: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, flexWrap: 'wrap' }}>
+                  <Avatar
+                    src={editPhoto || undefined}
+                    sx={{ width: 72, height: 72, bgcolor: '#018730', fontWeight: 800, fontSize: 24, border: '2px solid #CBD5E1' }}
+                  >
+                    {editFullName?.charAt(0) || 'K'}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 220 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                      Foto Profil Karyawan
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1.5 }}>
+                      Format JPG/PNG/WEBP, maksimal ukuran 3 MB. Foto ini akan muncul pada kartu ID dan arsip dokumen resmi.
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="contained"
+                        component="label"
+                        size="small"
+                        startIcon={<PhotoCameraIcon />}
+                        sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', borderRadius: 1.5, '&:hover': { bgcolor: '#005c21' } }}
+                      >
+                        Pilih / Ganti Foto
+                        <input type="file" hidden accept="image/*" onChange={handlePhotoUpload} />
+                      </Button>
+                      {editPhoto && (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          color="error"
+                          onClick={() => setEditPhoto(null)}
+                          sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5 }}
+                        >
+                          Hapus Foto
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </Box>
+              </Paper>
+
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Nama Lengkap Karyawan"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    required
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="NIK KTP (16 Digit)"
+                    value={editNik}
+                    onChange={(e) => setEditNik(e.target.value)}
+                    slotProps={{ htmlInput: { maxLength: 16 } }}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Nomor Telepon / WhatsApp"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="email"
+                    label="Email Karyawan"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Tempat Lahir"
+                    value={editBirthPlace}
+                    onChange={(e) => setEditBirthPlace(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Tanggal Lahir"
+                    slotProps={{ inputLabel: { shrink: true } }}
+                    value={editBirthDate}
+                    onChange={(e) => setEditBirthDate(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Usia / Umur (Tahun)"
+                    value={editAge}
+                    onChange={(e) => setEditAge(e.target.value)}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Jenis Kelamin"
+                    value={editGender}
+                    onChange={(e) => setEditGender(e.target.value)}
+                  >
+                    <MenuItem value="Laki-laki">Laki-laki</MenuItem>
+                    <MenuItem value="Perempuan">Perempuan</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Agama"
+                    value={editReligion}
+                    onChange={(e) => setEditReligion(e.target.value)}
+                  >
+                    <MenuItem value="Islam">Islam</MenuItem>
+                    <MenuItem value="Kristen Protestan">Kristen Protestan</MenuItem>
+                    <MenuItem value="Katolik">Katolik</MenuItem>
+                    <MenuItem value="Hindu">Hindu</MenuItem>
+                    <MenuItem value="Buddha">Buddha</MenuItem>
+                    <MenuItem value="Konghucu">Konghucu</MenuItem>
+                  </TextField>
+                </Grid>
+              </Grid>
+            </Stack>
+          )}
+
+          {/* TAB 1: KEPEGAWAIAN & KONTRAK */}
+          {editTab === 1 && (
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  disabled
+                  label="ID Karyawan Resmi (Generate Sistem)"
+                  value={selectedEmp?.employee_id || '-'}
+                  helperText="Nomor urut resmi tidak dapat diubah sembarangan."
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Payroll ID / NIK Perusahaan"
+                  value={editPayrollId}
+                  onChange={(e) => setEditPayrollId(e.target.value)}
+                  placeholder="Contoh: 1530"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Lokasi Plant"
+                  value={editPlant}
+                  onChange={(e) => setEditPlant(e.target.value)}
+                >
+                  <MenuItem value="KIIC">KIIC (Karawang International Industry City)</MenuItem>
+                  <MenuItem value="Suryacipta">Suryacipta City of Industry</MenuItem>
+                  <MenuItem value="Head Office">Head Office</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Departemen"
+                  value={editDept}
+                  onChange={(e) => setEditDept(e.target.value)}
+                  placeholder="Contoh: Information Technology"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Seksi / Section"
+                  value={editSection}
+                  onChange={(e) => setEditSection(e.target.value)}
+                  placeholder="Contoh: SYD, Painting, Welding"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Level Karyawan"
+                  value={editLevel}
+                  onChange={(e) => setEditLevel(e.target.value)}
+                  placeholder="Contoh: T9, T8, Staff, Supervisor"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  label="Jabatan / Posisi"
+                  value={editJobTitle}
+                  onChange={(e) => setEditJobTitle(e.target.value)}
+                  placeholder="Contoh: Operator, Leader, Staff"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Tipe Karyawan"
+                  value={editEmployeeType}
+                  onChange={(e) => setEditEmployeeType(e.target.value)}
+                >
+                  <MenuItem value="Direct">Direct</MenuItem>
+                  <MenuItem value="Indirect">Indirect</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  select
+                  label="Status Kontrak"
+                  value={editContractStatus}
+                  onChange={(e) => setEditContractStatus(e.target.value)}
+                >
+                  <MenuItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</MenuItem>
+                  <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
+                  <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
+                  <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+                  <MenuItem value="Probation">Probation (Percobaan)</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="Gaji Disepakati / Pokok"
+                  value={editSalary}
+                  onChange={(e) => setEditSalary(e.target.value)}
+                  placeholder="Contoh: Rp 5.257.834"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Tanggal Mulai (Join Date)"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  value={editJoinDate}
+                  onChange={(e) => setEditJoinDate(e.target.value)}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Tanggal Berakhir Kontrak"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  value={editEndDate}
+                  onChange={(e) => setEditEndDate(e.target.value)}
+                  helperText="Kosongkan jika Karyawan Tetap (PKWTT)"
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Lokasi Penempatan Kerja"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                />
+              </Grid>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  label="Catatan Kontrak / Referensi Perpanjangan"
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  placeholder="Catatan dari HRD mengenai evaluasi atau perpanjangan kontrak"
+                />
+              </Grid>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Gaji Disepakati"
-                value={editSalary}
-                onChange={(e) => setEditSalary(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Departemen"
-                value={editDept}
-                onChange={(e) => setEditDept(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                label="Jabatan"
-                value={editJobTitle}
-                onChange={(e) => setEditJobTitle(e.target.value)}
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                multiline
-                rows={2}
-                label="Catatan Kontrak / Referensi Perpanjangan"
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-              />
-            </Grid>
-          </Grid>
+          )}
+
+          {/* TAB 2: ALAMAT & PENDIDIKAN */}
+          {editTab === 2 && (
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HomeIcon sx={{ color: '#018730', fontSize: 20 }} /> Alamat Tempat Tinggal
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Alamat Lengkap Sesuai KTP"
+                      value={editAddressKtp}
+                      onChange={(e) => setEditAddressKtp(e.target.value)}
+                      placeholder="Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Provinsi"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Alamat Domisili Sekarang (Tempat Tinggal)"
+                      value={editAddressDomicile}
+                      onChange={(e) => setEditAddressDomicile(e.target.value)}
+                      placeholder="Kosongkan atau ketik sama jika sesuai dengan alamat KTP"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <SchoolIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Pendidikan Terakhir
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      label="Jenjang Pendidikan Terakhir"
+                      value={editEduLevel}
+                      onChange={(e) => setEditEduLevel(e.target.value)}
+                      placeholder="Contoh: SMK, SMA, D3, S1"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      label="Nama Sekolah / Perguruan Tinggi"
+                      value={editSchool}
+                      onChange={(e) => setEditSchool(e.target.value)}
+                      placeholder="Contoh: SMKN 1 Karawang"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 4 }}>
+                    <TextField
+                      fullWidth
+                      label="Jurusan / Program Studi"
+                      value={editMajor}
+                      onChange={(e) => setEditMajor(e.target.value)}
+                      placeholder="Contoh: Teknik Mesin, TKJ, dll"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Stack>
+          )}
+
+          {/* TAB 3: PAJAK, BANK & KELUARGA */}
+          {editTab === 3 && (
+            <Stack spacing={2.5}>
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <BusinessIcon sx={{ color: '#018730', fontSize: 20 }} /> Pajak, Jaminan Sosial & Rekening Payroll
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Status Pajak PTKP"
+                      value={editPtkp}
+                      onChange={(e) => setEditPtkp(e.target.value)}
+                      placeholder="Contoh: TK, TK/0, K/0, K/1"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Nomor Pokok Wajib Pajak (NPWP)"
+                      value={editNpwp}
+                      onChange={(e) => setEditNpwp(e.target.value)}
+                      placeholder="16 digit NPWP"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Nomor BPJS TK (Jamsostek)"
+                      value={editBpjsTk}
+                      onChange={(e) => setEditBpjsTk(e.target.value)}
+                      placeholder="11 digit BPJS TK"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                    <TextField
+                      fullWidth
+                      label="Nomor Rekening Bank Payroll"
+                      value={editBankAcc}
+                      onChange={(e) => setEditBankAcc(e.target.value)}
+                      placeholder="No. Rekening BCA / Bank lain"
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <FamilyIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Data Keluarga & Tanggungan
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nama Ayah Kandung"
+                      value={editFather}
+                      onChange={(e) => setEditFather(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nama Ibu Kandung"
+                      value={editMother}
+                      onChange={(e) => setEditMother(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nama Pasangan (Suami / Istri)"
+                      value={editSpouse}
+                      onChange={(e) => setEditSpouse(e.target.value)}
+                      placeholder="Kosongkan jika belum menikah"
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Jumlah Anggota Keluarga / Tanggungan"
+                      value={editFamilyCount}
+                      onChange={(e) => setEditFamilyCount(e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Stack>
+          )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+
+        <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
           <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
           <Button
             variant="contained"
             onClick={handleSaveEditContract}
             disabled={updatingEmp}
-            sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
+            sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
           >
-            {updatingEmp ? 'Menyimpan...' : 'Simpan Perubahan'}
+            {updatingEmp ? 'Menyimpan...' : 'Simpan Seluruh Data Karyawan'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1242,7 +1819,7 @@ export default function AdminEmployeesPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Avatar
-                src={selectedEmp?.photo_profile || undefined}
+                src={selectedEmp?.photo_profile || selectedEmp?.photo_file || undefined}
                 sx={{ width: 44, height: 44, bgcolor: '#018730', fontWeight: 800 }}
               >
                 {selectedEmp?.full_name?.charAt(0) || 'K'}
@@ -1256,14 +1833,41 @@ export default function AdminEmployeesPage() {
                 </Typography>
               </Box>
             </Box>
-            <IconButton size="small" onClick={() => setDetailModalOpen(false)} sx={{ color: '#94A3B8' }}>
-              <CloseIcon />
-            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<EditIcon fontSize="small" />}
+                onClick={() => {
+                  setDetailModalOpen(false);
+                  handleOpenEditModal(selectedEmp);
+                }}
+                sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', borderRadius: 1.5, '&:hover': { bgcolor: '#005c21' } }}
+              >
+                Edit Data Lengkap
+              </Button>
+              <IconButton size="small" onClick={() => setDetailModalOpen(false)} sx={{ color: '#94A3B8' }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </Box>
         </DialogTitle>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#F8FAFC' }}>
-          <Tabs value={detailTab} onChange={(_, val) => setDetailTab(val)} sx={{ px: 2 }}>
+          <Tabs
+            value={detailTab}
+            onChange={(_, val) => setDetailTab(val)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: 2,
+              '& .MuiTabs-scrollButtons': {
+                color: '#0F172A',
+                '&.Mui-disabled': { opacity: 0.3 }
+              }
+            }}
+          >
             <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Data Diri & Alamat" />
             <Tab icon={<BusinessIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Kepegawaian & Kontrak" />
             <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Pendidikan & Pengalaman" />
@@ -1863,7 +2467,18 @@ export default function AdminEmployeesPage() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9' }}>
+        <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => {
+              setDetailModalOpen(false);
+              handleOpenEditModal(selectedEmp);
+            }}
+            sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', borderRadius: 1.5, '&:hover': { bgcolor: '#005c21' } }}
+          >
+            Edit Profil, Foto &amp; Kontrak Karyawan Ini
+          </Button>
           <Button onClick={() => setDetailModalOpen(false)}>Tutup</Button>
         </DialogActions>
       </Dialog>
