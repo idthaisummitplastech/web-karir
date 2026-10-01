@@ -69,6 +69,8 @@ function dualCaseObject(obj: any): any {
 function extractBackendErrorMessage(errorJson: any, status: number): string {
   if (!errorJson) return `Backend API error (HTTP ${status})`;
   if (typeof errorJson.detail === 'string') return errorJson.detail;
+  if (typeof errorJson.error === 'string') return errorJson.error;
+  if (typeof errorJson.message === 'string') return errorJson.message;
   if (Array.isArray(errorJson.detail)) {
     return errorJson.detail
       .map((d: any) => {
@@ -82,7 +84,6 @@ function extractBackendErrorMessage(errorJson: any, status: number): string {
   if (errorJson.detail && typeof errorJson.detail === 'object') {
     return errorJson.detail.msg || errorJson.detail.message || JSON.stringify(errorJson.detail);
   }
-  if (typeof errorJson.message === 'string') return errorJson.message;
   return `Backend API error (HTTP ${status})`;
 }
 
