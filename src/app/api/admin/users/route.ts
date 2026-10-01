@@ -34,7 +34,11 @@ export async function POST(req: Request) {
       body: JSON.stringify(body),
     });
 
-    return NextResponse.json({ success: true, user: result.data || result });
+    return NextResponse.json({
+      success: true,
+      user: result.data || result,
+      message: result.message || "Aksi berhasil diproses.",
+    });
   } catch (error: any) {
     console.error("Create user error:", error);
     return NextResponse.json({ error: error.message || "Gagal menambah pengguna." }, { status: 500 });
