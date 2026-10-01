@@ -1359,11 +1359,25 @@ export default function AdminEmployeesPage() {
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Payroll ID</Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'monospace', color: '#0284C7' }}>
+                        {selectedEmp.payroll_id || selectedEmp.employee_id}
+                      </Typography>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Kategori &amp; Lingkungan</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {selectedEmp.employee_type || 'Direct'} ({selectedEmp.factory_office || 'Factory'})
                       </Typography>
                     </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Lokasi Plant Pabrik</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700, color: '#D97706' }}>
+                        {selectedEmp.plant ? `Plant ${selectedEmp.plant}` : (selectedEmp.work_location || 'Plant 1 KIIC Karawang')}
+                      </Typography>
+                    </Grid>
+
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jabatan Resmi</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.job_title || '-'}</Typography>
@@ -1372,13 +1386,28 @@ export default function AdminEmployeesPage() {
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Departemen / Divisi</Typography>
                       <Typography variant="body1">{selectedEmp.department || '-'}</Typography>
                     </Grid>
+
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Lokasi Penempatan Pabrik</Typography>
-                      <Typography variant="body1">{selectedEmp.work_location || 'Plant 1 KIIC Karawang'}</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Status Pajak PTKP</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.ptkp_status || '-'}</Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Gaji &amp; Kompensasi Disepakati</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 800, color: '#018730' }}>{selectedEmp.agreed_salary || selectedEmp.salary || '-'}</Typography>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Rekening Bank Payroll</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {selectedEmp.bank_account_no ? `${selectedEmp.bank_name || 'BCA'} - ${selectedEmp.bank_account_no}` : '-'}
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>NPWP &amp; Jamsostek (BPJS TK)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        NPWP: {selectedEmp.npwp || selectedEmp.npwp_number || '-'} <br />
+                        BPJS TK: {selectedEmp.bpjs_tk_no || selectedEmp.bpjs_tk_number || '-'}
+                      </Typography>
                     </Grid>
 
                     <Grid size={{ xs: 12 }}><Divider sx={{ my: 1 }} /></Grid>
@@ -1517,51 +1546,199 @@ export default function AdminEmployeesPage() {
 
               {/* TAB 3: KELUARGA & KONTAK DARURAT */}
               {detailTab === 3 && (
-                <Grid container spacing={2.5}>
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#DC2626', mb: 1.5 }}>
-                      Kontak Darurat
-                    </Typography>
-                    <Paper elevation={0} sx={{ p: 2, bgcolor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 2 }}>
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nama Kontak Darurat</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800 }}>{selectedEmp.emergency_contact_name || '-'}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Hubungan</Typography>
-                          <Typography variant="body2">{selectedEmp.emergency_contact_relation || '-'}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nomor Telepon Darurat</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: '#B91C1C' }}>{selectedEmp.emergency_contact_phone || '-'}</Typography>
-                        </Grid>
-                      </Grid>
-                    </Paper>
+                <Stack spacing={2.5}>
+                  {/* Ringkasan Status Keluarga & PTKP */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Status Pajak PTKP
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: '#15803D', mt: 0.5 }}>
+                          {selectedEmp.ptkp_status || selectedEmp.marital_status || '-'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#166534' }}>
+                          Status perpajakan PPh 21
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#1E40AF', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Jumlah Anggota Keluarga
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: '#1D4ED8', mt: 0.5 }}>
+                          {selectedEmp.family_members_count != null ? `${selectedEmp.family_members_count} Jiwa` : '-'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#1E40AF' }}>
+                          Total tanggungan keluarga
+                        </Typography>
+                      </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Paper elevation={0} sx={{ p: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                        <Typography variant="caption" sx={{ color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>
+                          Status Pernikahan
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
+                          {selectedEmp.marital_status || (selectedEmp.spouse_name ? 'Menikah' : 'Belum Menikah')}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>
+                          Sesuai kartu keluarga
+                        </Typography>
+                      </Paper>
+                    </Grid>
                   </Grid>
 
-                  <Grid size={{ xs: 12 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                      Nomor Jaminan Sosial &amp; Pajak
+                  {/* Orang Tua & Pasangan */}
+                  <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <FamilyIcon sx={{ color: '#018730', fontSize: 20 }} /> Data Orang Tua &amp; Pasangan (Suami / Istri)
                     </Typography>
-                    <Paper elevation={0} sx={{ p: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
-                      <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor NPWP</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.npwp_number || '-'}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Ketenagakerjaan</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_tk_number || '-'}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Kesehatan</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_kes_number || '-'}</Typography>
-                        </Grid>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ayah Kandung</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                          {selectedEmp.father_name || '-'}
+                        </Typography>
                       </Grid>
-                    </Paper>
-                  </Grid>
-                </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ibu Kandung</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                          {selectedEmp.mother_name || '-'}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Pasangan (Suami / Istri)</Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: selectedEmp.spouse_name ? '#0284C7' : '#64748B' }}>
+                          {selectedEmp.spouse_name || '-'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+
+                  {/* Anak-Anak Kandung */}
+                  <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Data Anak Kandung
+                    </Typography>
+                    {(() => {
+                      const children = parseJsonSafe(selectedEmp.family_children, []);
+                      if (!Array.isArray(children) || children.length === 0) {
+                        return (
+                          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                            Belum ada data anak kandung yang tercatat.
+                          </Typography>
+                        );
+                      }
+                      return (
+                        <Grid container spacing={1.5}>
+                          {children.map((child: any, idx: number) => {
+                            const childName = typeof child === 'string' ? child : (child?.name || `Anak ke-${idx + 1}`);
+                            return (
+                              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                                <Box sx={{ p: 1.5, bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 1.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 800, textTransform: 'uppercase' }}>
+                                    Anak ke-{idx + 1}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
+                                    {childName}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      );
+                    })()}
+                  </Paper>
+
+                  {/* Saudara Kandung */}
+                  <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PersonIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Data Saudara Kandung (Kakak / Adik)
+                    </Typography>
+                    {(() => {
+                      const siblings = parseJsonSafe(selectedEmp.family_siblings, []);
+                      if (!Array.isArray(siblings) || siblings.length === 0) {
+                        return (
+                          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                            Tidak ada riwayat saudara kandung tercatat.
+                          </Typography>
+                        );
+                      }
+                      return (
+                        <Grid container spacing={1.5}>
+                          {siblings.map((sibling: any, idx: number) => {
+                            const sibName = typeof sibling === 'string' ? sibling : (sibling?.name || `Saudara ke-${idx + 1}`);
+                            return (
+                              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
+                                <Box sx={{ p: 1.5, bgcolor: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 1.5 }}>
+                                  <Typography variant="caption" sx={{ color: '#7E22CE', fontWeight: 800, textTransform: 'uppercase' }}>
+                                    Saudara ke-{idx + 1}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
+                                    {sibName}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            );
+                          })}
+                        </Grid>
+                      );
+                    })()}
+                  </Paper>
+
+                  {/* Informasi Rekening Bank & Jaminan Sosial */}
+                  <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
+                      Nomor Jaminan Sosial, Pajak &amp; Rekening Payroll
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Rekening Bank Payroll</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#018730' }}>
+                          {selectedEmp.bank_account_no ? `${selectedEmp.bank_name || 'BCA'} - ${selectedEmp.bank_account_no}` : '-'}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor NPWP</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.npwp || selectedEmp.npwp_number || '-'}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS TK (Jamsostek)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_tk_no || selectedEmp.bpjs_tk_number || '-'}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Kesehatan</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_kes_number || '-'}</Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+
+                  {/* Kontak Darurat */}
+                  <Paper elevation={0} sx={{ p: 2, bgcolor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#DC2626', mb: 1.5 }}>
+                      Kontak Darurat Resmi
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nama Kontak Darurat</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800 }}>{selectedEmp.emergency_contact_name || '-'}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Hubungan</Typography>
+                        <Typography variant="body2">{selectedEmp.emergency_contact_relation || '-'}</Typography>
+                      </Grid>
+                      <Grid size={{ xs: 12, sm: 4 }}>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nomor Telepon Darurat</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#B91C1C' }}>{selectedEmp.emergency_contact_phone || '-'}</Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Stack>
               )}
 
               {/* TAB 4: BERKAS DOKUMEN PENDAFTARAN */}
