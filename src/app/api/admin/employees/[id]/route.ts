@@ -67,8 +67,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getAdminSession();
-    if (!session || session.role !== "admin") {
-      return NextResponse.json({ error: "Hanya Super Administrator yang berhak menghapus data karyawan." }, { status: 403, headers: ANTI_CACHE_HEADERS });
+    if (!session || (session.role !== "admin" && session.role !== "hr")) {
+      return NextResponse.json({ error: "Akses ditolak. Hanya Administrator atau HR yang berhak menghapus data karyawan." }, { status: 403, headers: ANTI_CACHE_HEADERS });
     }
 
     const { id } = await params;

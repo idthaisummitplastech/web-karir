@@ -82,3 +82,27 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const session = await getAdminSession();
+    if (!session || (session.role !== "admin" && session.role !== "hr")) {
+      return NextResponse.json({ error: "Akses ditolak. Hanya Administrator atau HR yang berhak mereset data karyawan." }, { status: 403, headers: ANTI_CACHE_HEADERS });
+    }
+
+    const result = await fetchFromBackend<any>("/recruitment/employees/all", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.adminId}`,
+      },
+    });
+
+    return NextResponse.json(result, { headers: ANTI_CACHE_HEADERS });
+  } catch (error: any) {
+    console.error("Delete all employees error:", error);
+    return NextResponse.json(
+      { error: error.message || "Gagal menghapus seluruh data karyawan." },
+      { status: 500, headers: ANTI_CACHE_HEADERS }
+    );
+  }
+}

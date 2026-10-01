@@ -33,6 +33,8 @@ import {
   Tab,
   Avatar,
   Stack,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -55,6 +57,9 @@ import {
   Description as DocIcon,
   CheckCircle as CheckCircleIcon,
   WarningAmber as WarningIcon,
+  UploadFile as UploadFileIcon,
+  Delete as DeleteIcon,
+  DeleteSweep as DeleteSweepIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
@@ -111,6 +116,23 @@ export default function AdminEmployeesPage() {
   const [seqSampleId, setSeqSampleId] = useState('');
   const [savingSeq, setSavingSeq] = useState(false);
   const [seqFeedback, setSeqFeedback] = useState<string | null>(null);
+
+  // Import Excel Modal State
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [includeOut, setIncludeOut] = useState(false);
+  const [replaceAll, setReplaceAll] = useState(false);
+  const [importing, setImporting] = useState(false);
+
+  // Delete All Employees Modal State
+  const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
+  const [confirmDeleteAllText, setConfirmDeleteAllText] = useState('');
+  const [deletingAll, setDeletingAll] = useState(false);
+
+  // Single Delete Employee Modal State
+  const [deleteSingleModalOpen, setDeleteSingleModalOpen] = useState(false);
+  const [empToDelete, setEmpToDelete] = useState<any | null>(null);
+  const [deletingSingle, setDeletingSingle] = useState(false);
 
   // General Notification
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -246,6 +268,104 @@ export default function AdminEmployeesPage() {
     }
   };
 
+  // Handle Import Excel Master
+  const handleImportExcel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) {
+      alert('Pilih file Excel (.xlsx atau .xls) terlebih dahulu.');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('include_out', String(includeOut));
+      formData.append('replace_all', String(replaceAll));
+
+      const res = await fetch('/api/admin/employees/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedback({
+          type: 'success',
+          message: data.message || 'Berhasil mengimpor data karyawan.',
+        });
+        setImportModalOpen(false);
+        setImportFile(null);
+        fetchEmployees();
+      } else {
+        alert(data.detail || data.error || 'Gagal mengimpor file Excel.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan saat mengunggah file.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Handle Delete All Employees
+  const handleDeleteAllEmployees = async () => {
+    if (confirmDeleteAllText !== 'HAPUS SEMUA') {
+      alert('Ketik "HAPUS SEMUA" untuk mengonfirmasi penghapusan seluruh data.');
+      return;
+    }
+
+    setDeletingAll(true);
+    try {
+      const res = await fetch('/api/admin/employees', {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedback({
+          type: 'success',
+          message: data.message || 'Seluruh data karyawan berhasil dihapus.',
+        });
+        setDeleteAllModalOpen(false);
+        setConfirmDeleteAllText('');
+        fetchEmployees();
+      } else {
+        alert(data.detail || data.error || 'Gagal menghapus seluruh data karyawan.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan sistem.');
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
+  // Handle Single Delete Employee
+  const handleDeleteSingleEmployee = async () => {
+    if (!empToDelete) return;
+
+    setDeletingSingle(true);
+    try {
+      const res = await fetch(`/api/admin/employees/${empToDelete.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedback({
+          type: 'success',
+          message: data.message || `Data karyawan ${empToDelete.full_name} berhasil dihapus.`,
+        });
+        setDeleteSingleModalOpen(false);
+        setEmpToDelete(null);
+        fetchEmployees();
+      } else {
+        alert(data.detail || data.error || 'Gagal menghapus data karyawan.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Terjadi kesalahan sistem.');
+    } finally {
+      setDeletingSingle(false);
+    }
+  };
+
   // Export Employees to CSV / Excel with UTF-8 BOM
   const handleExportEmployees = () => {
     if (employees.length === 0) {
@@ -365,6 +485,7 @@ export default function AdminEmployeesPage() {
   const totalEmployees = employees.length;
   const totalPkwt = employees.filter((e) => e.contract_status === 'PKWT').length;
   const totalPkwtt = employees.filter((e) => e.contract_status === 'PKWTT').length;
+  const totalTrainee = employees.filter((e) => e.contract_status === 'Trainee').length;
   const expiringSoon = employees.filter((e) => {
     if (e.contract_status !== 'PKWT' || !e.contract_end_date) return false;
     const rem = getDaysRemaining(e.contract_end_date);
@@ -387,7 +508,29 @@ export default function AdminEmployeesPage() {
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+        <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setImportFile(null);
+              setIncludeOut(false);
+              setReplaceAll(false);
+              setImportModalOpen(true);
+            }}
+            startIcon={<UploadFileIcon />}
+            sx={{
+              fontWeight: 800,
+              textTransform: 'none',
+              borderRadius: 2,
+              bgcolor: '#018730',
+              color: '#FFFFFF',
+              boxShadow: '0 2px 8px rgba(1, 135, 48, 0.3)',
+              '&:hover': { bgcolor: '#005c21' },
+            }}
+          >
+            Import Excel Master
+          </Button>
+
           <Button
             variant="outlined"
             onClick={handleOpenSequenceModal}
@@ -406,20 +549,41 @@ export default function AdminEmployeesPage() {
           </Button>
 
           <Button
-            variant="contained"
+            variant="outlined"
             onClick={handleExportEmployees}
             startIcon={<DownloadIcon />}
             sx={{
-              fontWeight: 800,
+              fontWeight: 700,
               textTransform: 'none',
               borderRadius: 2,
-              bgcolor: '#018730',
-              color: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(1, 135, 48, 0.3)',
-              '&:hover': { bgcolor: '#005c21' },
+              borderColor: '#CBD5E1',
+              color: '#334155',
+              bgcolor: '#FFFFFF',
+              '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
             }}
           >
             Export Excel / CSV
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              setConfirmDeleteAllText('');
+              setDeleteAllModalOpen(true);
+            }}
+            startIcon={<DeleteSweepIcon />}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              borderRadius: 2,
+              borderColor: '#FECACA',
+              color: '#DC2626',
+              bgcolor: '#FEF2F2',
+              '&:hover': { bgcolor: '#FEE2E2', borderColor: '#F87171' },
+            }}
+          >
+            Hapus Semua Data
           </Button>
 
           <Tooltip title="Muat Ulang Data">
@@ -437,60 +601,76 @@ export default function AdminEmployeesPage() {
       )}
 
       {/* KPI Stats Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0' }}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0', height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                Total Karyawan
+                Total Personel
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
                 {totalEmployees}
               </Typography>
               <Typography variant="caption" sx={{ color: '#018730', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                Terdaftar di database HR
+                Pegawai &amp; Trainee aktif
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0' }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #BBF7D0', bgcolor: '#F0FDF4', height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                Karyawan Kontrak (PKWT)
-              </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0284C7', mt: 0.5 }}>
-                {totalPkwt}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                Dengan batas masa kerja
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0' }}>
-            <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
+              <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
                 Karyawan Tetap (PKWTT)
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: '#059669', mt: 0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#15803D', mt: 0.5 }}>
                 {totalPkwtt}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600, mt: 0.5, display: 'block' }}>
+              <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 600, mt: 0.5, display: 'block' }}>
                 Permanen PT ITSP
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0' }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #BAE6FD', bgcolor: '#F0F9FF', height: '100%' }}>
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
-                Kontrak Segera Habis (&le; 30 Hari)
+              <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 700, textTransform: 'uppercase' }}>
+                Karyawan Kontrak (PKWT)
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0284C7', mt: 0.5 }}>
+                {totalPkwt}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#0284C7', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                Dengan masa kontrak
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #FDE68A', bgcolor: '#FFFBEB', height: '100%' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, textTransform: 'uppercase' }}>
+                Peserta Magang (Trainee)
+              </Typography>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: '#D97706', mt: 0.5 }}>
+                {totalTrainee}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                Program Pemagangan
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #FECACA', bgcolor: expiringSoon > 0 ? '#FEF2F2' : '#FFFFFF', height: '100%' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700, textTransform: 'uppercase' }}>
+                Kontrak Habis (&le; 30 Hari)
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, color: expiringSoon > 0 ? '#DC2626' : '#64748B', mt: 0.5 }}>
                 {expiringSoon}
@@ -505,7 +685,7 @@ export default function AdminEmployeesPage() {
 
       {/* Filter & Search Bar */}
       <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: 2.5, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
           <Grid size={{ xs: 12, md: 5 }}>
             <TextField
               fullWidth
@@ -513,12 +693,14 @@ export default function AdminEmployeesPage() {
               placeholder="Cari nama karyawan, nomor ID (1530.09.26), NIK KTP, atau jabatan..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#94A3B8' }} />
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: '#94A3B8' }} />
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
           </Grid>
@@ -554,10 +736,10 @@ export default function AdminEmployeesPage() {
               onChange={(e) => setContractFilter(e.target.value)}
             >
               <MenuItem value="">Semua Status Hubungan Kerja</MenuItem>
-              <MenuItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</MenuItem>
               <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
-              <MenuItem value="Probation">Probation (Percobaan)</MenuItem>
-              <MenuItem value="Internship">Magang / Internship</MenuItem>
+              <MenuItem value="PKWT">PKWT (Karyawan Kontrak)</MenuItem>
+              <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
+              <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
             </TextField>
           </Grid>
         </Grid>
@@ -611,7 +793,9 @@ export default function AdminEmployeesPage() {
                 employees.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((emp) => {
                   const rem = getDaysRemaining(emp.contract_end_date);
                   const isPermanent = emp.contract_status === 'PKWTT';
-                  const isExpiring = !isPermanent && rem !== null && rem <= 30;
+                  const isTrainee = emp.contract_status === 'Trainee';
+                  const isExpat = emp.contract_status === 'Expatriate';
+                  const isExpiring = !isPermanent && !isTrainee && rem !== null && rem <= 30;
 
                   return (
                     <TableRow key={emp.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -622,19 +806,28 @@ export default function AdminEmployeesPage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: 0.8,
-                            bgcolor: '#0F172A',
-                            color: '#FFFFFF',
+                            bgcolor: isTrainee ? '#FFFBEB' : '#0F172A',
+                            color: isTrainee ? '#B45309' : '#FFFFFF',
                             borderRadius: 1.5,
                             px: 1.2,
                             py: 0.6,
-                            border: '1px solid #334155',
+                            border: `1px solid ${isTrainee ? '#FCD34D' : '#334155'}`,
                           }}
                         >
-                          <BadgeIcon sx={{ color: '#4ADE80', fontSize: 16 }} />
+                          {isTrainee ? (
+                            <SchoolIcon sx={{ color: '#D97706', fontSize: 16 }} />
+                          ) : (
+                            <BadgeIcon sx={{ color: '#4ADE80', fontSize: 16 }} />
+                          )}
                           <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: 'monospace', letterSpacing: '0.8px' }}>
                             {emp.employee_id}
                           </Typography>
                         </Box>
+                        {isTrainee && (
+                          <Typography variant="caption" sx={{ display: 'block', color: '#D97706', fontWeight: 800, fontSize: 10, mt: 0.3 }}>
+                            PEMAGANGAN
+                          </Typography>
+                        )}
                       </TableCell>
 
                       {/* Nama & Data Pribadi */}
@@ -645,8 +838,8 @@ export default function AdminEmployeesPage() {
                             sx={{
                               width: 40,
                               height: 40,
-                              bgcolor: '#E2E8F0',
-                              color: '#0F172A',
+                              bgcolor: isTrainee ? '#FEF3C7' : '#E2E8F0',
+                              color: isTrainee ? '#B45309' : '#0F172A',
                               fontWeight: 800,
                               fontSize: 14,
                             }}
@@ -684,13 +877,42 @@ export default function AdminEmployeesPage() {
                       <TableCell>
                         <Chip
                           size="small"
-                          label={emp.contract_status || 'PKWT'}
+                          icon={isTrainee ? <SchoolIcon sx={{ fontSize: '13px !important', color: '#B45309' }} /> : undefined}
+                          label={
+                            isPermanent
+                              ? 'PKWTT (Tetap)'
+                              : isTrainee
+                              ? 'Trainee (Magang)'
+                              : isExpat
+                              ? 'Expatriate'
+                              : emp.contract_status || 'PKWT'
+                          }
                           sx={{
                             fontWeight: 800,
                             fontSize: 11,
-                            bgcolor: isPermanent ? '#DCFCE7' : '#E0F2FE',
-                            color: isPermanent ? '#15803D' : '#0369A1',
-                            border: `1px solid ${isPermanent ? '#86EFAC' : '#BAE6FD'}`,
+                            bgcolor: isPermanent
+                              ? '#DCFCE7'
+                              : isTrainee
+                              ? '#FEF3C7'
+                              : isExpat
+                              ? '#F3E8FF'
+                              : '#E0F2FE',
+                            color: isPermanent
+                              ? '#15803D'
+                              : isTrainee
+                              ? '#B45309'
+                              : isExpat
+                              ? '#7E22CE'
+                              : '#0369A1',
+                            border: `1px solid ${
+                              isPermanent
+                                ? '#86EFAC'
+                                : isTrainee
+                                ? '#FCD34D'
+                                : isExpat
+                                ? '#DDD6FE'
+                                : '#BAE6FD'
+                            }`,
                           }}
                         />
                       </TableCell>
@@ -703,6 +925,10 @@ export default function AdminEmployeesPage() {
                         {isPermanent ? (
                           <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 800, display: 'block' }}>
                             Karyawan Tetap
+                          </Typography>
+                        ) : isTrainee ? (
+                          <Typography variant="caption" sx={{ color: '#B45309', fontWeight: 700, display: 'block' }}>
+                            Selesai Magang: <strong>{emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}</strong>
                           </Typography>
                         ) : (
                           <>
@@ -730,7 +956,7 @@ export default function AdminEmployeesPage() {
 
                       {/* Aksi */}
                       <TableCell align="right">
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                        <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                           <Tooltip title="Lihat Profil Lengkap & Dokumen Berkas">
                             <IconButton
                               size="small"
@@ -752,6 +978,19 @@ export default function AdminEmployeesPage() {
                               sx={{ color: '#018730' }}
                             >
                               <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title="Hapus Karyawan Ini">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEmpToDelete(emp);
+                                setDeleteSingleModalOpen(true);
+                              }}
+                              sx={{ color: '#DC2626', '&:hover': { bgcolor: '#FEE2E2' } }}
+                            >
+                              <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </Stack>
@@ -851,7 +1090,7 @@ export default function AdminEmployeesPage() {
                 fullWidth
                 type="date"
                 label="Tanggal Mulai (Join Date)"
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
                 value={editJoinDate}
                 onChange={(e) => setEditJoinDate(e.target.value)}
               />
@@ -861,7 +1100,7 @@ export default function AdminEmployeesPage() {
                 fullWidth
                 type="date"
                 label="Tanggal Berakhir Kontrak"
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
                 value={editEndDate}
                 onChange={(e) => setEditEndDate(e.target.value)}
                 helperText="Kosongkan jika Karyawan Tetap (PKWTT)"
@@ -877,8 +1116,9 @@ export default function AdminEmployeesPage() {
               >
                 <MenuItem value="PKWT">PKWT (Kontrak Waktu Tertentu)</MenuItem>
                 <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
+                <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
+                <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
                 <MenuItem value="Probation">Probation (Percobaan)</MenuItem>
-                <MenuItem value="Internship">Magang / Internship</MenuItem>
               </TextField>
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -1278,6 +1518,247 @@ export default function AdminEmployeesPage() {
 
         <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9' }}>
           <Button onClick={() => setDetailModalOpen(false)}>Tutup</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL 3: IMPORT EXCEL MASTER KARYAWAN */}
+      <Dialog open={importModalOpen} onClose={() => !importing && setImportModalOpen(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleImportExcel}>
+          <DialogTitle sx={{ bgcolor: '#018730', color: '#FFFFFF', pb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <UploadFileIcon />
+                <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                  Import Data Master Karyawan
+                </Typography>
+              </Box>
+              <IconButton onClick={() => setImportModalOpen(false)} sx={{ color: '#FFFFFF' }} disabled={importing}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ p: 3 }}>
+            <Typography variant="body2" sx={{ color: '#475569', mb: 2.5, mt: 1 }}>
+              Unggah file Excel master karyawan resmi (format <code>.xlsx</code> atau <code>.xls</code>). Sistem akan membaca sheet <strong>ITSP</strong> dan <strong>Trainee</strong> secara otomatis.
+            </Typography>
+
+            <Box
+              sx={{
+                border: '2px dashed #CBD5E1',
+                borderRadius: 2.5,
+                p: 3,
+                textAlign: 'center',
+                bgcolor: '#F8FAFC',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': { borderColor: '#018730', bgcolor: '#F0FDF4' },
+              }}
+              onClick={() => document.getElementById('excel-file-input')?.click()}
+            >
+              <input
+                id="excel-file-input"
+                type="file"
+                accept=".xlsx, .xls"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setImportFile(e.target.files[0]);
+                  }
+                }}
+              />
+              <UploadFileIcon sx={{ fontSize: 48, color: importFile ? '#018730' : '#94A3B8', mb: 1 }} />
+              {importFile ? (
+                <>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                    {importFile.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748B' }}>
+                    Ukuran: {(importFile.size / 1024 / 1024).toFixed(2)} MB • Klik untuk ganti file
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155' }}>
+                    Klik untuk memilih file Excel (.xlsx)
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                    Mendukung file Master Employee PT ITSP
+                  </Typography>
+                </>
+              )}
+            </Box>
+
+            <Box sx={{ mt: 3, p: 2, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
+                Opsi Tambahan Import:
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={includeOut}
+                    onChange={(e) => setIncludeOut(e.target.checked)}
+                    color="success"
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
+                      Sertakan Data Mantan Karyawan / Alumni (Sheet &quot;Out&quot;)
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B' }}>
+                      Status karyawan ini akan ditandai sebagai &quot;resign&quot; di sistem.
+                    </Typography>
+                  </Box>
+                }
+                sx={{ alignItems: 'flex-start', mb: 1 }}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={replaceAll}
+                    onChange={(e) => setReplaceAll(e.target.checked)}
+                    color="error"
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#DC2626' }}>
+                      Bersihkan / Reset Semua Data Lama Terlebih Dahulu
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B' }}>
+                      Pilih opsi ini jika Anda ingin mengosongkan database terlebih dahulu dan menimpa dengan file baru.
+                    </Typography>
+                  </Box>
+                }
+                sx={{ alignItems: 'flex-start' }}
+              />
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ p: 2.5, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
+            <Button onClick={() => setImportModalOpen(false)} disabled={importing} sx={{ color: '#64748B' }}>
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!importFile || importing}
+              startIcon={importing ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <UploadFileIcon />}
+              sx={{ bgcolor: '#018730', fontWeight: 800, '&:hover': { bgcolor: '#005c21' } }}
+            >
+              {importing ? 'Mengimpor Data...' : 'Mulai Import Data'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* MODAL 4: HAPUS SELURUH DATA KARYAWAN */}
+      <Dialog open={deleteAllModalOpen} onClose={() => !deletingAll && setDeleteAllModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#DC2626', color: '#FFFFFF', pb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DeleteSweepIcon />
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                Konfirmasi Hapus Seluruh Data Karyawan
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setDeleteAllModalOpen(false)} sx={{ color: '#FFFFFF' }} disabled={deletingAll}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 3 }}>
+          <Alert severity="error" sx={{ mb: 2.5, mt: 1, borderRadius: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+              PERINGATAN KRUSIAL!
+            </Typography>
+            Tindakan ini akan <strong>menghapus permanen seluruh ({employees.length}) data karyawan</strong> dari database sistem. Data yang sudah dihapus tidak dapat dipulihkan.
+          </Alert>
+
+          <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
+            Fitur ini digunakan jika Anda ingin mereset total database karyawan karena data tidak sesuai, atau ingin mengimpor ulang dari file Excel master yang baru.
+          </Typography>
+
+          <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', mb: 1 }}>
+            Untuk mengonfirmasi, ketik teks: <strong style={{ color: '#DC2626' }}>HAPUS SEMUA</strong>
+          </Typography>
+
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Ketik HAPUS SEMUA"
+            value={confirmDeleteAllText}
+            onChange={(e) => setConfirmDeleteAllText(e.target.value)}
+            disabled={deletingAll}
+            autoFocus
+          />
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, bgcolor: '#F8FAFC', justifyContent: 'space-between' }}>
+          <Button onClick={() => setDeleteAllModalOpen(false)} disabled={deletingAll} sx={{ color: '#64748B' }}>
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={confirmDeleteAllText !== 'HAPUS SEMUA' || deletingAll}
+            onClick={handleDeleteAllEmployees}
+            startIcon={deletingAll ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <DeleteSweepIcon />}
+            sx={{ fontWeight: 800 }}
+          >
+            {deletingAll ? 'Menghapus Seluruh Data...' : 'Kosongkan Seluruh Data Karyawan'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* MODAL 5: HAPUS KARYAWAN TUNGGAL */}
+      <Dialog open={deleteSingleModalOpen} onClose={() => !deletingSingle && setDeleteSingleModalOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ bgcolor: '#DC2626', color: '#FFFFFF', pb: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DeleteIcon />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Hapus Data Karyawan
+            </Typography>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 3 }}>
+          <Typography variant="body1" sx={{ color: '#0F172A', mb: 1, mt: 1 }}>
+            Apakah Anda yakin ingin menghapus data karyawan berikut?
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
+              {empToDelete?.full_name}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+              ID: <code>{empToDelete?.employee_id}</code> • Dept: {empToDelete?.department}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+              Jabatan: {empToDelete?.job_title}
+            </Typography>
+          </Box>
+          <Typography variant="caption" sx={{ color: '#DC2626', fontWeight: 600 }}>
+            Catatan: Data ini akan dihapus permanen dari daftar master karyawan.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, bgcolor: '#F8FAFC', justifyContent: 'space-between' }}>
+          <Button onClick={() => setDeleteSingleModalOpen(false)} disabled={deletingSingle} sx={{ color: '#64748B' }}>
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleDeleteSingleEmployee}
+            disabled={deletingSingle}
+            startIcon={deletingSingle ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <DeleteIcon />}
+            sx={{ fontWeight: 800 }}
+          >
+            {deletingSingle ? 'Menghapus...' : 'Hapus Karyawan'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
