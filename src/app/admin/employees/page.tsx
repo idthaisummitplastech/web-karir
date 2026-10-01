@@ -532,6 +532,25 @@ export default function AdminEmployeesPage() {
           </Button>
 
           <Button
+            component="a"
+            href="/api/admin/employees/template"
+            download="Template_Master_Karyawan_ITSP.xlsx"
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              borderRadius: 2,
+              borderColor: '#86EFAC',
+              color: '#15803D',
+              bgcolor: '#F0FDF4',
+              '&:hover': { bgcolor: '#DCFCE7', borderColor: '#16A34A' },
+            }}
+          >
+            Unduh Template Excel
+          </Button>
+
+          <Button
             variant="outlined"
             onClick={handleOpenSequenceModal}
             startIcon={<SettingsIcon />}
@@ -1539,7 +1558,52 @@ export default function AdminEmployeesPage() {
           </DialogTitle>
 
           <DialogContent sx={{ p: 3 }}>
-            <Typography variant="body2" sx={{ color: '#475569', mb: 2.5, mt: 1 }}>
+            {/* Banner Unduh Template */}
+            <Box
+              sx={{
+                p: 2,
+                mb: 2.5,
+                mt: 0.5,
+                borderRadius: 2,
+                bgcolor: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1.5,
+              }}
+            >
+              <Box sx={{ maxWidth: { xs: '100%', sm: '65%' } }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534' }}>
+                  Belum memiliki format Excel yang sesuai?
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#15803D', display: 'block' }}>
+                  Unduh template resmi <code>.xlsx</code> yang sudah terkonfigurasi dengan sheet <strong>ITSP</strong> (Karyawan), <strong>Trainee</strong> (Magang), dan sheet <strong>PANDUAN</strong>.
+                </Typography>
+              </Box>
+              <Button
+                component="a"
+                href="/api/admin/employees/template"
+                download="Template_Master_Karyawan_ITSP.xlsx"
+                variant="contained"
+                size="small"
+                startIcon={<DownloadIcon />}
+                sx={{
+                  fontWeight: 800,
+                  textTransform: 'none',
+                  bgcolor: '#018730',
+                  color: '#FFFFFF',
+                  borderRadius: 2,
+                  boxShadow: 'none',
+                  '&:hover': { bgcolor: '#005c21' },
+                }}
+              >
+                Unduh Template (.xlsx)
+              </Button>
+            </Box>
+
+            <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
               Unggah file Excel master karyawan resmi (format <code>.xlsx</code> atau <code>.xls</code>). Sistem akan membaca sheet <strong>ITSP</strong> dan <strong>Trainee</strong> secara otomatis.
             </Typography>
 
