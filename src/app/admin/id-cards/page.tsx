@@ -33,6 +33,7 @@ import {
   Tab,
   Alert,
   Divider,
+  Slider,
 } from '@mui/material';
 import {
   Print as PrintIcon,
@@ -53,6 +54,9 @@ import {
   ContentPaste as ContentPasteIcon,
   ContentCopy as ContentCopyIcon,
   Delete as DeleteIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+  Crop as CropIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 
@@ -113,6 +117,7 @@ const DEFAULT_HR_SIGNATURE =
   'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCAxNDAgNjAiPjxwYXRoIGQ9Ik0gMTUgNDUgUSAyNSAxNSwgNDAgMzAgVCA2NSAyNSBUIDkwIDQwIFQgMTE1IDIwIFQgMTMwIDM1IiBmaWxsPSJub25lIiBzdHJva2U9IiMwRjE3MkEiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNIDQ1IDM1USA1NSA1LCA1MCA0OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMEYxNzJBIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iOTUiIGN5PSIyMiIgcj0iMi41IiBmaWxsPSIjMEYxNzJBIi8+PC9zdmc=';
 
 // Interactive Digital Signature Canvas for HR with Scratch, Upload, Copy & Paste support
+// Supports scale adjustment for pasted/uploaded images
 const SignaturePad: React.FC<{
   value: string;
   onChange: (val: string) => void;
@@ -120,7 +125,57 @@ const SignaturePad: React.FC<{
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Stores the original pasted/uploaded image DataURL (before any scaling)
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  // Scale percentage: 100 = fit to canvas, range 10–300
+  const [imageScale, setImageScale] = useState<number>(100);
 
+  // Draw the raw image onto the canvas at the given scale, centered
+  const drawImageToCanvas = (imageSrc: string, scale: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new (window as any).Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Calculate the "fit" dimensions (aspect-ratio preserving fit into canvas)
+      const canvasW = canvas.width;
+      const canvasH = canvas.height;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const canvasAspect = canvasW / canvasH;
+
+      let fitW: number, fitH: number;
+      if (imgAspect > canvasAspect) {
+        // Image is wider than canvas → fit by width
+        fitW = canvasW;
+        fitH = canvasW / imgAspect;
+      } else {
+        // Image is taller than canvas → fit by height
+        fitH = canvasH;
+        fitW = canvasH * imgAspect;
+      }
+
+      // Apply scale factor
+      const scaleFactor = scale / 100;
+      const drawW = fitW * scaleFactor;
+      const drawH = fitH * scaleFactor;
+
+      // Center on canvas
+      const drawX = (canvasW - drawW) / 2;
+      const drawY = (canvasH - drawH) / 2;
+
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+      // Save the scaled result as the value
+      onChange(canvas.toDataURL('image/png'));
+    };
+    img.src = imageSrc;
+  };
+
+  // When value changes externally (not from our own drawImageToCanvas), redraw
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -139,6 +194,15 @@ const SignaturePad: React.FC<{
     }
   }, [value]);
 
+  // Handle scale slider change – re-draw the raw image at new scale
+  const handleScaleChange = (_: Event, newValue: number | number[]) => {
+    const newScale = newValue as number;
+    setImageScale(newScale);
+    if (rawImage) {
+      drawImageToCanvas(rawImage, newScale);
+    }
+  };
+
   const processImageFile = (file: Blob | File) => {
     if (!file.type.startsWith('image/')) {
       alert('File atau konten clipboard yang ditempelkan harus berupa gambar (PNG/JPG).');
@@ -148,7 +212,11 @@ const SignaturePad: React.FC<{
     reader.onload = (evt) => {
       const res = evt.target?.result as string;
       if (res) {
-        onChange(res);
+        // Store the original raw image and reset scale to 100%
+        setRawImage(res);
+        setImageScale(100);
+        // Draw it centered + fit at 100%
+        drawImageToCanvas(res, 100);
         setFeedback('✓ Gambar tanda tangan berhasil ditempelkan (Paste)!');
         setTimeout(() => setFeedback(null), 3500);
       }
@@ -248,6 +316,11 @@ const SignaturePad: React.FC<{
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
+    // When user starts drawing manually, clear rawImage state so slider hides
+    if (rawImage) {
+      setRawImage(null);
+      setImageScale(100);
+    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -288,6 +361,8 @@ const SignaturePad: React.FC<{
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     onChange('');
+    setRawImage(null);
+    setImageScale(100);
     setFeedback(null);
   };
 
@@ -380,6 +455,71 @@ const SignaturePad: React.FC<{
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
+
+      {/* Scale Slider – only visible when a pasted/uploaded image exists */}
+      {rawImage && (
+        <Box
+          sx={{
+            mt: 1.5,
+            p: 1.5,
+            bgcolor: '#FFFBEB',
+            border: '1px solid #FDE68A',
+            borderRadius: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <ZoomOutIcon sx={{ fontSize: 20, color: '#92400E', flexShrink: 0 }} />
+          <Slider
+            value={imageScale}
+            onChange={handleScaleChange}
+            min={10}
+            max={300}
+            step={5}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(v) => `${v}%`}
+            sx={{
+              flexGrow: 1,
+              color: '#D97706',
+              '& .MuiSlider-thumb': {
+                width: 20,
+                height: 20,
+                bgcolor: '#FFFFFF',
+                border: '2px solid #D97706',
+                '&:hover': { boxShadow: '0 0 0 6px rgba(217, 119, 6, 0.15)' },
+              },
+              '& .MuiSlider-valueLabel': {
+                bgcolor: '#92400E',
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 700,
+              },
+              '& .MuiSlider-track': { height: 5 },
+              '& .MuiSlider-rail': { height: 5, bgcolor: '#FDE68A' },
+            }}
+          />
+          <ZoomInIcon sx={{ fontSize: 20, color: '#92400E', flexShrink: 0 }} />
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 800,
+              fontSize: 12,
+              color: '#92400E',
+              bgcolor: '#FEF3C7',
+              px: 1,
+              py: 0.3,
+              borderRadius: 1,
+              border: '1px solid #FDE68A',
+              minWidth: 48,
+              textAlign: 'center',
+              flexShrink: 0,
+            }}
+          >
+            {imageScale}%
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="caption" sx={{ color: '#0369A1', bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', px: 1, py: 0.3, borderRadius: 1, display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 700, fontSize: 11 }}>
