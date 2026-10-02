@@ -23,12 +23,14 @@ export async function GET(req: Request) {
     const contractStatus = searchParams.get("contract_status") || searchParams.get("contractStatus");
     const employeeStatus = searchParams.get("employee_status") || searchParams.get("employeeStatus");
     const search = searchParams.get("search") || "";
+    const sort = searchParams.get("sort") || "desc";
 
     const params = new URLSearchParams();
     if (department) params.set("department", department);
     if (contractStatus) params.set("contract_status", contractStatus);
     if (employeeStatus) params.set("employee_status", employeeStatus);
     if (search) params.set("search", search);
+    if (sort) params.set("sort", sort);
 
     const data = await fetchFromBackend<{
       success: boolean;
@@ -64,7 +66,11 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const result = await fetchFromBackend<any>("/recruitment/hire-contract", {
+
+    // If applicant_id is present, it's signing contract from applicants flow
+    const endpoint = body.applicant_id ? "/recruitment/hire-contract" : "/recruitment/employees";
+
+    const result = await fetchFromBackend<any>(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -75,9 +81,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result, { headers: ANTI_CACHE_HEADERS });
   } catch (error: any) {
-    console.error("Hire contract error:", error);
+    console.error("Employee create/hire error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memproses penandatanganan kontrak karyawan." },
+      { error: error.message || "Gagal memproses penambahan data karyawan." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }

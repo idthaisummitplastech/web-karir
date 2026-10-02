@@ -12,9 +12,17 @@ export async function GET() {
       return NextResponse.json({ error: "Akses ditolak. Hanya Admin." }, { status: 403 });
     }
 
-    // Fetch CMS users from backend (central)
-    const users = await fetchFromBackend("/cms/users");
-    return NextResponse.json({ success: true, users: users || [] });
+    // Fetch CMS users and employee departments from backend
+    const [users, deptData] = await Promise.all([
+      fetchFromBackend("/cms/users"),
+      fetchFromBackend("/recruitment/departments").catch(() => ({ departments: [] })),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      users: users || [],
+      departments: deptData?.departments || [],
+    });
   } catch (error: any) {
     console.error("Fetch users error:", error);
     return NextResponse.json({ error: "Gagal memuat daftar pengguna." }, { status: 500 });

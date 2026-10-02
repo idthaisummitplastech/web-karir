@@ -73,18 +73,28 @@ export default function AdminUsersPage() {
   const [editDepartment, setEditDepartment] = useState('Human Capital');
   const [editNewPassword, setEditNewPassword] = useState('');
 
-  // Daftar Departemen Aktif di Sistem
+  // Daftar Departemen Resmi dari Data Karyawan
   const [availableDepartments, setAvailableDepartments] = useState<string[]>([
-    'Human Capital',
-    'Engineering',
-    'IT',
-    'Production',
-    'Quality Control',
-    'Purchasing',
-    'HSE',
-    'PPIC',
+    'Accounting & Finance',
+    'Assembly',
+    'HQ Office',
+    'HR & GA',
+    'Injection',
+    'Interseat',
+    'Local Manager',
     'Maintenance',
-    'Finance & Accounting',
+    'Marketing',
+    'Painting',
+    'Planning',
+    'Production',
+    'Production Engineering',
+    'Purchasing',
+    'Quality Assurance',
+    'Rack',
+    'SYD & IT',
+    'Store',
+    'Thai Manager',
+    'Warehouse & Delivery',
   ]);
 
   const fetchUsers = () => {
@@ -580,7 +590,7 @@ export default function AdminUsersPage() {
                     required
                     label="Departemen"
                     placeholder="Pilih atau ketik departemen"
-                    helperText="Pilih dari lowongan/soal atau ketik baru"
+                    helperText="Pilih dari daftar departemen data karyawan atau ketik baru"
                   />
                 )}
               />
