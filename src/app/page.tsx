@@ -45,6 +45,24 @@ export default function HomePage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+
+    // Smoothly normalize legacy Indonesian URL hashes to English
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash === '#lowongan') {
+        window.history.replaceState(null, '', '#job-vacancies');
+        setTimeout(() => {
+          const el = document.getElementById('job-vacancies');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else if (hash === '#tahapan') {
+        window.history.replaceState(null, '', '#selection-stages');
+        setTimeout(() => {
+          const el = document.getElementById('selection-stages');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
   }, []);
 
   // Translate all jobs dynamically based on current language
@@ -184,7 +202,7 @@ export default function HomePage() {
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 <Button
                   component="a"
-                  href="#lowongan"
+                  href="#job-vacancies"
                   variant="contained"
                   size="large"
                   endIcon={<ArrowForwardIcon />}
@@ -266,7 +284,8 @@ export default function HomePage() {
       </Box>
 
       {/* 7-Stage Process Stepper Overview */}
-      <Container maxWidth="lg" id="tahapan" sx={{ py: 8 }}>
+      <Container maxWidth="lg" id="selection-stages" sx={{ py: 8 }}>
+        <span id="tahapan" aria-hidden="true" style={{ position: 'relative', top: '-80px' }} />
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography
             variant="overline"
@@ -411,7 +430,8 @@ export default function HomePage() {
       </Container>
 
       {/* Active Job Postings Section */}
-      <Box id="lowongan" sx={{ bgcolor: '#FFFFFF', py: 8, borderTop: '1px solid #E2E8F0' }}>
+      <Box id="job-vacancies" sx={{ bgcolor: '#FFFFFF', py: 8, borderTop: '1px solid #E2E8F0' }}>
+        <span id="lowongan" aria-hidden="true" style={{ position: 'relative', top: '-80px' }} />
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', mb: 4, gap: 2 }}>
             <Box>

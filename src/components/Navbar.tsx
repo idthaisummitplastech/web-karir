@@ -64,7 +64,7 @@ export default function Navbar() {
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             <Button
               component={Link}
-              href="/#lowongan"
+              href="/#job-vacancies"
               startIcon={<WorkIcon sx={{ color: '#018730' }} />}
               sx={{ color: '#334155', fontWeight: 600, px: 1.5 }}
             >
@@ -72,7 +72,7 @@ export default function Navbar() {
             </Button>
             <Button
               component={Link}
-              href="/#tahapan"
+              href="/#selection-stages"
               startIcon={<TrackIcon sx={{ color: '#fc4509' }} />}
               sx={{ color: '#334155', fontWeight: 600, px: 1.5 }}
             >
@@ -192,7 +192,7 @@ export default function Navbar() {
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              href="/#lowongan"
+              href="/#job-vacancies"
               onClick={handleDrawerToggle}
             >
               <ListItemIcon>
@@ -204,7 +204,7 @@ export default function Navbar() {
           <ListItem disablePadding>
             <ListItemButton
               component={Link}
-              href="/#tahapan"
+              href="/#selection-stages"
               onClick={handleDrawerToggle}
             >
               <ListItemIcon>

@@ -323,7 +323,7 @@ export default function LoginPage() {
                   <Box sx={{ textAlign: 'center', mt: 3 }}>
                     <Typography variant="body2" sx={{ color: '#64748B' }}>
                       Belum pernah melamar lowongan?{' '}
-                      <Link href="/#lowongan" style={{ color: '#018730', fontWeight: 700, textDecoration: 'none' }}>
+                      <Link href="/#job-vacancies" style={{ color: '#018730', fontWeight: 700, textDecoration: 'none' }}>
                         Pilih Posisi & Lamar Sekarang
                       </Link>
                     </Typography>

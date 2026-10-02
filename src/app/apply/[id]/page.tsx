@@ -68,11 +68,11 @@ const MAX_CV_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly for CV
 const MAX_DOC_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly for all documents
 
 const STEPS = [
-  'Unggah Berkas & KTP',
-  'Data Pribadi & Alamat',
-  'Pendidikan & Pengalaman',
-  'Latar Belakang Keluarga',
-  'Review & Kirim Lamaran',
+  'Documents & National ID',
+  'Personal Details & Address',
+  'Education & Work Experience',
+  'Family Background',
+  'Review & Submit',
 ];
 
 const GENDER_OPTIONS = ['LAKI-LAKI', 'PEREMPUAN'];
@@ -109,6 +109,45 @@ const MARRIAGE_OPTIONS = [
 ];
 
 const EDU_LEVEL_OPTIONS = ['SD', 'SMP', 'SMA/SMK', 'D3', 'D4', 'S1', 'S2', 'S3'];
+
+const FORM_OPTION_LABELS: Record<string, string> = {
+  'LAKI-LAKI': 'Male',
+  PEREMPUAN: 'Female',
+  ISLAM: 'Islam',
+  'KRISTEN PROTESTAN': 'Protestant Christian',
+  KATOLIK: 'Catholic',
+  HINDU: 'Hindu',
+  BUDDHA: 'Buddhist',
+  KONGHUCU: 'Confucianism',
+  LAINNYA: 'Other',
+  'BELUM MENIKAH': 'Single',
+  MENIKAH: 'Married',
+  'CERAI HIDUP': 'Divorced',
+  'CERAI MATI': 'Widowed',
+  'KARYAWAN SWASTA': 'Private-sector employee',
+  'WIRASWASTA / PEDAGANG': 'Entrepreneur / Trader',
+  'PNS / APARATUR SIPIL NEGARA (ASN)': 'Civil servant / State employee',
+  'TNI / POLRI': 'Military / Police',
+  'KARYAWAN BUMN / BUMD': 'State-owned enterprise employee',
+  'BURUH PABRIK / MANUFAKTUR': 'Factory / Manufacturing worker',
+  'PETANI / PETERNAK / NELAYAN': 'Farmer / Livestock worker / Fisher',
+  'GURU / DOSEN / TENAGA PENDIDIK': 'Teacher / Lecturer / Educator',
+  'DOKTER / TENAGA MEDIS / BIDAN / PERAWAT': 'Doctor / Medical professional / Midwife / Nurse',
+  'IBU RUMAH TANGGA': 'Homemaker',
+  'PELAJAR / MAHASISWA': 'Student',
+  PENSIUNAN: 'Retired',
+  'BELUM / TIDAK BEKERJA': 'Not currently employed',
+  'PAUD / TK': 'Early childhood education / Kindergarten',
+  'SD / SEDERAJAT': 'Elementary school / Equivalent',
+  'SMP / MTS': 'Junior high school / Equivalent',
+  'SMA / SMK / MA': 'Senior high school / Vocational school / Equivalent',
+  'KAKAK KANDUNG': 'Older sibling',
+  'ADIK KANDUNG': 'Younger sibling',
+  'SEKARANG (MASIH BEKERJA)': 'Current (still employed)',
+  'BELUM SEKOLAH': 'Not yet in school',
+};
+
+const formOptionLabel = (value: string) => FORM_OPTION_LABELS[value] || value;
 
 interface UploadedDoc {
   file: File | null;
@@ -459,7 +498,7 @@ export default function ApplyPage() {
   const [ktpVerified, setKtpVerified] = useState(false);
   const [ocrStatusMsg, setOcrStatusMsg] = useState<string | null>(null);
   const [ocrStatusSeverity, setOcrStatusSeverity] = useState<'info' | 'success' | 'warning'>('info');
-  const [nikHelperText, setNikHelperText] = useState('16 Digit NIK KTP sesuai Dukcapil');
+  const [nikHelperText, setNikHelperText] = useState('Enter the 16-digit National ID number shown on your KTP');
   const [nikError, setNikError] = useState(false);
   // 3. KK
   const [kkDoc, setKkDoc] = useState<UploadedDoc>({ file: null, base64: '', size: 0 });
@@ -697,7 +736,7 @@ export default function ApplyPage() {
         file: null,
         base64: '',
         size: 0,
-        error: 'Berkas harus dalam format PDF (.pdf). Format lain tidak diperbolehkan.',
+        error: 'This document must be in PDF format (.pdf). Other file formats are not accepted.',
       });
       return;
     }
@@ -708,7 +747,7 @@ export default function ApplyPage() {
         file: null,
         base64: '',
         size: file.size,
-        error: `Ukuran berkas (${(file.size / 1024).toFixed(1)} KB) melebihi batas maksimal ${maxKb} KB!`,
+        error: `The file size (${(file.size / 1024).toFixed(1)} KB) exceeds the maximum limit of ${maxKb} KB.`,
       });
       return;
     }
@@ -738,7 +777,7 @@ export default function ApplyPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > MAX_DOC_FILE_SIZE_BYTES) {
-        errors.push(`${file.name} (${(file.size / 1024).toFixed(1)} KB) melebihi batas 100 KB`);
+        errors.push(`${file.name} (${(file.size / 1024).toFixed(1)} KB) exceeds the 100 KB limit`);
         continue;
       }
 
@@ -780,7 +819,7 @@ export default function ApplyPage() {
       const parsed = validateAndParseNik(clean);
       if (parsed.valid && parsed.birthDate) {
         setNikError(false);
-        setNikHelperText(`✓ NIK Dukcapil Valid (${parsed.gender}, Tgl Lahir: ${parsed.actualDay}/${parsed.month}/${parsed.year})`);
+        setNikHelperText(`✓ Valid National ID (${formOptionLabel(parsed.gender)}, date of birth: ${parsed.actualDay}/${parsed.month}/${parsed.year})`);
         
         // Auto set birth date & calculate age
         setBirthDate(parsed.birthDate);
@@ -795,14 +834,14 @@ export default function ApplyPage() {
         if (parsed.district) setDistrictKtp(parsed.district);
       } else {
         setNikError(true);
-        setNikHelperText(parsed.error || 'Format NIK tidak valid sesuai standar Dukcapil.');
+        setNikHelperText(parsed.error || 'The National ID number is not valid according to Dukcapil standards.');
       }
     } else if (clean.length > 0) {
       setNikError(false);
-      setNikHelperText(`${clean.length}/16 digit NIK KTP`);
+      setNikHelperText(`${clean.length}/16 digits entered`);
     } else {
       setNikError(false);
-      setNikHelperText('16 Digit NIK KTP sesuai Dukcapil');
+      setNikHelperText('Enter the 16-digit National ID number shown on your KTP');
     }
   };
 
@@ -829,7 +868,7 @@ export default function ApplyPage() {
             if (parsed.nik) {
               setNik(parsed.nik);
               setNikError(false);
-              setNikHelperText(`✓ NIK Valid Dukcapil (${parsed.gender}, Lahir: ${parsed.birthDate})`);
+              setNikHelperText(`✓ Valid National ID (${formOptionLabel(parsed.gender)}, date of birth: ${parsed.birthDate})`);
               if (parsed.birthDate) {
                 setBirthDate(parsed.birthDate);
                 handleBirthDateChange(parsed.birthDate);
@@ -859,22 +898,22 @@ export default function ApplyPage() {
 
             if (parsed.ocrFound) {
               setOcrStatusSeverity('success');
-              setOcrStatusMsg('Data e-KTP berhasil dipindai dan dimasukkan otomatis ke formulir dalam huruf KAPITAL. Silakan periksa data Anda.');
+              setOcrStatusMsg('Your e-KTP data was scanned and entered automatically in uppercase. Please review the information carefully.');
             } else {
               setOcrStatusSeverity('info');
-              setOcrStatusMsg('Foto e-KTP tersimpan. Silakan lengkapi atau periksa data diri Anda di formulir.');
+              setOcrStatusMsg('Your e-KTP image has been saved. Please complete or review your personal details in the form.');
             }
           } catch (ocrErr) {
             console.warn('Gagal membaca OCR KTP:', ocrErr);
             setOcrStatusSeverity('info');
-            setOcrStatusMsg('Berkas e-KTP tersimpan. Silakan lengkapi data kependudukan Anda di formulir.');
+            setOcrStatusMsg('Your e-KTP document has been saved. Please complete your identification details in the form.');
           } finally {
             setIsVerifyingKtp(false);
             setKtpVerified(true);
           }
         } else {
           setOcrStatusSeverity('info');
-          setOcrStatusMsg('Berkas e-KTP (PDF) tersimpan. Silakan lengkapi data identitas Anda di formulir.');
+          setOcrStatusMsg('Your e-KTP PDF has been saved. Please complete your identification details in the form.');
           setIsVerifyingKtp(false);
           setKtpVerified(true);
         }
@@ -901,7 +940,7 @@ export default function ApplyPage() {
 
   const handleRemoveEducation = (id: string) => {
     if (educationList.length <= 1) {
-      alert('Minimal 1 riwayat pendidikan terakhir wajib diisi.');
+      alert('At least one education record, starting with your most recent qualification, is required.');
       return;
     }
     setEducationList((prev) => prev.filter((item) => item.id !== id));
@@ -1007,7 +1046,7 @@ export default function ApplyPage() {
     setErrorMessage(null);
     if (step === 0) {
       if (!cvDoc.base64) {
-        setErrorMessage('Berkas CV (.pdf) wajib diunggah (Maksimal 100 KB).');
+        setErrorMessage('Your CV must be uploaded as a PDF file no larger than 100 KB.');
         return false;
       }
       if (cvDoc.error) {
@@ -1020,12 +1059,12 @@ export default function ApplyPage() {
     if (step === 1) {
       const full = (firstName + ' ' + lastName).trim();
       if (!full || !email.trim() || !phone.trim() || !birthDate) {
-        setErrorMessage('Mohon lengkapi Nama Lengkap, Email Aktif, Nomor HP/WA, dan Tanggal Lahir.');
+        setErrorMessage('Please complete your full name, active email address, phone/WhatsApp number, and date of birth.');
         return false;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
-        setErrorMessage('Format alamat email tidak valid.');
+        setErrorMessage('Please enter a valid email address.');
         return false;
       }
       return true;
@@ -1034,7 +1073,7 @@ export default function ApplyPage() {
     if (step === 2) {
       const primaryEdu = educationList[0];
       if (!primaryEdu || !primaryEdu.schoolName.trim()) {
-        setErrorMessage('Mohon isi minimal 1 Nama Sekolah/Instansi pendidikan terakhir Anda.');
+        setErrorMessage('Please enter at least one school or institution for your most recent education.');
         return false;
       }
       return true;
@@ -1065,7 +1104,7 @@ export default function ApplyPage() {
 
     const full = (firstName + ' ' + lastName).trim();
     if (!full || !email.trim() || !phone.trim() || !birthDate || !cvDoc.base64) {
-      setErrorMessage('Mohon lengkapi seluruh data wajib yang bertanda bintang (*).');
+      setErrorMessage('Please complete all required fields marked with an asterisk (*).');
       return;
     }
 
@@ -1170,12 +1209,12 @@ export default function ApplyPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal mengirimkan berkas lamaran kerja.');
+        throw new Error(data.error || 'We could not submit your application documents.');
       }
 
       setSuccessInfo(data);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Terjadi kesalahan sistem.');
+      setErrorMessage(err.message || 'A system error occurred. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -1251,7 +1290,7 @@ export default function ApplyPage() {
                 },
               }}
             >
-              {state.file ? 'Ganti Berkas' : 'Pilih Berkas'}
+              {state.file ? 'Replace File' : 'Choose File'}
             </Button>
           </label>
 
@@ -1280,20 +1319,20 @@ export default function ApplyPage() {
 
       <Container maxWidth="lg" sx={{ py: 5, flex: 1 }}>
         <Button
-          onClick={() => router.push('/#lowongan')}
+          onClick={() => router.push('/#job-vacancies')}
           startIcon={<ArrowBackIcon />}
           className="notranslate"
           translate="no"
           sx={{ color: '#64748B', fontWeight: 600, mb: 3 }}
         >
-          Kembali ke Daftar Lowongan
+          Back to Job Vacancies
         </Button>
 
         {checkingAuth ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CircularProgress sx={{ color: '#018730' }} />
             <Typography variant="body2" sx={{ color: '#64748B', mt: 2 }}>
-              Memeriksa status akun pendaftaran...
+              Checking your applicant account status...
             </Typography>
           </Box>
         ) : activeApplicant ? (
@@ -1318,15 +1357,15 @@ export default function ApplyPage() {
                 <InfoIcon sx={{ fontSize: 44 }} />
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
-                Anda Sudah Memiliki Lamaran Terdaftar
+                You Already Have an Application on File
               </Typography>
               <Typography variant="body1" sx={{ color: '#475569', maxWidth: 600, mx: 'auto', mb: 3, lineHeight: 1.6 }}>
-                Halo, <strong>{activeApplicant.fullName}</strong>. Anda saat ini tercatat dalam sistem rekrutmen kami dengan email{' '}
-                <strong>{activeApplicant.email}</strong> untuk posisi <strong>{activeApplicant.jobPosting?.title || 'Lamaran Kerja'}</strong>.
+                Hello, <strong>{activeApplicant.fullName}</strong>. Our recruitment system already has an application under{' '}
+                <strong>{activeApplicant.email}</strong> for <strong>{activeApplicant.jobPosting?.title || 'the selected position'}</strong>.
               </Typography>
 
               <Alert severity="info" sx={{ maxWidth: 580, mx: 'auto', textAlign: 'left', mb: 4, borderRadius: 2 }}>
-                Sesuai kebijakan resmi rekrutmen PT Indonesia Thai Summit Plastech, <strong>1 alamat email hanya dapat digunakan untuk 1 berkas pelamar</strong>. Anda tidak perlu mendaftar ulang.
+                Under PT Indonesia Thai Summit Plastech recruitment policy, <strong>one email address may be used for only one applicant profile</strong>. You do not need to register again.
               </Alert>
 
               <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
@@ -1346,7 +1385,7 @@ export default function ApplyPage() {
                     '&:hover': { bgcolor: '#005c21' },
                   }}
                 >
-                  Buka Dashboard Progres Seleksi &rarr;
+                  Open Selection Progress Dashboard &rarr;
                 </Button>
                 <Button
                   variant="outlined"
@@ -1358,7 +1397,7 @@ export default function ApplyPage() {
                   translate="no"
                   sx={{ fontWeight: 600, px: 2.5, borderRadius: 2 }}
                 >
-                  Keluar / Gunakan Akun Lain
+                  Sign Out / Use Another Account
                 </Button>
               </Box>
             </CardContent>
@@ -1385,11 +1424,11 @@ export default function ApplyPage() {
                 <EmailSentIcon sx={{ fontSize: 44 }} />
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
-                Lamaran Kerja Berhasil Dikirim!
+                Application Submitted Successfully!
               </Typography>
               <Typography variant="body1" sx={{ color: '#475569', maxWidth: 620, mx: 'auto', mb: 3.5, lineHeight: 1.6 }}>
-                Terima kasih, <strong>{successInfo.applicant.fullName}</strong>. Berkas lamaran Anda untuk posisi{' '}
-                <strong>{successInfo.applicant.jobTitle}</strong> telah resmi tercatat di sistem ATS PT Indonesia Thai Summit Plastech.
+                Thank you, <strong>{successInfo.applicant.fullName}</strong>. Your application for{' '}
+                <strong>{successInfo.applicant.jobTitle}</strong> has been officially recorded in the PT Indonesia Thai Summit Plastech ATS.
               </Typography>
 
               {/* Box Instruksi Cek Email */}
@@ -1408,11 +1447,11 @@ export default function ApplyPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
                   <EmailSentIcon sx={{ color: '#018730', fontSize: 26 }} />
                   <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    Silakan Periksa Email Anda Untuk Kredensial Akun
+                    Check Your Email for Your Account Credentials
                   </Typography>
                 </Box>
                 <Typography variant="body2" sx={{ color: '#334155', mb: 1.5, lineHeight: 1.6 }}>
-                  Sistem kami telah mengirimkan detail kredensial dan <strong>Password Sementara</strong> resmi ke alamat email pendaftaran Anda:
+                  Our system has sent your account credentials and an official <strong>temporary password</strong> to your registered email address:
                 </Typography>
                 <Box
                   sx={{
@@ -1431,9 +1470,9 @@ export default function ApplyPage() {
                   {successInfo.applicant.email}
                 </Box>
                 <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.6, fontSize: 13 }}>
-                  • Buka kotak masuk (<strong>Inbox</strong>) email Anda untuk menyalin password sementara.<br />
-                  • Jika belum muncul dalam 1–2 menit, mohon periksa folder <strong>Spam</strong> atau <strong>Promosi</strong>.<br />
-                  • Gunakan email dan password tersebut untuk login ke Portal Pelamar dan memantau progres 7 tahap seleksi.
+                  • Open your email <strong>Inbox</strong> and copy the temporary password.<br />
+                  • If it does not arrive within 1–2 minutes, check your <strong>Spam</strong> or <strong>Promotions</strong> folder.<br />
+                  • Use the email address and password to sign in to the Applicant Portal and track all seven selection stages.
                 </Typography>
               </Box>
 
@@ -1456,7 +1495,7 @@ export default function ApplyPage() {
                   '&:hover': { bgcolor: '#005c21' },
                 }}
               >
-                Buka Halaman Login Pelamar &rarr;
+                Open Applicant Login &rarr;
               </Button>
             </CardContent>
           </Card>
@@ -1472,13 +1511,13 @@ export default function ApplyPage() {
               }}
             >
               <Typography variant="overline" sx={{ color: '#FED7AA', fontWeight: 800, fontSize: 12 }}>
-                FORMULIR LAMARAN PEKERJAAN RESMI
+                OFFICIAL EMPLOYMENT APPLICATION FORM
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, mt: 0.5, letterSpacing: '-0.02em' }}>
-                Formulir Pendaftaran Calon Karyawan
+                Employment Application Form
               </Typography>
               <Typography variant="body2" sx={{ color: '#D1FAE5', mt: 1 }}>
-                PT Indonesia Thai Summit Plastech • Harap mengisi formulir pendaftaran secara lengkap dan sesuai dengan dokumen asli yang sah.
+                PT Indonesia Thai Summit Plastech • Please complete this form accurately using your valid original documents.
               </Typography>
             </Box>
 
@@ -1520,7 +1559,7 @@ export default function ApplyPage() {
                         translate="no"
                         sx={{ fontWeight: 700, textDecoration: 'underline' }}
                       >
-                        Login Sekarang
+                        Login Now
                       </Button>
                     ) : undefined
                   }
@@ -1532,7 +1571,7 @@ export default function ApplyPage() {
               {/* Posisi Lowongan (Always Visible at Top of Form) */}
               <Box sx={{ mb: 4, p: 2.5, bgcolor: '#EFF6FF', borderRadius: 2, border: '1px solid #BFDBFE' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E40AF', mb: 1 }}>
-                  Posisi Pekerjaan yang Dilamar:
+                  Position Applied For:
                 </Typography>
                 <TextField
                   select
@@ -1540,7 +1579,7 @@ export default function ApplyPage() {
                   required
                   value={selectedJobId}
                   onChange={(e) => setSelectedJobId(e.target.value)}
-                  helperText={selectedJob ? `Departemen: ${selectedJob.department} | Lokasi Penempatan: ${selectedJob.location}` : ''}
+                  helperText={selectedJob ? `Department: ${selectedJob.department} | Work Location: ${selectedJob.location}` : ''}
                   size="small"
                   sx={{ bgcolor: '#FFFFFF', borderRadius: 1 }}
                 >
@@ -1561,17 +1600,17 @@ export default function ApplyPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                       <DocumentIcon sx={{ color: '#018730', fontSize: 28 }} />
                       <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                        1. Unggah Dokumen Persyaratan & Scan KTP
+                        1. Required Documents & National ID
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                      Pastikan dokumen yang diunggah jelas, terbaca, dan sah. Sistem akan otomatis memindai dan memverifikasi data kependudukan KTP Anda dengan Dukcapil.
+                      Upload clear, legible, and valid documents. The system will scan your KTP (Indonesian National ID) and verify the identification details against Dukcapil records.
                     </Typography>
 
                     {/* Banner Dukcapil KTP */}
                     {isVerifyingKtp && (
                       <Alert severity="info" icon={<CircularProgress size={20} />} sx={{ mb: 3, borderRadius: 2 }}>
-                        Memindai data e-KTP dengan AI OCR & memverifikasi standar Dukcapil RI...
+                        Scanning e-KTP data with AI OCR and verifying it against Dukcapil standards...
                       </Alert>
                     )}
 
@@ -1586,15 +1625,15 @@ export default function ApplyPage() {
                           border: `1px solid ${ocrStatusSeverity === 'success' ? '#86EFAC' : '#BAE6FD'}`,
                         }}
                       >
-                        <strong>{ocrStatusSeverity === 'success' ? 'e-KTP Berhasil Terverifikasi!' : 'e-KTP Berhasil Diunggah!'}</strong> {ocrStatusMsg}
+                            <strong>{ocrStatusSeverity === 'success' ? 'e-KTP Verified Successfully!' : 'e-KTP Uploaded Successfully!'}</strong> {ocrStatusMsg}
                       </Alert>
                     )}
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2.5 }}>
                       {/* 1. Upload Foto */}
                       {renderUploadCard(
-                        '1. Pasfoto Formal (3x4 / 4x6)',
-                        'Format JPG/PNG latar merah/biru, maks. 100 KB.',
+                        '1. Formal Passport Photo (3x4 / 4x6)',
+                        'JPG/PNG format with a red or blue background, maximum 100 KB.',
                         photoDoc,
                         (e) => handleGenericFileUpload(e, setPhotoDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-foto-input',
@@ -1603,22 +1642,22 @@ export default function ApplyPage() {
 
                       {/* 2. Upload KTP */}
                       {renderUploadCard(
-                        '2. KTP Asli (e-KTP)',
-                        'Scan/foto e-KTP asli. Auto-fill NIK & Alamat via Dukcapil, maks. 100 KB.',
+                        '2. Original KTP (e-KTP)',
+                        'Scan or photo of your original e-KTP. Automatically fills your National ID and address, maximum 100 KB.',
                         ktpDoc,
                         handleKtpUpload,
                         'upload-ktp-input',
                         'image/*,application/pdf',
                         false,
                         ktpVerified ? (
-                          <Chip label="Dukcapil Valid" size="small" color="success" sx={{ fontWeight: 700, height: 20 }} />
+                          <Chip label="Dukcapil Verified" size="small" color="success" sx={{ fontWeight: 700, height: 20 }} />
                         ) : null
                       )}
 
                       {/* 3. Kartu Keluarga (KK) */}
                       {renderUploadCard(
-                        '3. Kartu Keluarga (KK)',
-                        'Scan Kartu Keluarga terbaru resmi Dukcapil, maks. 100 KB.',
+                        '3. Family Card (KK)',
+                        'Scan of your latest official Family Card issued through Dukcapil, maximum 100 KB.',
                         kkDoc,
                         (e) => handleGenericFileUpload(e, setKkDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-kk-input',
@@ -1627,8 +1666,8 @@ export default function ApplyPage() {
 
                       {/* 4. Ijazah Terakhir */}
                       {renderUploadCard(
-                        '4. Ijazah Terakhir (Diploma)',
-                        'Scan Ijazah asli pendidikan terakhir, maks. 100 KB.',
+                        '4. Most Recent Diploma',
+                        'Scan of your original highest or most recent diploma, maximum 100 KB.',
                         ijazahDoc,
                         (e) => handleGenericFileUpload(e, setIjazahDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-ijazah-input',
@@ -1637,8 +1676,8 @@ export default function ApplyPage() {
 
                       {/* 5. Transkrip Nilai / SKHUN */}
                       {renderUploadCard(
-                        '5. Transkrip Nilai / SKHUN',
-                        'Scan Transkrip Nilai / SKHUN resmi pendidikan terakhir, maks. 100 KB.',
+                        '5. Academic Transcript / SKHUN',
+                        'Scan of your official transcript or SKHUN for your most recent education, maximum 100 KB.',
                         transkripDoc,
                         (e) => handleGenericFileUpload(e, setTranskripDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-transkrip-input',
@@ -1665,11 +1704,11 @@ export default function ApplyPage() {
                         <Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                              6. Sertifikat Pelatihan / Keahlian
+                              6. Training / Professional Certificates
                             </Typography>
                             {certNonformalList.length > 0 && (
                               <Chip
-                                label={`${certNonformalList.length} Berkas`}
+                                label={`${certNonformalList.length} File${certNonformalList.length === 1 ? '' : 's'}`}
                                 size="small"
                                 color="success"
                                 sx={{ fontWeight: 700, height: 20 }}
@@ -1677,7 +1716,7 @@ export default function ApplyPage() {
                             )}
                           </Box>
                           <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1.5, lineHeight: 1.4 }}>
-                            Pelatihan keahlian, sertifikasi kompetensi (Bisa tambah banyak sertifikat, maks. 100 KB/berkas, Opsional).
+                            Training records and competency certificates. You may add multiple files, maximum 100 KB per file (optional).
                           </Typography>
 
                           {certNonformalList.length > 0 && (
@@ -1708,7 +1747,7 @@ export default function ApplyPage() {
                                     size="small"
                                     onClick={() => removeCertNonformal(item.id)}
                                     sx={{ color: '#EF4444', p: 0.3 }}
-                                    title="Hapus berkas ini"
+                                    title="Remove this file"
                                   >
                                     <DeleteIcon sx={{ fontSize: 16 }} />
                                   </IconButton>
@@ -1755,7 +1794,7 @@ export default function ApplyPage() {
                                 },
                               }}
                             >
-                              {certNonformalList.length > 0 ? '+ Tambah Sertifikat' : 'Pilih Berkas'}
+                              {certNonformalList.length > 0 ? '+ Add Certificate' : 'Choose Files'}
                             </Button>
                           </label>
                         </Box>
@@ -1763,8 +1802,8 @@ export default function ApplyPage() {
 
                       {/* 7. BPJS Kesehatan */}
                       {renderUploadCard(
-                        '7. BPJS Kesehatan',
-                        'Scan Kartu KIS / BPJS Kesehatan aktif, maks. 100 KB.',
+                        '7. BPJS Health Card',
+                        'Scan of your active KIS / BPJS Health Card, maximum 100 KB.',
                         bpjsKesehatanDoc,
                         (e) => handleGenericFileUpload(e, setBpjsKesehatanDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-bpjs-kes-input',
@@ -1773,8 +1812,8 @@ export default function ApplyPage() {
 
                       {/* 8. BPJS Ketenagakerjaan (Optional) */}
                       {renderUploadCard(
-                        '8. BPJS Ketenagakerjaan',
-                        'Scan Kartu BPJS TK / Jamsostek (Opsional jika ada), maks. 100 KB.',
+                        '8. BPJS Employment Card',
+                        'Scan of your BPJS Employment / Jamsostek card (optional), maximum 100 KB.',
                         bpjsKetenagakerjaanDoc,
                         (e) => handleGenericFileUpload(e, setBpjsKetenagakerjaanDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-bpjs-tk-input',
@@ -1783,8 +1822,8 @@ export default function ApplyPage() {
 
                       {/* 9. NPWP */}
                       {renderUploadCard(
-                        '9. NPWP',
-                        'Scan Kartu NPWP / bukti pendaftaran NPWP, maks. 100 KB.',
+                        '9. Taxpayer Identification Card (NPWP)',
+                        'Scan of your NPWP card or NPWP registration proof, maximum 100 KB.',
                         npwpDoc,
                         (e) => handleGenericFileUpload(e, setNpwpDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-npwp-input',
@@ -1793,8 +1832,8 @@ export default function ApplyPage() {
 
                       {/* 10. Akta Kelahiran */}
                       {renderUploadCard(
-                        '10. Akta Kelahiran',
-                        'Scan Akta Kelahiran resmi dari Dukcapil, maks. 100 KB.',
+                        '10. Birth Certificate',
+                        'Scan of your official Birth Certificate issued through Dukcapil, maximum 100 KB.',
                         aktaDoc,
                         (e) => handleGenericFileUpload(e, setAktaDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-akta-input',
@@ -1803,8 +1842,8 @@ export default function ApplyPage() {
 
                       {/* 11. SKCK */}
                       {renderUploadCard(
-                        '11. SKCK Aktif',
-                        'Surat Keterangan Catatan Kepolisian yang masih berlaku, maks. 100 KB.',
+                        '11. Valid Police Clearance Certificate (SKCK)',
+                        'A currently valid Police Clearance Certificate, maximum 100 KB.',
                         skckDoc,
                         (e) => handleGenericFileUpload(e, setSkckDoc, MAX_DOC_FILE_SIZE_BYTES, false),
                         'upload-skck-input',
@@ -1813,14 +1852,14 @@ export default function ApplyPage() {
 
                       {/* 12. CV (Strict 100 KB) */}
                       {renderUploadCard(
-                        '12. Berkas CV (Curriculum Vitae)',
-                        'Wajib format PDF (.pdf), ukuran MAKSIMAL 100 KB.',
+                        '12. Curriculum Vitae (CV)',
+                        'PDF format (.pdf) required, maximum file size 100 KB.',
                         cvDoc,
                         (e) => handleGenericFileUpload(e, setCvDoc, MAX_CV_FILE_SIZE_BYTES, true),
                         'upload-cv-input',
                         'application/pdf',
                         true,
-                        <Chip label="Wajib Max 100KB" size="small" color="primary" sx={{ fontWeight: 700, height: 20 }} />
+                        <Chip label="Required, max 100 KB" size="small" color="primary" sx={{ fontWeight: 700, height: 20 }} />
                       )}
                     </Box>
 
@@ -1828,7 +1867,7 @@ export default function ApplyPage() {
                       <Box sx={{ mt: 3, p: 2, bgcolor: '#F1F5F9', borderRadius: 2 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                           <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155' }}>
-                            Ukuran File CV Terpilih: {cvDoc.file?.name}
+                            Selected CV File Size: {cvDoc.file?.name}
                           </Typography>
                           <Typography
                             variant="caption"
@@ -1861,13 +1900,13 @@ export default function ApplyPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                       <PersonIcon sx={{ color: '#018730', fontSize: 28 }} />
                       <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                        2. Identitas Pribadi & Alamat Kependudukan
+                        2. Personal Details & Registered Address
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
                       {ktpVerified && ocrStatusSeverity === 'success'
-                        ? 'Data identitas di bawah ini telah terisi otomatis dari hasil scan e-KTP Anda. Anda dapat mengubah atau melengkapi jika ada koreksi.'
-                        : 'Kolom isian di bawah ini dapat Anda lengkapi sesuai data kependudukan pada e-KTP asli Anda. NIK 16 digit akan memverifikasi tanggal lahir & jenis kelamin secara otomatis.'}
+                        ? 'The identification details below were filled automatically from your e-KTP scan. Review and correct them if necessary.'
+                        : 'Complete the fields below using the identification details on your original e-KTP. Your 16-digit National ID will automatically validate your date of birth and gender.'}
                     </Typography>
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2.5 }}>
@@ -1875,8 +1914,8 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                         <TextField
                           fullWidth
-                          label="1. NIK (Nomor Induk Kependudukan)"
-                          placeholder="16 Digit NIK KTP"
+                          label="1. National ID Number (NIK)"
+                          placeholder="16-digit National ID number"
                           value={nik}
                           onChange={(e) => handleNikChange(e.target.value)}
                           error={nikError}
@@ -1890,8 +1929,8 @@ export default function ApplyPage() {
                         <TextField
                           fullWidth
                           required
-                          label="2. Nama Depan"
-                          placeholder="Nama depan"
+                          label="2. First Name"
+                          placeholder="First name"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value.toUpperCase())}
                           slotProps={{ htmlInput: { style: { textTransform: 'uppercase' } } }}
@@ -1900,8 +1939,8 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 3' } }}>
                         <TextField
                           fullWidth
-                          label="Nama Belakang"
-                          placeholder="Nama belakang"
+                          label="Last Name"
+                          placeholder="Last name"
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value.toUpperCase())}
                           slotProps={{ htmlInput: { style: { textTransform: 'uppercase' } } }}
@@ -1914,13 +1953,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           required
-                          label="3. Jenis Kelamin (Gender)"
+                          label="3. Gender"
                           value={gender}
                           onChange={(e) => setGender(e.target.value)}
                         >
                           {GENDER_OPTIONS.map((g) => (
                             <MenuItem key={g} value={g}>
-                              {g}
+                              {formOptionLabel(g)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -1932,13 +1971,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           required
-                          label="4. Agama (Religion)"
+                          label="4. Religion"
                           value={religion}
                           onChange={(e) => setReligion(e.target.value)}
                         >
                           {RELIGION_OPTIONS.map((r) => (
                             <MenuItem key={r} value={r}>
-                              {r}
+                              {formOptionLabel(r)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -1950,7 +1989,7 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           required
-                          label="5. Suku Bangsa (Ethnic)"
+                          label="5. Ethnicity"
                           value={ethnic}
                           onChange={(e) => setEthnic(e.target.value)}
                         >
@@ -1967,8 +2006,8 @@ export default function ApplyPage() {
                         <TextField
                           fullWidth
                           type="number"
-                          label="6. Tinggi Badan (cm)"
-                          placeholder="Contoh: 170"
+                          label="6. Height (cm)"
+                          placeholder="Example: 170"
                           value={heightCm}
                           onChange={(e) => setHeightCm(e.target.value ? Number(e.target.value) : '')}
                         />
@@ -1977,8 +2016,8 @@ export default function ApplyPage() {
                         <TextField
                           fullWidth
                           type="number"
-                          label="Berat Badan (kg)"
-                          placeholder="Contoh: 65"
+                          label="Weight (kg)"
+                          placeholder="Example: 65"
                           value={weightKg}
                           onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : '')}
                         />
@@ -1990,13 +2029,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           required
-                          label="7. Status Pernikahan"
+                          label="7. Marital Status"
                           value={marriageStatus}
                           onChange={(e) => setMarriageStatus(e.target.value)}
                         >
                           {MARRIAGE_OPTIONS.map((m) => (
                             <MenuItem key={m} value={m}>
-                              {m}
+                              {formOptionLabel(m)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -2008,19 +2047,19 @@ export default function ApplyPage() {
                           fullWidth
                           required
                           type="email"
-                          label="8. Alamat E-Mail Aktif"
-                          placeholder="contoh@gmail.com"
+                          label="8. Active Email Address"
+                          placeholder="name@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          helperText="Kredensial login ATS akan dikirimkan ke email ini"
+                          helperText="Your ATS login credentials will be sent to this address"
                         />
                       </Box>
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                         <TextField
                           fullWidth
                           required
-                          label="Nomor WhatsApp / HP"
-                          placeholder="08123456789"
+                          label="Phone / WhatsApp Number"
+                          placeholder="+62 812 3456 789"
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                         />
@@ -2042,8 +2081,8 @@ export default function ApplyPage() {
                             <TextField
                               {...params}
                               fullWidth
-                              label="Tempat Lahir"
-                              placeholder="KOTA KELAHIRAN (PILIH / KETIK)"
+                              label="Place of Birth"
+                              placeholder="Select or type your city of birth"
                               sx={{ '& input': { textTransform: 'uppercase' } }}
                             />
                           )}
@@ -2054,7 +2093,7 @@ export default function ApplyPage() {
                           fullWidth
                           required
                           type="date"
-                          label="Tanggal Lahir"
+                          label="Date of Birth"
                           slotProps={{ inputLabel: { shrink: true } }}
                           value={birthDate}
                           onChange={(e) => handleBirthDateChange(e.target.value)}
@@ -2063,10 +2102,10 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 3' } }}>
                         <TextField
                           fullWidth
-                          label="Usia"
-                          value={age !== '' ? `${age} Tahun` : '-'}
+                          label="Age"
+                          value={age !== '' ? `${age} years` : '-'}
                           disabled
-                          helperText="Dihitung otomatis"
+                          helperText="Calculated automatically"
                         />
                       </Box>
 
@@ -2074,7 +2113,7 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: 'span 12' }}>
                         <Divider sx={{ my: 1 }} />
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                          9. Alamat Sesuai KTP (Auto-Terisi dari KTP)
+                          9. Address as Shown on KTP (Auto-filled)
                         </Typography>
                       </Box>
 
@@ -2093,8 +2132,8 @@ export default function ApplyPage() {
                             <TextField
                               {...params}
                               fullWidth
-                              label="10. Provinsi"
-                              placeholder="PILIH / KETIK PROVINSI"
+                              label="10. Province"
+                              placeholder="Select or type a province"
                               sx={{ '& input': { textTransform: 'uppercase' } }}
                             />
                           )}
@@ -2115,8 +2154,8 @@ export default function ApplyPage() {
                             <TextField
                               {...params}
                               fullWidth
-                              label="Kabupaten / Kota"
-                              placeholder="PILIH / KETIK KAB/KOTA"
+                              label="Regency / City"
+                              placeholder="Select or type a regency or city"
                               sx={{ '& input': { textTransform: 'uppercase' } }}
                             />
                           )}
@@ -2137,8 +2176,8 @@ export default function ApplyPage() {
                             <TextField
                               {...params}
                               fullWidth
-                              label="Kecamatan"
-                              placeholder="PILIH / KETIK KECAMATAN"
+                              label="District"
+                              placeholder="Select or type a district"
                               sx={{ '& input': { textTransform: 'uppercase' } }}
                             />
                           )}
@@ -2160,8 +2199,8 @@ export default function ApplyPage() {
                             <TextField
                               {...params}
                               fullWidth
-                              label="11. Kelurahan / Desa"
-                              placeholder="PILIH / KETIK KELURAHAN"
+                              label="11. Subdistrict / Village"
+                              placeholder="Select or type a subdistrict or village"
                               sx={{ '& input': { textTransform: 'uppercase' } }}
                             />
                           )}
@@ -2188,8 +2227,8 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 8' } }}>
                         <TextField
                           fullWidth
-                          label="13. Nama Jalan, Gang, No. Rumah"
-                          placeholder="JL. GARNET BLOK K2 NO. 43 REGENCY"
+                          label="13. Street, Alley, and House Number"
+                          placeholder="Enter your street address"
                           value={streetKtp}
                           onChange={(e) => setStreetKtp(e.target.value.toUpperCase())}
                           slotProps={{ htmlInput: { style: { textTransform: 'uppercase' } } }}
@@ -2198,12 +2237,12 @@ export default function ApplyPage() {
                       <Box sx={{ gridColumn: { xs: 'span 12', sm: 'span 4' } }}>
                         <TextField
                           fullWidth
-                          label="14. Kode Pos KTP"
+                          label="14. KTP Postal Code"
                           placeholder="41374"
                           value={postalCodeKtp}
                           onChange={(e) => setPostalCodeKtp(e.target.value.replace(/\D/g, '').slice(0, 5))}
                           slotProps={{ htmlInput: { maxLength: 5 } }}
-                          helperText="Kode Pos resmi Kemendagri (contoh: 41374)"
+                          helperText="Official postal code (example: 41374)"
                         />
                       </Box>
 
@@ -2220,7 +2259,7 @@ export default function ApplyPage() {
                             }
                             label={
                               <Typography variant="body2" sx={{ fontWeight: 700, color: '#1E293B' }}>
-                                Alamat tempat tinggal (domisili saat ini) TIDAK SAMA dengan alamat KTP
+                                My current residential address is DIFFERENT from the address on my KTP
                               </Typography>
                             }
                           />
@@ -2243,8 +2282,8 @@ export default function ApplyPage() {
                                       {...params}
                                       fullWidth
                                       size="small"
-                                      label="Provinsi Domisili"
-                                      placeholder="PILIH / KETIK PROVINSI"
+                                      label="Residential Province"
+                                      placeholder="Select or type a province"
                                       sx={{ '& input': { textTransform: 'uppercase' } }}
                                     />
                                   )}
@@ -2266,8 +2305,8 @@ export default function ApplyPage() {
                                       {...params}
                                       fullWidth
                                       size="small"
-                                      label="Kabupaten / Kota Domisili"
-                                      placeholder="PILIH / KETIK KAB/KOTA"
+                                      label="Residential Regency / City"
+                                      placeholder="Select or type a regency or city"
                                       sx={{ '& input': { textTransform: 'uppercase' } }}
                                     />
                                   )}
@@ -2289,8 +2328,8 @@ export default function ApplyPage() {
                                       {...params}
                                       fullWidth
                                       size="small"
-                                      label="Kecamatan Domisili"
-                                      placeholder="PILIH / KETIK KECAMATAN"
+                                      label="Residential District"
+                                      placeholder="Select or type a district"
                                       sx={{ '& input': { textTransform: 'uppercase' } }}
                                     />
                                   )}
@@ -2312,8 +2351,8 @@ export default function ApplyPage() {
                                       {...params}
                                       fullWidth
                                       size="small"
-                                      label="Kelurahan Domisili"
-                                      placeholder="PILIH / KETIK KELURAHAN"
+                                      label="Residential Subdistrict / Village"
+                                      placeholder="Select or type a subdistrict or village"
                                       sx={{ '& input': { textTransform: 'uppercase' } }}
                                     />
                                   )}
@@ -2323,7 +2362,7 @@ export default function ApplyPage() {
                                 <TextField
                                   fullWidth
                                   size="small"
-                                  label="RT Domisili"
+                                  label="Residential RT"
                                   value={rtDomicile}
                                   onChange={(e) => setRtDomicile(e.target.value)}
                                 />
@@ -2332,7 +2371,7 @@ export default function ApplyPage() {
                                 <TextField
                                   fullWidth
                                   size="small"
-                                  label="RW Domisili"
+                                  label="Residential RW"
                                   value={rwDomicile}
                                   onChange={(e) => setRwDomicile(e.target.value)}
                                 />
@@ -2341,7 +2380,7 @@ export default function ApplyPage() {
                                 <TextField
                                   fullWidth
                                   size="small"
-                                  label="Jalan / Gang Domisili"
+                                  label="Residential Street / Alley"
                                   value={streetDomicile}
                                   onChange={(e) => setStreetDomicile(e.target.value.toUpperCase())}
                                   slotProps={{ htmlInput: { style: { textTransform: 'uppercase' } } }}
@@ -2351,12 +2390,12 @@ export default function ApplyPage() {
                                 <TextField
                                   fullWidth
                                   size="small"
-                                  label="Kode Pos Domisili"
+                                  label="Residential Postal Code"
                                   placeholder="41374"
                                   value={postalCodeDomicile}
                                   onChange={(e) => setPostalCodeDomicile(e.target.value.replace(/\D/g, '').slice(0, 5))}
                                   slotProps={{ htmlInput: { maxLength: 5 } }}
-                                  helperText="5 digit angka kode pos domisili"
+                                  helperText="Five-digit residential postal code"
                                 />
                               </Box>
                             </Box>
@@ -2377,7 +2416,7 @@ export default function ApplyPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <SchoolIcon sx={{ color: '#018730', fontSize: 28 }} />
                         <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          14. Riwayat Pendidikan Formal
+                          14. Formal Education History
                         </Typography>
                       </Box>
                       <Button
@@ -2395,12 +2434,12 @@ export default function ApplyPage() {
                           '&:hover': { bgcolor: '#F0FDF4', borderColor: '#005c21' },
                         }}
                       >
-                        Tambah Pendidikan
+                        Add Education
                       </Button>
                     </Box>
 
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                      Cantumkan riwayat pendidikan Anda dari jenjang tertinggi hingga dasar (SD, SMP, SMA/SMK, S1, dll).
+                      List your education history from the highest qualification to the earliest level (elementary school, junior high school, senior high school, university, and so on).
                     </Typography>
 
                     {educationList.map((edu, idx) => (
@@ -2417,10 +2456,10 @@ export default function ApplyPage() {
                       >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730' }}>
-                            Jenjang #{idx + 1}
+                            Education Record #{idx + 1}
                           </Typography>
                           {educationList.length > 1 && (
-                            <Tooltip title="Hapus baris pendidikan ini">
+                            <Tooltip title="Remove this education record">
                               <IconButton
                                 size="small"
                                 color="error"
@@ -2439,13 +2478,13 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Jenjang Pendidikan"
+                              label="Education Level"
                               value={edu.level}
                               onChange={(e) => handleUpdateEducation(edu.id, 'level', e.target.value)}
                             >
                               {EDU_LEVEL_OPTIONS.map((lvl) => (
                                 <MenuItem key={lvl} value={lvl}>
-                                  {lvl}
+                                  {formOptionLabel(lvl)}
                                 </MenuItem>
                               ))}
                             </TextField>
@@ -2469,8 +2508,8 @@ export default function ApplyPage() {
                                 <TextField
                                   {...params}
                                   size="small"
-                                  label="Nama Sekolah / Universitas *"
-                                  placeholder="PILIH / KETIK NAMA SEKOLAH ATAU UNIVERSITAS"
+                                  label="School / University Name *"
+                                  placeholder="Select or type the school or university name"
                                 />
                               )}
                             />
@@ -2494,8 +2533,8 @@ export default function ApplyPage() {
                                 <TextField
                                   {...params}
                                   size="small"
-                                  label="Jurusan / Program Studi *"
-                                  placeholder="PILIH / KETIK JURUSAN (MISAL: TEKNIK KOMPUTER / IPA)"
+                                  label="Major / Study Program *"
+                                  placeholder="Select or type your major (for example: Computer Engineering / Science)"
                                 />
                               )}
                             />
@@ -2506,7 +2545,7 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Tahun Masuk"
+                              label="Start Year"
                               value={edu.entryYear}
                               onChange={(e) => handleUpdateEducation(edu.id, 'entryYear', e.target.value)}
                             >
@@ -2523,7 +2562,7 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Tahun Lulus"
+                              label="Graduation Year"
                               value={edu.gradYear}
                               onChange={(e) => handleUpdateEducation(edu.id, 'gradYear', e.target.value)}
                             >
@@ -2545,7 +2584,7 @@ export default function ApplyPage() {
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <WorkIcon sx={{ color: '#018730', fontSize: 28 }} />
                         <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          15. Pengalaman Kerja Terakhir (Work Experience)
+                          15. Most Recent Work Experience
                         </Typography>
                       </Box>
                       <Button
@@ -2563,12 +2602,12 @@ export default function ApplyPage() {
                           '&:hover': { bgcolor: '#F0FDF4', borderColor: '#005c21' },
                         }}
                       >
-                        Tambah Pengalaman
+                        Add Work Experience
                       </Button>
                     </Box>
 
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                      Bagi pelamar Fresh Graduate (lulusan baru) dapat mengosongkan bagian ini atau klik Tambah Pengalaman jika memiliki pengalaman kerja/magang.
+                      Fresh graduates may leave this section empty. Add an entry if you have work or internship experience.
                     </Typography>
 
                     {workList.length === 0 ? (
@@ -2582,7 +2621,7 @@ export default function ApplyPage() {
                         }}
                       >
                         <Typography variant="body2" sx={{ color: '#64748B', mb: 1.5 }}>
-                          Belum ada riwayat pengalaman kerja yang ditambahkan.
+                          No work experience has been added yet.
                         </Typography>
                         <Button
                           variant="text"
@@ -2592,7 +2631,7 @@ export default function ApplyPage() {
                           translate="no"
                           sx={{ color: '#018730', fontWeight: 700 }}
                         >
-                          Klik di sini untuk menambah pengalaman kerja
+                          Click here to add work experience
                         </Button>
                       </Box>
                     ) : (
@@ -2609,9 +2648,9 @@ export default function ApplyPage() {
                         >
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730' }}>
-                              Pengalaman #{idx + 1}
+                              Work Experience #{idx + 1}
                             </Typography>
-                            <Tooltip title="Hapus pengalaman ini">
+                            <Tooltip title="Remove this work experience">
                               <IconButton
                                 size="small"
                                 color="error"
@@ -2628,8 +2667,8 @@ export default function ApplyPage() {
                               <TextField
                                 fullWidth
                                 size="small"
-                                label="Nama Perusahaan"
-                                placeholder="PT MANUFACTURING INDONESIA"
+                                label="Company Name"
+                                placeholder="MANUFACTURING COMPANY"
                                 value={work.company}
                                 onChange={(e) => handleUpdateWork(work.id, 'company', e.target.value.toUpperCase())}
                                 sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2639,8 +2678,8 @@ export default function ApplyPage() {
                               <TextField
                                 fullWidth
                                 size="small"
-                                label="Posisi / Jabatan"
-                                placeholder="OPERATOR INJECTION / QA STAFF"
+                                label="Position / Job Title"
+                                placeholder="Injection Operator / QA Staff"
                                 value={work.position}
                                 onChange={(e) => handleUpdateWork(work.id, 'position', e.target.value.toUpperCase())}
                                 sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2651,7 +2690,7 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Tahun Masuk"
+                                label="Start Year"
                                 value={work.startYear}
                                 onChange={(e) => handleUpdateWork(work.id, 'startYear', e.target.value)}
                               >
@@ -2667,11 +2706,11 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Tahun Keluar"
+                                label="End Year"
                                 value={work.endYear}
                                 onChange={(e) => handleUpdateWork(work.id, 'endYear', e.target.value)}
                               >
-                                <MenuItem value="SEKARANG (MASIH BEKERJA)">SEKARANG (MASIH BEKERJA)</MenuItem>
+                                <MenuItem value="SEKARANG (MASIH BEKERJA)">{formOptionLabel('SEKARANG (MASIH BEKERJA)')}</MenuItem>
                                 {YEAR_OPTIONS.map((yr) => (
                                   <MenuItem key={yr} value={yr}>
                                     {yr}
@@ -2683,8 +2722,8 @@ export default function ApplyPage() {
                               <TextField
                                 fullWidth
                                 size="small"
-                                label="Alasan Keluar / Resign"
-                                placeholder="HABIS KONTRAK / MENCARI PENGALAMAN BARU"
+                                label="Reason for Leaving"
+                                placeholder="Contract ended / Seeking a new opportunity"
                                 value={work.exitReason}
                                 onChange={(e) => handleUpdateWork(work.id, 'exitReason', e.target.value.toUpperCase())}
                                 sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2696,8 +2735,8 @@ export default function ApplyPage() {
                                 multiline
                                 rows={2}
                                 size="small"
-                                label="Deskripsi Pekerjaan / Job Description"
-                                placeholder="JELASKAN TUGAS DAN TANGGUNG JAWAB UTAMA ANDA..."
+                                label="Job Description"
+                                placeholder="Describe your main duties and responsibilities..."
                                 value={work.jobDescription}
                                 onChange={(e) => handleUpdateWork(work.id, 'jobDescription', e.target.value.toUpperCase())}
                                 sx={{ '& textarea': { textTransform: 'uppercase' } }}
@@ -2714,19 +2753,19 @@ export default function ApplyPage() {
                         select
                         fullWidth
                         size="small"
-                        label="Kemampuan Bahasa Inggris"
+                        label="English Language Proficiency"
                         value={englishSkill}
                         onChange={(e) => setEnglishSkill(e.target.value)}
                       >
-                        <MenuItem value="Beginner">Beginner (Pemula / Pasif)</MenuItem>
-                        <MenuItem value="Intermediate">Intermediate (Cukup / Menengah)</MenuItem>
-                        <MenuItem value="Advanced">Advanced (Lancar / Fasih)</MenuItem>
+                        <MenuItem value="Beginner">Beginner</MenuItem>
+                        <MenuItem value="Intermediate">Intermediate</MenuItem>
+                        <MenuItem value="Advanced">Advanced</MenuItem>
                       </TextField>
                       <TextField
                         fullWidth
                         size="small"
-                        label="Bahasa Asing Lainnya (Opsional)"
-                        placeholder="Contoh: Bahasa Jepang (N3), Thai, Mandarin"
+                        label="Other Languages (Optional)"
+                        placeholder="Example: Japanese (N3), Thai, Mandarin"
                         value={otherLanguages}
                         onChange={(e) => setOtherLanguages(e.target.value.toUpperCase())}
                           slotProps={{ htmlInput: { style: { textTransform: 'uppercase' } } }}
@@ -2743,28 +2782,28 @@ export default function ApplyPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                       <FamilyIcon sx={{ color: '#018730', fontSize: 28 }} />
                       <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                        16, 17 & 18. Latar Belakang Keluarga (Family Background)
+                        16, 17 & 18. Family Background
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                      Informasi susunan keluarga kandung dan keluarga inti diperlukan untuk administrasi ketenagakerjaan, tunjangan keluarga, dan kontak darurat resmi.
+                      Family information is collected for employment administration, family benefits, and official emergency contact purposes.
                     </Typography>
 
                     {/* 16. Data Orang Tua Kandung */}
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                      16. Data Orang Tua Kandung
+                      16. Biological Parents
                     </Typography>
 
                     <Paper sx={{ p: 2.5, mb: 3.5, borderRadius: 2, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#018730', mb: 2 }}>
-                        Data Ayah Kandung
+                        Father's Information
                       </Typography>
                       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 1.5fr 1.5fr' }, gap: 2, mb: 3 }}>
                         <TextField
                           fullWidth
                           size="small"
-                          label="Nama Lengkap Ayah"
-                          placeholder="MASUKKAN NAMA AYAH"
+                          label="Father's Full Name"
+                          placeholder="Enter father's full name"
                           value={fatherName}
                           onChange={(e) => setFatherName(e.target.value.toUpperCase())}
                           sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2773,7 +2812,7 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Tahun Lahir"
+                          label="Year of Birth"
                           value={fatherBirthYear}
                           onChange={(e) => setFatherBirthYear(e.target.value)}
                         >
@@ -2787,13 +2826,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Pendidikan Terakhir"
+                          label="Highest Education"
                           value={fatherEducation}
                           onChange={(e) => setFatherEducation(e.target.value)}
                         >
                           {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
                             <MenuItem key={lvl} value={lvl}>
-                              {lvl}
+                              {formOptionLabel(lvl)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -2801,13 +2840,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Pekerjaan Ayah"
+                          label="Father's Occupation"
                           value={fatherJob}
                           onChange={(e) => setFatherJob(e.target.value)}
                         >
                           {OCCUPATION_OPTIONS.map((occ) => (
                             <MenuItem key={occ} value={occ}>
-                              {occ}
+                              {formOptionLabel(occ)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -2816,14 +2855,14 @@ export default function ApplyPage() {
                       <Divider sx={{ my: 2.5 }} />
 
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#018730', mb: 2 }}>
-                        Data Ibu Kandung
+                        Mother's Information
                       </Typography>
                       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 1.5fr 1.5fr' }, gap: 2 }}>
                         <TextField
                           fullWidth
                           size="small"
-                          label="Nama Lengkap Ibu"
-                          placeholder="MASUKKAN NAMA IBU"
+                          label="Mother's Full Name"
+                          placeholder="Enter mother's full name"
                           value={motherName}
                           onChange={(e) => setMotherName(e.target.value.toUpperCase())}
                           sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2832,7 +2871,7 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Tahun Lahir"
+                          label="Year of Birth"
                           value={motherBirthYear}
                           onChange={(e) => setMotherBirthYear(e.target.value)}
                         >
@@ -2846,13 +2885,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Pendidikan Terakhir"
+                          label="Highest Education"
                           value={motherEducation}
                           onChange={(e) => setMotherEducation(e.target.value)}
                         >
                           {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
                             <MenuItem key={lvl} value={lvl}>
-                              {lvl}
+                              {formOptionLabel(lvl)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -2860,13 +2899,13 @@ export default function ApplyPage() {
                           select
                           fullWidth
                           size="small"
-                          label="Pekerjaan Ibu"
+                          label="Mother's Occupation"
                           value={motherJob}
                           onChange={(e) => setMotherJob(e.target.value)}
                         >
                           {OCCUPATION_OPTIONS.map((occ) => (
                             <MenuItem key={occ} value={occ}>
-                              {occ}
+                              {formOptionLabel(occ)}
                             </MenuItem>
                           ))}
                         </TextField>
@@ -2877,10 +2916,10 @@ export default function ApplyPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                       <Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          17. Data Saudara Kandung (Kakak & Adik)
+                          17. Siblings (Older and Younger)
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>
-                          Diisi untuk seluruh pelamar (kakak kandung maupun adik kandung)
+                          Complete this section for all applicants, including older and younger siblings.
                         </Typography>
                       </Box>
                       <Button
@@ -2896,7 +2935,7 @@ export default function ApplyPage() {
                           '&:hover': { bgcolor: '#F0FDF4', borderColor: '#005c21' },
                         }}
                       >
-                        Tambah Saudara Kandung
+                        Add Sibling
                       </Button>
                     </Box>
 
@@ -2912,7 +2951,7 @@ export default function ApplyPage() {
                         }}
                       >
                         <Typography variant="body2" sx={{ color: '#64748B', mb: 1 }}>
-                          Belum ada data saudara kandung yang ditambahkan (Kosongkan jika Anda Anak Tunggal).
+                          No sibling information has been added. Leave this section empty if you are an only child.
                         </Typography>
                         <Button
                           variant="text"
@@ -2920,7 +2959,7 @@ export default function ApplyPage() {
                           onClick={handleAddSibling}
                           sx={{ color: '#018730', fontWeight: 700 }}
                         >
-                          Klik untuk menambah data kakak / adik kandung
+                          Click to add an older or younger sibling
                         </Button>
                       </Box>
                     ) : (
@@ -2938,9 +2977,9 @@ export default function ApplyPage() {
                           >
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730' }}>
-                                Saudara Kandung #{idx + 1}
+                                Sibling #{idx + 1}
                               </Typography>
-                              <Tooltip title="Hapus baris ini">
+                              <Tooltip title="Remove this row">
                                 <IconButton
                                   size="small"
                                   color="error"
@@ -2956,18 +2995,18 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Hubungan"
+                                label="Relationship"
                                 value={sib.relation}
                                 onChange={(e) => handleUpdateSibling(sib.id, 'relation', e.target.value)}
                               >
-                                <MenuItem value="KAKAK KANDUNG">KAKAK KANDUNG</MenuItem>
-                                <MenuItem value="ADIK KANDUNG">ADIK KANDUNG</MenuItem>
+                                <MenuItem value="KAKAK KANDUNG">{formOptionLabel('KAKAK KANDUNG')}</MenuItem>
+                                <MenuItem value="ADIK KANDUNG">{formOptionLabel('ADIK KANDUNG')}</MenuItem>
                               </TextField>
                               <TextField
                                 fullWidth
                                 size="small"
-                                label="Nama Lengkap"
-                                placeholder="NAMA SAUDARA KANDUNG"
+                                label="Full Name"
+                                placeholder="Enter sibling's full name"
                                 value={sib.name}
                                 onChange={(e) => handleUpdateSibling(sib.id, 'name', e.target.value.toUpperCase())}
                                 sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -2976,7 +3015,7 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Tahun Lahir"
+                                label="Year of Birth"
                                 value={sib.birthYear}
                                 onChange={(e) => handleUpdateSibling(sib.id, 'birthYear', e.target.value)}
                               >
@@ -2990,13 +3029,13 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Pendidikan Terakhir"
+                                label="Highest Education"
                                 value={sib.education}
                                 onChange={(e) => handleUpdateSibling(sib.id, 'education', e.target.value)}
                               >
                                 {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
                                   <MenuItem key={lvl} value={lvl}>
-                                    {lvl}
+                                    {formOptionLabel(lvl)}
                                   </MenuItem>
                                 ))}
                               </TextField>
@@ -3004,13 +3043,13 @@ export default function ApplyPage() {
                                 select
                                 fullWidth
                                 size="small"
-                                label="Pekerjaan"
+                                label="Occupation"
                                 value={sib.job}
                                 onChange={(e) => handleUpdateSibling(sib.id, 'job', e.target.value)}
                               >
                                 {OCCUPATION_OPTIONS.map((occ) => (
                                   <MenuItem key={occ} value={occ}>
-                                    {occ}
+                                    {formOptionLabel(occ)}
                                   </MenuItem>
                                 ))}
                               </TextField>
@@ -3026,22 +3065,22 @@ export default function ApplyPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
                             {gender === 'PEREMPUAN'
-                              ? '18. Data Keluarga Sendiri (Suami & Anak)'
-                              : '18. Data Keluarga Sendiri (Istri & Anak)'}
+                              ? '18. Immediate Family (Husband & Children)'
+                              : '18. Immediate Family (Wife & Children)'}
                           </Typography>
                         </Box>
 
                         {/* Data Pasangan */}
                         <Paper sx={{ p: 2.5, mb: 3, borderRadius: 2, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#018730', mb: 2 }}>
-                            {gender === 'PEREMPUAN' ? 'Data Suami' : 'Data Istri'}
+                            {gender === 'PEREMPUAN' ? "Husband's Information" : "Wife's Information"}
                           </Typography>
                           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr 1.5fr 1.5fr 1.5fr' }, gap: 2 }}>
                             <TextField
                               fullWidth
                               size="small"
-                              label={gender === 'PEREMPUAN' ? 'Nama Lengkap Suami' : 'Nama Lengkap Istri'}
-                              placeholder="MASUKKAN NAMA LENGKAP PASANGAN"
+                              label={gender === 'PEREMPUAN' ? "Husband's Full Name" : "Wife's Full Name"}
+                              placeholder="Enter spouse's full name"
                               value={spouseName}
                               onChange={(e) => setSpouseName(e.target.value.toUpperCase())}
                               sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -3050,7 +3089,7 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Tahun Lahir"
+                              label="Year of Birth"
                               value={spouseBirthYear}
                               onChange={(e) => setSpouseBirthYear(e.target.value)}
                             >
@@ -3064,13 +3103,13 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Pendidikan Terakhir"
+                              label="Highest Education"
                               value={spouseEducation}
                               onChange={(e) => setSpouseEducation(e.target.value)}
                             >
                               {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
                                 <MenuItem key={lvl} value={lvl}>
-                                  {lvl}
+                                  {formOptionLabel(lvl)}
                                 </MenuItem>
                               ))}
                             </TextField>
@@ -3078,21 +3117,21 @@ export default function ApplyPage() {
                               select
                               fullWidth
                               size="small"
-                              label="Pekerjaan"
+                              label="Occupation"
                               value={spouseJob}
                               onChange={(e) => setSpouseJob(e.target.value)}
                             >
                               {OCCUPATION_OPTIONS.map((occ) => (
                                 <MenuItem key={occ} value={occ}>
-                                  {occ}
+                                  {formOptionLabel(occ)}
                                 </MenuItem>
                               ))}
                             </TextField>
                             <TextField
                               fullWidth
                               size="small"
-                              label="No. WhatsApp / HP"
-                              placeholder="0812xxxxxxxx"
+                              label="Phone / WhatsApp Number"
+                              placeholder="+62 812 3456 789"
                               value={spousePhone}
                               onChange={(e) => setSpousePhone(e.target.value)}
                             />
@@ -3102,7 +3141,7 @@ export default function ApplyPage() {
                         {/* Data Anak Kandung */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                            Data Anak Kandung
+                            Children's Information
                           </Typography>
                           <Button
                             variant="outlined"
@@ -3117,7 +3156,7 @@ export default function ApplyPage() {
                               '&:hover': { bgcolor: '#F0FDF4', borderColor: '#005c21' },
                             }}
                           >
-                            Tambah Data Anak
+                            Add Child
                           </Button>
                         </Box>
 
@@ -3132,7 +3171,7 @@ export default function ApplyPage() {
                             }}
                           >
                             <Typography variant="body2" sx={{ color: '#64748B', mb: 1 }}>
-                              Belum ada data anak yang ditambahkan (Kosongkan jika belum memiliki anak).
+                              No children have been added. Leave this section empty if you do not have children.
                             </Typography>
                             <Button
                               variant="text"
@@ -3140,7 +3179,7 @@ export default function ApplyPage() {
                               onClick={handleAddChild}
                               sx={{ color: '#018730', fontWeight: 700 }}
                             >
-                              Klik untuk menambah data anak
+                              Click to add a child
                             </Button>
                           </Box>
                         ) : (
@@ -3157,9 +3196,9 @@ export default function ApplyPage() {
                             >
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730' }}>
-                                  Anak #{idx + 1}
+                                  Child #{idx + 1}
                                 </Typography>
-                                <Tooltip title="Hapus anak ini">
+                                <Tooltip title="Remove this child">
                                   <IconButton
                                     size="small"
                                     color="error"
@@ -3174,8 +3213,8 @@ export default function ApplyPage() {
                                 <TextField
                                   fullWidth
                                   size="small"
-                                  label="Nama Lengkap Anak"
-                                  placeholder="NAMA ANAK"
+                                  label="Child's Full Name"
+                                  placeholder="Enter child's full name"
                                   value={child.name}
                                   onChange={(e) => handleUpdateChild(child.id, 'name', e.target.value.toUpperCase())}
                                   sx={{ '& input': { textTransform: 'uppercase' } }}
@@ -3184,18 +3223,18 @@ export default function ApplyPage() {
                                   select
                                   fullWidth
                                   size="small"
-                                  label="Jenis Kelamin"
+                                  label="Gender"
                                   value={child.gender}
                                   onChange={(e) => handleUpdateChild(child.id, 'gender', e.target.value)}
                                 >
-                                  <MenuItem value="LAKI-LAKI">LAKI-LAKI</MenuItem>
-                                  <MenuItem value="PEREMPUAN">PEREMPUAN</MenuItem>
+                                  <MenuItem value="LAKI-LAKI">{formOptionLabel('LAKI-LAKI')}</MenuItem>
+                                  <MenuItem value="PEREMPUAN">{formOptionLabel('PEREMPUAN')}</MenuItem>
                                 </TextField>
                                 <TextField
                                   select
                                   fullWidth
                                   size="small"
-                                  label="Tahun Lahir"
+                                  label="Year of Birth"
                                   value={child.birthYear}
                                   onChange={(e) => handleUpdateChild(child.id, 'birthYear', e.target.value)}
                                 >
@@ -3209,13 +3248,13 @@ export default function ApplyPage() {
                                   select
                                   fullWidth
                                   size="small"
-                                  label="Status / Pendidikan Anak"
+                                  label="Child's Status / Education"
                                   value={child.education}
                                   onChange={(e) => handleUpdateChild(child.id, 'education', e.target.value)}
                                 >
                                   {EDUCATION_LEVEL_OPTIONS.map((lvl) => (
                                     <MenuItem key={lvl} value={lvl}>
-                                      {lvl}
+                                      {formOptionLabel(lvl)}
                                     </MenuItem>
                                   ))}
                                 </TextField>
@@ -3236,11 +3275,11 @@ export default function ApplyPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                       <CheckOutlineIcon sx={{ color: '#018730', fontSize: 28 }} />
                       <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                        Review Berkas & Konfirmasi Pendaftaran
+                        Review & Confirm Application
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                      Silakan periksa kembali ringkasan berkas dan data pendaftaran Anda sebelum menekan tombol kirim di bawah ini.
+                      Review your documents and application details before submitting the form below.
                     </Typography>
 
                     {/* Ringkasan Data */}
@@ -3248,20 +3287,20 @@ export default function ApplyPage() {
                       {/* Kartu Profil */}
                       <Paper sx={{ p: 2.5, borderRadius: 2, border: '1px solid #E2E8F0' }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730', mb: 1.5 }}>
-                          Ringkasan Identitas & Alamat:
+                          Personal Details & Address Summary:
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, fontSize: 13, color: '#334155' }}>
-                          <div><strong>Posisi Dilamar:</strong> {selectedJob?.title || '-'}</div>
-                          <div><strong>Nama Lengkap:</strong> {firstName} {lastName}</div>
-                          <div><strong>NIK:</strong> {nik || '-'} {ktpVerified && <span style={{ color: '#16A34A', fontWeight: 700 }}>(✓ Dukcapil)</span>}</div>
+                          <div><strong>Position Applied For:</strong> {selectedJob?.title || '-'}</div>
+                          <div><strong>Full Name:</strong> {firstName} {lastName}</div>
+                          <div><strong>National ID:</strong> {nik || '-'} {ktpVerified && <span style={{ color: '#16A34A', fontWeight: 700 }}>(✓ Dukcapil)</span>}</div>
                           <div><strong>Email:</strong> {email}</div>
-                          <div><strong>No. WhatsApp / HP:</strong> {phone}</div>
-                          <div><strong>Jenis Kelamin / Agama:</strong> {gender} / {religion}</div>
-                          <div><strong>Tinggi / Berat Badan:</strong> {heightCm ? `${heightCm} cm` : '-'} / {weightKg ? `${weightKg} kg` : '-'}</div>
-                          <div><strong>Status Pernikahan:</strong> {marriageStatus}</div>
-                          <div><strong>Alamat KTP:</strong> {streetKtp ? `${streetKtp}, ` : ''}{villageKtp ? `Desa ${villageKtp}, ` : ''}{districtKtp}, {cityKtp}, {provinceKtp}</div>
+                          <div><strong>Phone / WhatsApp:</strong> {phone}</div>
+                          <div><strong>Gender / Religion:</strong> {formOptionLabel(gender)} / {formOptionLabel(religion)}</div>
+                          <div><strong>Height / Weight:</strong> {heightCm ? `${heightCm} cm` : '-'} / {weightKg ? `${weightKg} kg` : '-'}</div>
+                          <div><strong>Marital Status:</strong> {formOptionLabel(marriageStatus)}</div>
+                          <div><strong>KTP Address:</strong> {streetKtp ? `${streetKtp}, ` : ''}{villageKtp ? `${villageKtp}, ` : ''}{districtKtp}, {cityKtp}, {provinceKtp}</div>
                           {domicileDifferent && (
-                            <div><strong>Alamat Domisili:</strong> {streetDomicile}, {villageDomicile}, {districtDomicile}, {cityDomicile}, {provinceDomicile}</div>
+                            <div><strong>Residential Address:</strong> {streetDomicile}, {villageDomicile}, {districtDomicile}, {cityDomicile}, {provinceDomicile}</div>
                           )}
                         </Box>
                       </Paper>
@@ -3269,35 +3308,35 @@ export default function ApplyPage() {
                       {/* Kartu Berkas & Riwayat */}
                       <Paper sx={{ p: 2.5, borderRadius: 2, border: '1px solid #E2E8F0' }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730', mb: 1.5 }}>
-                          Ringkasan Dokumen & Riwayat:
+                          Documents & History Summary:
                         </Typography>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, fontSize: 13, color: '#334155' }}>
                           <div>
                             <strong>Curriculum Vitae (CV):</strong> {cvDoc.file?.name} ({(cvDoc.size / 1024).toFixed(1)} KB)
                           </div>
                           <div>
-                            <strong>Pas Foto:</strong> {photoDoc.file ? '✓ Diunggah' : '- (Opsional)'}
+                            <strong>Passport Photo:</strong> {photoDoc.file ? '✓ Uploaded' : '- (Optional)'}
                           </div>
                           <div>
-                            <strong>KTP:</strong> {ktpDoc.file ? '✓ Diunggah' : '- (Opsional)'}
+                            <strong>KTP:</strong> {ktpDoc.file ? '✓ Uploaded' : '- (Optional)'}
                           </div>
                           <div>
-                            <strong>Kartu Keluarga:</strong> {kkDoc.file ? '✓ Diunggah' : '- (Opsional)'}
+                            <strong>Family Card:</strong> {kkDoc.file ? '✓ Uploaded' : '- (Optional)'}
                           </div>
                           <div>
-                            <strong>Ijazah & Transkrip:</strong> {ijazahDoc.file || transkripDoc.file ? '✓ Diunggah' : '- (Opsional)'}
+                            <strong>Diploma & Transcript:</strong> {ijazahDoc.file || transkripDoc.file ? '✓ Uploaded' : '- (Optional)'}
                           </div>
                           <div>
-                            <strong>Sertifikat Keahlian:</strong> {certNonformalList.length > 0 ? `✓ ${certNonformalList.length} Sertifikat Diunggah` : '- (Opsional)'}
+                            <strong>Professional Certificates:</strong> {certNonformalList.length > 0 ? `✓ ${certNonformalList.length} Uploaded` : '- (Optional)'}
                           </div>
                           <div>
-                            <strong>Pendidikan Terakhir:</strong> {educationList[0]?.level} - {educationList[0]?.schoolName} ({educationList[0]?.major})
+                            <strong>Most Recent Education:</strong> {formOptionLabel(educationList[0]?.level || '-')} - {educationList[0]?.schoolName} ({educationList[0]?.major})
                           </div>
                           <div>
-                            <strong>Pengalaman Kerja:</strong> {workList.length > 0 ? `${workList.length} Pengalaman Tercatat` : 'Fresh Graduate'}
+                            <strong>Work Experience:</strong> {workList.length > 0 ? `${workList.length} record${workList.length === 1 ? '' : 's'}` : 'Fresh Graduate'}
                           </div>
                           <div>
-                            <strong>Data Orang Tua:</strong> {fatherName || '-'} / {motherName || '-'}
+                            <strong>Parents:</strong> {fatherName || '-'} / {motherName || '-'}
                           </div>
                         </Box>
                       </Paper>
@@ -3315,7 +3354,7 @@ export default function ApplyPage() {
                         }
                         label={
                           <Typography variant="body2" sx={{ fontWeight: 600, color: '#713F12' }}>
-                            Saya menyatakan bahwa seluruh data dan dokumen yang saya berikan adalah benar, asli, dan sah. Jika di kemudian hari ditemukan ketidaksesuaian data, saya bersedia menerima konsekuensi pembatalan proses seleksi.
+                            I confirm that all information and documents I have provided are accurate, authentic, and valid. If any discrepancy is discovered later, I accept that my application may be cancelled.
                           </Typography>
                         }
                       />
@@ -3345,7 +3384,7 @@ export default function ApplyPage() {
                         '&:hover': { bgcolor: '#F1F5F9', borderColor: '#94A3B8' },
                       }}
                     >
-                      Sebelumnya
+                      Previous
                     </Button>
                   ) : (
                     <Box />
@@ -3369,7 +3408,7 @@ export default function ApplyPage() {
                         '&:hover': { bgcolor: '#005c21' },
                       }}
                     >
-                      Selanjutnya &rarr;
+                      Next &rarr;
                     </Button>
                   ) : (
                     <Button
@@ -3392,7 +3431,7 @@ export default function ApplyPage() {
                         '&:hover': { bgcolor: '#005c21' },
                       }}
                     >
-                      {submitting ? 'Mengirimkan Lamaran...' : 'Kirim Berkas Lamaran Lengkap'}
+                      {submitting ? 'Submitting Application...' : 'Submit Complete Application'}
                     </Button>
                   )}
                 </Box>
