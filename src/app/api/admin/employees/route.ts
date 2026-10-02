@@ -22,6 +22,7 @@ export async function GET(req: Request) {
     const department = searchParams.get("department");
     const contractStatus = searchParams.get("contract_status") || searchParams.get("contractStatus");
     const employeeStatus = searchParams.get("employee_status") || searchParams.get("employeeStatus");
+    const contractEval = searchParams.get("contract_eval") || searchParams.get("contractEval");
     const search = searchParams.get("search") || "";
     const sort = searchParams.get("sort") || "desc";
 
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
     if (department) params.set("department", department);
     if (contractStatus) params.set("contract_status", contractStatus);
     if (employeeStatus) params.set("employee_status", employeeStatus);
+    if (contractEval) params.set("contract_eval", contractEval);
     if (search) params.set("search", search);
     if (sort) params.set("sort", sort);
 

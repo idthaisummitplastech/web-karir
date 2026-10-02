@@ -35,6 +35,9 @@ import {
   Stack,
   FormControlLabel,
   Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -45,6 +48,8 @@ import {
   Visibility as ViewIcon,
   Edit as EditIcon,
   Close as CloseIcon,
+  Clear as ClearIcon,
+  RestartAlt as RestartAltIcon,
   Badge as BadgeIcon,
   HowToReg as HowToRegIcon,
   Business as BusinessIcon,
@@ -112,7 +117,8 @@ export default function AdminEmployeesPage() {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [contractFilter, setContractFilter] = useState('');
-  const [employeeStatusFilter, setEmployeeStatusFilter] = useState(''); // '' = aktif saja, 'resign' = keluar
+  const [contractEvalFilter, setContractEvalFilter] = useState(''); // '' = semua, 'expiring_soon' = evaluasi perpanjangan (<= 30 hari), 'expired' = lewat tempo, 'safe' = aman
+  const [employeeStatusFilter, setEmployeeStatusFilter] = useState(''); // '' = aktif saja, 'resign' = keluar, 'all' = semua
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -309,6 +315,7 @@ export default function AdminEmployeesPage() {
     if (contractFilter) params.append('contract_status', contractFilter);
     // Jika filter keluar dipilih, kirim employee_status=resign ke backend
     if (employeeStatusFilter) params.append('employee_status', employeeStatusFilter);
+    if (contractEvalFilter) params.append('contract_eval', contractEvalFilter);
     params.append('sort', sortOrder);
     params.append('_t', Date.now().toString());
 
@@ -326,7 +333,7 @@ export default function AdminEmployeesPage() {
         setEmployees([]);
       })
       .finally(() => setLoading(false));
-  }, [search, deptFilter, contractFilter, employeeStatusFilter, sortOrder]);
+  }, [search, deptFilter, contractFilter, contractEvalFilter, employeeStatusFilter, sortOrder]);
 
   useEffect(() => {
     fetchEmployees();
@@ -940,6 +947,15 @@ export default function AdminEmployeesPage() {
         return rem !== null && rem > 0 && rem <= 30;
       }).length;
 
+  const handleResetFilters = () => {
+    setSearch('');
+    setDeptFilter('');
+    setContractFilter('');
+    setContractEvalFilter('');
+    setEmployeeStatusFilter('');
+    setPage(0);
+  };
+
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       {/* Top Breadcrumb & Title */}
@@ -1114,10 +1130,23 @@ export default function AdminEmployeesPage() {
         </Alert>
       )}
 
-      {/* KPI Stats Cards */}
+      {/* KPI Stats Cards - Interactive as quick filters */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
+        {/* Card 1: Total Personel */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #E2E8F0', height: '100%' }}>
+          <Card
+            onClick={handleResetFilters}
+            sx={{
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              height: '100%',
+              bgcolor: '#FFFFFF',
+              border: !contractFilter && !contractEvalFilter && !employeeStatusFilter ? '2px solid #0F172A' : '1px solid #E2E8F0',
+              boxShadow: !contractFilter && !contractEvalFilter && !employeeStatusFilter ? '0 4px 16px rgba(15, 23, 42, 0.12)' : '0 2px 10px rgba(0,0,0,0.04)',
+              transition: 'all 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 20px rgba(0,0,0,0.08)' },
+            }}
+          >
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>
                 Total Personel
@@ -1132,8 +1161,26 @@ export default function AdminEmployeesPage() {
           </Card>
         </Grid>
 
+        {/* Card 2: Karyawan Tetap (PKWTT) */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #BBF7D0', bgcolor: '#F0FDF4', height: '100%' }}>
+          <Card
+            onClick={() => {
+              setContractFilter(contractFilter === 'PKWTT' ? '' : 'PKWTT');
+              setContractEvalFilter('');
+              setEmployeeStatusFilter('');
+              setPage(0);
+            }}
+            sx={{
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              height: '100%',
+              bgcolor: '#F0FDF4',
+              border: contractFilter === 'PKWTT' ? '2px solid #16A34A' : '1px solid #BBF7D0',
+              boxShadow: contractFilter === 'PKWTT' ? '0 4px 16px rgba(22, 163, 74, 0.2)' : '0 2px 10px rgba(0,0,0,0.04)',
+              transition: 'all 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 20px rgba(22, 163, 74, 0.15)' },
+            }}
+          >
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
                 Karyawan Tetap (PKWTT)
@@ -1148,8 +1195,26 @@ export default function AdminEmployeesPage() {
           </Card>
         </Grid>
 
+        {/* Card 3: Karyawan Kontrak (PKWT) */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #BAE6FD', bgcolor: '#F0F9FF', height: '100%' }}>
+          <Card
+            onClick={() => {
+              setContractFilter(contractFilter === 'PKWT' ? '' : 'PKWT');
+              setContractEvalFilter('');
+              setEmployeeStatusFilter('');
+              setPage(0);
+            }}
+            sx={{
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              height: '100%',
+              bgcolor: '#F0F9FF',
+              border: contractFilter === 'PKWT' && !contractEvalFilter ? '2px solid #0284C7' : '1px solid #BAE6FD',
+              boxShadow: contractFilter === 'PKWT' && !contractEvalFilter ? '0 4px 16px rgba(2, 132, 199, 0.2)' : '0 2px 10px rgba(0,0,0,0.04)',
+              transition: 'all 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 20px rgba(2, 132, 199, 0.15)' },
+            }}
+          >
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 700, textTransform: 'uppercase' }}>
                 Karyawan Kontrak (PKWT)
@@ -1164,8 +1229,26 @@ export default function AdminEmployeesPage() {
           </Card>
         </Grid>
 
+        {/* Card 4: Peserta Magang (Trainee) */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #FDE68A', bgcolor: '#FFFBEB', height: '100%' }}>
+          <Card
+            onClick={() => {
+              setContractFilter(contractFilter === 'Trainee' ? '' : 'Trainee');
+              setContractEvalFilter('');
+              setEmployeeStatusFilter('');
+              setPage(0);
+            }}
+            sx={{
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              height: '100%',
+              bgcolor: '#FFFBEB',
+              border: contractFilter === 'Trainee' ? '2px solid #D97706' : '1px solid #FDE68A',
+              boxShadow: contractFilter === 'Trainee' ? '0 4px 16px rgba(217, 119, 6, 0.2)' : '0 2px 10px rgba(0,0,0,0.04)',
+              transition: 'all 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 20px rgba(217, 119, 6, 0.15)' },
+            }}
+          >
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, textTransform: 'uppercase' }}>
                 Peserta Magang (Trainee)
@@ -1180,106 +1263,379 @@ export default function AdminEmployeesPage() {
           </Card>
         </Grid>
 
+        {/* Card 5: Kontrak Habis (<= 30 Hari) / Perlu Evaluasi Perpanjangan */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <Card sx={{ borderRadius: 2.5, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #FECACA', bgcolor: expiringSoon > 0 ? '#FEF2F2' : '#FFFFFF', height: '100%' }}>
+          <Card
+            onClick={() => {
+              setContractEvalFilter(contractEvalFilter === 'expiring_soon' ? '' : 'expiring_soon');
+              setContractFilter('');
+              setEmployeeStatusFilter('');
+              setPage(0);
+            }}
+            sx={{
+              borderRadius: 2.5,
+              cursor: 'pointer',
+              height: '100%',
+              bgcolor: expiringSoon > 0 ? '#FEF2F2' : '#FFFFFF',
+              border: contractEvalFilter === 'expiring_soon' ? '2px solid #DC2626' : '1px solid #FECACA',
+              boxShadow: contractEvalFilter === 'expiring_soon' ? '0 4px 18px rgba(220, 38, 38, 0.25)' : '0 2px 10px rgba(0,0,0,0.04)',
+              transition: 'all 0.2s ease',
+              '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 20px rgba(220, 38, 38, 0.2)' },
+            }}
+          >
             <CardContent sx={{ p: 2.5 }}>
-              <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700, textTransform: 'uppercase' }}>
-                Kontrak Habis (&le; 30 Hari)
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700, textTransform: 'uppercase' }}>
+                  Kontrak Habis (&le; 30 Hari)
+                </Typography>
+                {contractEvalFilter === 'expiring_soon' && (
+                  <Chip size="small" label="Aktif" sx={{ height: 18, fontSize: 10, bgcolor: '#DC2626', color: '#FFF', fontWeight: 800 }} />
+                )}
+              </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: expiringSoon > 0 ? '#DC2626' : '#64748B', mt: 0.5 }}>
                 {expiringSoon}
               </Typography>
-              <Typography variant="caption" sx={{ color: expiringSoon > 0 ? '#DC2626' : '#64748B', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                Perlu evaluasi perpanjangan
+              <Typography variant="caption" sx={{ color: expiringSoon > 0 ? '#DC2626' : '#64748B', fontWeight: 700, mt: 0.5, display: 'block' }}>
+                Perlu evaluasi perpanjangan &rarr;
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Filter & Search Bar */}
-      <Paper elevation={0} sx={{ p: 2.5, mb: 3, borderRadius: 2.5, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF' }}>
-        <Grid container spacing={2} sx={{ alignItems: 'center' }}>
-          <Grid size={{ xs: 12, md: 5 }}>
+      {/* Filter & Search Bar - Spacious, Clear & Complete */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 3 },
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid #E2E8F0',
+          bgcolor: '#FFFFFF',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
+        }}
+      >
+        {/* Header Bar inside Filter Container */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+            <Box sx={{ bgcolor: '#F0FDF4', color: '#018730', p: 0.8, borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FilterIcon sx={{ fontSize: 20 }} />
+            </Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 16 }}>
+              Pencarian &amp; Filter Karyawan
+            </Typography>
+            <Chip
+              size="small"
+              label={`${employees.length} Karyawan`}
+              sx={{ fontWeight: 700, bgcolor: '#F1F5F9', color: '#334155', fontSize: 12, height: 24 }}
+            />
+          </Box>
+
+          {(search || deptFilter || contractFilter || contractEvalFilter || employeeStatusFilter) && (
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<RestartAltIcon />}
+              onClick={handleResetFilters}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                color: '#DC2626',
+                borderRadius: 2,
+                px: 1.5,
+                '&:hover': { bgcolor: '#FEE2E2' },
+              }}
+            >
+              Reset Semua Filter
+            </Button>
+          )}
+        </Box>
+
+        <Grid container spacing={2.5}>
+          {/* Row 1: Search Bar (Full Width & Spacious) */}
+          <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              size="small"
-              placeholder="Cari nama karyawan, nomor ID (1530.09.26), NIK KTP, atau jabatan..."
+              placeholder="Cari nama karyawan, nomor ID (1530.09.26), NIK KTP, jabatan, atau divisi..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(0);
+              }}
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: '#94A3B8' }} />
+                      <SearchIcon sx={{ color: '#018730', fontSize: 22, mr: 0.5 }} />
                     </InputAdornment>
                   ),
+                  endAdornment: search ? (
+                    <InputAdornment position="end">
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setSearch('');
+                          setPage(0);
+                        }}
+                      >
+                        <ClearIcon sx={{ fontSize: 18, color: '#94A3B8' }} />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                  sx: {
+                    borderRadius: 2.5,
+                    bgcolor: '#F8FAFC',
+                    fontSize: '0.95rem',
+                    height: 48,
+                    '&:hover': { bgcolor: '#F1F5F9' },
+                    '&.Mui-focused': { bgcolor: '#FFFFFF' },
+                  },
                 },
               }}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
-            <TextField
-              fullWidth
-              select
-              size="small"
-              label="Filter Departemen"
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-            >
-              <MenuItem value="">Semua Departemen</MenuItem>
-              {departmentOptions.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
+          {/* Row 2: 4 Clear, Large Dropdown Filters */}
+          {/* 1. Filter Departemen */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size="medium">
+              <InputLabel id="dept-filter-label" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                Filter Departemen
+              </InputLabel>
+              <Select
+                labelId="dept-filter-label"
+                label="Filter Departemen"
+                value={deptFilter}
+                onChange={(e) => {
+                  setDeptFilter(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: deptFilter ? '#F0FDF4' : '#FFFFFF',
+                  fontWeight: deptFilter ? 700 : 500,
+                  fontSize: '0.9rem',
+                  height: 48,
+                  '& fieldset': { borderColor: deptFilter ? '#86EFAC' : '#CBD5E1' },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Semua Departemen</em>
                 </MenuItem>
-              ))}
-            </TextField>
+                {departmentOptions.map((dept) => (
+                  <MenuItem key={dept} value={dept}>
+                    {dept}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, md: 3.5 }}>
-            <TextField
-              fullWidth
-              select
-              size="small"
-              label="Status Hubungan Kerja"
-              value={contractFilter}
-              onChange={(e) => setContractFilter(e.target.value)}
-            >
-              <MenuItem value="">Semua Karyawan Aktif</MenuItem>
-              <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
-              <MenuItem value="PKWT">PKWT (Karyawan Kontrak)</MenuItem>
-              <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
-              <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
-            </TextField>
-          </Grid>
-          {/* Filter: Status Karyawan (Aktif / Keluar) */}
-          <Grid item xs={12} sm={6} md={2.5}>
-            <TextField
-              fullWidth
-              select
-              size="small"
-              label="Status Karyawan"
-              value={employeeStatusFilter}
-              onChange={(e) => {
-                setEmployeeStatusFilter(e.target.value);
-                setPage(0);
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
+          {/* 2. Status Hubungan Kerja */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size="medium">
+              <InputLabel id="contract-filter-label" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                Status Hubungan Kerja
+              </InputLabel>
+              <Select
+                labelId="contract-filter-label"
+                label="Status Hubungan Kerja"
+                value={contractFilter}
+                onChange={(e) => {
+                  setContractFilter(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
                   borderRadius: 2,
-                  ...(employeeStatusFilter === 'resign' && {
-                    '& fieldset': { borderColor: '#DC2626' },
-                    bgcolor: '#FFF5F5',
-                  }),
-                },
-              }}
-            >
-              <MenuItem value="">Karyawan Aktif</MenuItem>
-              <MenuItem value="resign" sx={{ color: '#DC2626', fontWeight: 700 }}>⚠ Karyawan Keluar / Tidak Aktif</MenuItem>
-            </TextField>
+                  bgcolor: contractFilter ? '#F0F9FF' : '#FFFFFF',
+                  fontWeight: contractFilter ? 700 : 500,
+                  fontSize: '0.9rem',
+                  height: 48,
+                  '& fieldset': { borderColor: contractFilter ? '#7DD3FC' : '#CBD5E1' },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Semua Hubungan Kerja</em>
+                </MenuItem>
+                <MenuItem value="PKWT">PKWT (Karyawan Kontrak)</MenuItem>
+                <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
+                <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
+                <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* 3. Masa & Evaluasi Kontrak (REQUESTED FILTER) */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size="medium">
+              <InputLabel id="eval-filter-label" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                Masa &amp; Evaluasi Kontrak
+              </InputLabel>
+              <Select
+                labelId="eval-filter-label"
+                label="Masa & Evaluasi Kontrak"
+                value={contractEvalFilter}
+                onChange={(e) => {
+                  setContractEvalFilter(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor:
+                    contractEvalFilter === 'expiring_soon'
+                      ? '#FEF2F2'
+                      : contractEvalFilter
+                      ? '#FFFBEB'
+                      : '#FFFFFF',
+                  fontWeight: contractEvalFilter ? 700 : 500,
+                  fontSize: '0.9rem',
+                  height: 48,
+                  '& fieldset': {
+                    borderColor:
+                      contractEvalFilter === 'expiring_soon'
+                        ? '#F87171'
+                        : contractEvalFilter
+                        ? '#FCD34D'
+                        : '#CBD5E1',
+                    borderWidth: contractEvalFilter === 'expiring_soon' ? 2 : 1,
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Semua Masa Kontrak</em>
+                </MenuItem>
+                <MenuItem
+                  value="expiring_soon"
+                  sx={{
+                    color: '#DC2626',
+                    fontWeight: 700,
+                    bgcolor: '#FEF2F2',
+                    '&:hover': { bgcolor: '#FEE2E2' },
+                  }}
+                >
+                  ⏰ Perlu Evaluasi Perpanjangan (&le; 30 Hari)
+                </MenuItem>
+                <MenuItem value="expired" sx={{ color: '#B91C1C', fontWeight: 600 }}>
+                  ⚠️ Kontrak Telah Berakhir (Lewat Tempo)
+                </MenuItem>
+                <MenuItem value="safe" sx={{ color: '#15803D', fontWeight: 600 }}>
+                  ✓ Kontrak Masih Panjang (&gt; 30 Hari)
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* 4. Status Kepegawaian (Aktif / Keluar) */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <FormControl fullWidth size="medium">
+              <InputLabel id="status-filter-label" sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                Status Kepegawaian
+              </InputLabel>
+              <Select
+                labelId="status-filter-label"
+                label="Status Kepegawaian"
+                value={employeeStatusFilter}
+                onChange={(e) => {
+                  setEmployeeStatusFilter(e.target.value);
+                  setPage(0);
+                }}
+                sx={{
+                  borderRadius: 2,
+                  bgcolor: employeeStatusFilter === 'resign' ? '#FEF2F2' : '#FFFFFF',
+                  fontWeight: employeeStatusFilter ? 700 : 500,
+                  fontSize: '0.9rem',
+                  height: 48,
+                  '& fieldset': {
+                    borderColor: employeeStatusFilter === 'resign' ? '#EF4444' : '#CBD5E1',
+                    borderWidth: employeeStatusFilter === 'resign' ? 2 : 1,
+                  },
+                }}
+              >
+                <MenuItem value="">Karyawan Aktif</MenuItem>
+                <MenuItem value="resign" sx={{ color: '#DC2626', fontWeight: 700, bgcolor: '#FFF5F5' }}>
+                  ⚠ Karyawan Keluar / Resign
+                </MenuItem>
+                <MenuItem value="all">Semua Status (Aktif &amp; Keluar)</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
+
+        {/* Active Filter Tags */}
+        {(search || deptFilter || contractFilter || contractEvalFilter || employeeStatusFilter) && (
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mt: 2.5, pt: 2, borderTop: '1px dashed #E2E8F0' }}>
+            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, mr: 0.5 }}>
+              Filter Aktif:
+            </Typography>
+            {search && (
+              <Chip
+                size="small"
+                label={`Pencarian: "${search}"`}
+                onDelete={() => {
+                  setSearch('');
+                  setPage(0);
+                }}
+                sx={{ bgcolor: '#F1F5F9', fontWeight: 600 }}
+              />
+            )}
+            {deptFilter && (
+              <Chip
+                size="small"
+                label={`Departemen: ${deptFilter}`}
+                onDelete={() => {
+                  setDeptFilter('');
+                  setPage(0);
+                }}
+                sx={{ bgcolor: '#DCFCE7', color: '#166534', fontWeight: 600 }}
+              />
+            )}
+            {contractFilter && (
+              <Chip
+                size="small"
+                label={`Hubungan Kerja: ${contractFilter}`}
+                onDelete={() => {
+                  setContractFilter('');
+                  setPage(0);
+                }}
+                sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 600 }}
+              />
+            )}
+            {contractEvalFilter && (
+              <Chip
+                size="small"
+                label={
+                  contractEvalFilter === 'expiring_soon'
+                    ? 'Perlu Evaluasi Perpanjangan (≤ 30 Hari)'
+                    : contractEvalFilter === 'expired'
+                    ? 'Kontrak Berakhir (Lewat Tempo)'
+                    : 'Kontrak Masih Panjang (> 30 Hari)'
+                }
+                onDelete={() => {
+                  setContractEvalFilter('');
+                  setPage(0);
+                }}
+                sx={{
+                  bgcolor: contractEvalFilter === 'expiring_soon' ? '#FEE2E2' : '#FEF3C7',
+                  color: contractEvalFilter === 'expiring_soon' ? '#B91C1C' : '#92400E',
+                  fontWeight: 700,
+                  border: '1px solid',
+                  borderColor: contractEvalFilter === 'expiring_soon' ? '#FCA5A5' : '#FDE68A',
+                }}
+              />
+            )}
+            {employeeStatusFilter && (
+              <Chip
+                size="small"
+                label={employeeStatusFilter === 'resign' ? 'Status: Karyawan Keluar / Resign' : 'Status: Semua'}
+                onDelete={() => {
+                  setEmployeeStatusFilter('');
+                  setPage(0);
+                }}
+                sx={{ bgcolor: '#FEE2E2', color: '#991B1B', fontWeight: 600 }}
+              />
+            )}
+          </Box>
+        )}
       </Paper>
 
       {/* Main Table */}
