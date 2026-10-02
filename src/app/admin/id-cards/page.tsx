@@ -1258,8 +1258,8 @@ export default function AdminIdCardsPage() {
             filteredCount={filteredEmployees.length}
           />
 
-          <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-            <Table size="small">
+          <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 700 }}>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell padding="checkbox" sx={{ py: 1.5 }}>

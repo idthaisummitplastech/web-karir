@@ -1776,14 +1776,14 @@ export default function AdminApplicantsPage() {
       </Card>
 
       {/* Applicants Table */}
-      <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+      <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflowX: 'auto' }}>
         {loading ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CircularProgress sx={{ color: '#018730' }} />
           </Box>
         ) : (
           <>
-            <Table>
+            <Table sx={{ minWidth: 850 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Kandidat & Posisi</TableCell>

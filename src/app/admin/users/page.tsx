@@ -315,12 +315,29 @@ export default function AdminUsersPage() {
 
   return (
     <Box sx={{ maxWidth: 1200 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: '#0F172A',
+              letterSpacing: '-0.02em',
+              fontSize: { xs: '1.4rem', sm: '1.75rem', md: '2.1rem' },
+            }}
+          >
             Kelola Akun HR & User Departemen
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748B' }}>
+          <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
             Manajemen kredensial tim internal rekrutmen, reset password akun, dan reset MFA jika perangkat Authenticator hilang.
           </Typography>
         </Box>
@@ -328,7 +345,17 @@ export default function AdminUsersPage() {
           variant="contained"
           startIcon={<AddUserIcon />}
           onClick={() => setAddModalOpen(true)}
-          sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
+          sx={{
+            bgcolor: '#018730',
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+            width: { xs: '100%', sm: 'auto' },
+            py: { xs: 1.2, sm: 1 },
+            px: 2.5,
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(1, 135, 48, 0.25)',
+            '&:hover': { bgcolor: '#005c21' },
+          }}
         >
           Tambah Akun Baru
         </Button>
@@ -357,18 +384,145 @@ export default function AdminUsersPage() {
 
         return (
           <>
-            <KarirTableToolbar
-              searchQuery={searchQuery}
-              onSearchChange={(val) => {
-                setSearchQuery(val);
-                setPage(0);
+            <Paper sx={{ mb: 2, borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+              <KarirTableToolbar
+                searchQuery={searchQuery}
+                onSearchChange={(val) => {
+                  setSearchQuery(val);
+                  setPage(0);
+                }}
+                placeholder="Cari nama, username, email, role, atau dept..."
+                totalCount={users.length}
+                filteredCount={filteredUsers.length}
+              />
+            </Paper>
+
+            {/* Tampilan Khusus Mobile: List Card Responsif */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2, mb: 3 }}>
+              {filteredUsers.length === 0 ? (
+                <Paper sx={{ p: 4, textAlign: 'center', color: '#64748B', borderRadius: 2 }}>
+                  {searchQuery ? 'Tidak ada akun pengguna yang sesuai kriteria pencarian.' : 'Belum ada data akun pengguna.'}
+                </Paper>
+              ) : (
+                paginatedUsers.map((u) => (
+                  <Paper
+                    key={u.id}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      border: '1px solid #E2E8F0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    {/* Header Card: Nama & Role */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', lineHeight: 1.2 }}>
+                          {u.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.3 }}>
+                          Username: <code>{u.username}</code>
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={u.role === 'hr' ? 'HR Recruitment' : u.role === 'user_dept' ? 'User Dept' : 'Super Admin'}
+                        size="small"
+                        sx={{
+                          bgcolor: u.role === 'hr' ? '#DCFCE7' : u.role === 'user_dept' ? '#FEF3C7' : '#E0F2FE',
+                          color: u.role === 'hr' ? '#166534' : u.role === 'user_dept' ? '#92400E' : '#0369A1',
+                          fontWeight: 700,
+                          fontSize: 11,
+                        }}
+                      />
+                    </Box>
+
+                    {/* Email & Dept */}
+                    <Box sx={{ fontSize: 13, color: '#475569', mb: 1.5 }}>
+                      <div>✉️ {u.email}</div>
+                      <div>🏢 Departemen: <strong>{u.department}</strong></div>
+                    </Box>
+
+                    {/* Status MFA */}
+                    <Box sx={{ mb: 2 }}>
+                      <Chip
+                        icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 15 }} /> : <SecurityIcon sx={{ fontSize: 15 }} />}
+                        label={u.isMfaEnabled ? 'MFA Aktif (Authenticator)' : 'MFA Belum Aktif'}
+                        size="small"
+                        sx={{
+                          bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2',
+                          color: u.isMfaEnabled ? '#15803D' : '#991B1B',
+                          fontWeight: 700,
+                          fontSize: 11.5,
+                        }}
+                      />
+                    </Box>
+
+                    {/* Action Buttons Grid on Mobile */}
+                    <Divider sx={{ mb: 1.5 }} />
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleOpenEdit(u)}
+                        sx={{ borderColor: '#0284C7', color: '#0284C7', fontWeight: 700, flex: 1, minWidth: 90 }}
+                      >
+                        Edit
+                      </Button>
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<ResetPasswordIcon />}
+                        onClick={() => {
+                          setSelectedUser(u);
+                          setNewPasswordInput('');
+                          setResetFeedback(null);
+                          setResetModalOpen(true);
+                        }}
+                        sx={{ borderColor: '#CBD5E1', color: '#334155', fontWeight: 700, flex: 1, minWidth: 140 }}
+                      >
+                        Reset Password
+                      </Button>
+
+                      {u.isMfaEnabled && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="warning"
+                          onClick={() => handleResetMfa(u.id, u.name)}
+                          sx={{ fontWeight: 700, flex: 1, minWidth: 110 }}
+                        >
+                          Reset MFA
+                        </Button>
+                      )}
+
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteUser(u.id, u.name)}
+                        sx={{ color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 1.5, p: 0.7 }}
+                        title="Hapus Akun Pengguna"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Paper>
+                ))
+              )}
+            </Box>
+
+            {/* Tampilan Desktop: Tabel Standar dengan Horizontal Scroll Protection */}
+            <TableContainer
+              component={Paper}
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                borderRadius: 2.5,
+                border: '1px solid #E2E8F0',
+                overflowX: 'auto',
+                mb: 2,
               }}
-              placeholder="Cari nama, username, email, role, atau dept..."
-              totalCount={users.length}
-              filteredCount={filteredUsers.length}
-            />
-            <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-              <Table>
+            >
+              <Table sx={{ minWidth: 750 }}>
                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 800 }}>Nama Pengguna</TableCell>
@@ -489,6 +643,10 @@ export default function AdminUsersPage() {
                   )}
                 </TableBody>
               </Table>
+            </TableContainer>
+
+            {/* Pagination Component */}
+            <Paper sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
               <KarirTablePagination
                 count={filteredUsers.length}
                 page={page}
@@ -499,7 +657,7 @@ export default function AdminUsersPage() {
                   setPage(0);
                 }}
               />
-            </TableContainer>
+            </Paper>
           </>
         );
       })()}

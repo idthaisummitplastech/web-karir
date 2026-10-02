@@ -34,17 +34,26 @@ export function KarirTableToolbar({
       className="notranslate"
       translate="no"
       sx={{
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 2,
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 1.5,
         bgcolor: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 260 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: 1.5,
+          flex: 1,
+          width: '100%',
+        }}
+      >
         <TextField
           size="small"
           value={searchQuery}
@@ -67,7 +76,7 @@ export function KarirTableToolbar({
             },
           }}
           sx={{
-            maxWidth: 340,
+            maxWidth: { xs: '100%', sm: 380 },
             width: '100%',
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
@@ -78,13 +87,22 @@ export function KarirTableToolbar({
           }}
         />
         {totalCount !== undefined && filteredCount !== undefined && (
-          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: '#64748B',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              alignSelf: { xs: 'flex-start', sm: 'center' },
+              pl: { xs: 0.5, sm: 0 },
+            }}
+          >
             {searchQuery ? `${filteredCount} dari ${totalCount} entri` : `Total: ${totalCount} entri`}
           </Typography>
         )}
       </Box>
 
-      {extraAction && <Box>{extraAction}</Box>}
+      {extraAction && <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>{extraAction}</Box>}
     </Box>
   );
 }
@@ -125,14 +143,20 @@ export function KarirTablePagination({
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
         rowsPerPageOptions={rowsPerPageOptions}
-        labelRowsPerPage="Baris per halaman:"
+        labelRowsPerPage="Baris:"
         labelDisplayedRows={({ from, to, count: total }) =>
-          `${from}–${to} dari ${total !== -1 ? total : `lebih dari ${to}`}`
+          `${from}–${to} / ${total !== -1 ? total : `>${to}`}`
         }
         sx={{
-          '& .MuiTablePagination-toolbar': { minHeight: 52, px: 2 },
+          '& .MuiTablePagination-toolbar': {
+            minHeight: 52,
+            px: { xs: 1, sm: 2 },
+            flexWrap: 'wrap',
+            justifyContent: { xs: 'center', sm: 'flex-end' },
+            gap: 0.5,
+          },
           '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-            fontSize: '0.85rem',
+            fontSize: '0.82rem',
             fontWeight: 600,
             color: '#475569',
           },
