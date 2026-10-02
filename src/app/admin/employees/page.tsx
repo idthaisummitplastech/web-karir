@@ -112,6 +112,7 @@ export default function AdminEmployeesPage() {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [contractFilter, setContractFilter] = useState('');
+  const [employeeStatusFilter, setEmployeeStatusFilter] = useState(''); // '' = aktif saja, 'resign' = keluar
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -306,6 +307,8 @@ export default function AdminEmployeesPage() {
     if (search) params.append('search', search);
     if (deptFilter) params.append('department', deptFilter);
     if (contractFilter) params.append('contract_status', contractFilter);
+    // Jika filter keluar dipilih, kirim employee_status=resign ke backend
+    if (employeeStatusFilter) params.append('employee_status', employeeStatusFilter);
     params.append('sort', sortOrder);
     params.append('_t', Date.now().toString());
 
@@ -323,7 +326,7 @@ export default function AdminEmployeesPage() {
         setEmployees([]);
       })
       .finally(() => setLoading(false));
-  }, [search, deptFilter, contractFilter, sortOrder]);
+  }, [search, deptFilter, contractFilter, employeeStatusFilter, sortOrder]);
 
   useEffect(() => {
     fetchEmployees();
@@ -1243,11 +1246,37 @@ export default function AdminEmployeesPage() {
               value={contractFilter}
               onChange={(e) => setContractFilter(e.target.value)}
             >
-              <MenuItem value="">Semua Status Hubungan Kerja</MenuItem>
+              <MenuItem value="">Semua Karyawan Aktif</MenuItem>
               <MenuItem value="PKWTT">PKWTT (Karyawan Tetap)</MenuItem>
               <MenuItem value="PKWT">PKWT (Karyawan Kontrak)</MenuItem>
               <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
               <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+            </TextField>
+          </Grid>
+          {/* Filter: Status Karyawan (Aktif / Keluar) */}
+          <Grid item xs={12} sm={6} md={2.5}>
+            <TextField
+              fullWidth
+              select
+              size="small"
+              label="Status Karyawan"
+              value={employeeStatusFilter}
+              onChange={(e) => {
+                setEmployeeStatusFilter(e.target.value);
+                setPage(0);
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  ...(employeeStatusFilter === 'resign' && {
+                    '& fieldset': { borderColor: '#DC2626' },
+                    bgcolor: '#FFF5F5',
+                  }),
+                },
+              }}
+            >
+              <MenuItem value="">Karyawan Aktif</MenuItem>
+              <MenuItem value="resign" sx={{ color: '#DC2626', fontWeight: 700 }}>⚠ Karyawan Keluar / Tidak Aktif</MenuItem>
             </TextField>
           </Grid>
         </Grid>
@@ -1313,6 +1342,7 @@ export default function AdminEmployeesPage() {
                   const isTrainee = emp.contract_status === 'Trainee';
                   const isExpat = emp.contract_status === 'Expatriate';
                   const isExpiring = !isPermanent && !isTrainee && rem !== null && rem <= 30;
+                  const isResigned = emp.employee_status === 'resign';
 
                   return (
                     <TableRow key={emp.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -1398,49 +1428,68 @@ export default function AdminEmployeesPage() {
                       {/* Status Kontrak */}
                       <TableCell>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.4 }}>
-                          <Chip
-                            size="small"
-                            icon={isTrainee ? <SchoolIcon sx={{ fontSize: '13px !important', color: '#B45309' }} /> : undefined}
-                            label={
-                              isPermanent
-                                ? 'PKWTT (Tetap)'
-                                : isTrainee
-                                ? (emp.contract_status || 'Trainee')
-                                : isExpat
-                                ? 'Expatriate'
-                                : (emp.contract_status || 'PKWT')
-                            }
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: 11,
-                              bgcolor: isPermanent
-                                ? '#DCFCE7'
-                                : isTrainee
-                                ? '#FEF3C7'
-                                : isExpat
-                                ? '#F3E8FF'
-                                : '#E0F2FE',
-                              color: isPermanent
-                                ? '#15803D'
-                                : isTrainee
-                                ? '#B45309'
-                                : isExpat
-                                ? '#7E22CE'
-                                : '#0369A1',
-                              border: `1px solid ${
+                          {isResigned ? (
+                            <Chip
+                              size="small"
+                              label="Keluar / Tidak Aktif"
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: 11,
+                                bgcolor: '#FEE2E2',
+                                color: '#B91C1C',
+                                border: '1px solid #FECACA',
+                              }}
+                            />
+                          ) : (
+                            <Chip
+                              size="small"
+                              icon={isTrainee ? <SchoolIcon sx={{ fontSize: '13px !important', color: '#B45309' }} /> : undefined}
+                              label={
                                 isPermanent
-                                  ? '#86EFAC'
+                                  ? 'PKWTT (Tetap)'
                                   : isTrainee
-                                  ? '#FCD34D'
+                                  ? (emp.contract_status || 'Trainee')
                                   : isExpat
-                                  ? '#DDD6FE'
-                                  : '#BAE6FD'
-                              }`,
-                            }}
-                          />
-                          {emp.contract_sequence && emp.contract_sequence > 1 && (
+                                  ? 'Expatriate'
+                                  : (emp.contract_status || 'PKWT')
+                              }
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: 11,
+                                bgcolor: isPermanent
+                                  ? '#DCFCE7'
+                                  : isTrainee
+                                  ? '#FEF3C7'
+                                  : isExpat
+                                  ? '#F3E8FF'
+                                  : '#E0F2FE',
+                                color: isPermanent
+                                  ? '#15803D'
+                                  : isTrainee
+                                  ? '#B45309'
+                                  : isExpat
+                                  ? '#7E22CE'
+                                  : '#0369A1',
+                                border: `1px solid ${
+                                  isPermanent
+                                    ? '#86EFAC'
+                                    : isTrainee
+                                    ? '#FCD34D'
+                                    : isExpat
+                                    ? '#DDD6FE'
+                                    : '#BAE6FD'
+                                }`,
+                              }}
+                            />
+                          )}
+                          {!isResigned && emp.contract_sequence && emp.contract_sequence > 1 && (
                             <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, fontSize: 10 }}>
                               Kontrak Ke-{emp.contract_sequence}
+                            </Typography>
+                          )}
+                          {isResigned && emp.exit_reason && (
+                            <Typography variant="caption" sx={{ color: '#B91C1C', fontWeight: 600, fontSize: 10, maxWidth: 160, whiteSpace: 'normal', lineHeight: 1.3 }}>
+                              {emp.exit_reason}
                             </Typography>
                           )}
                         </Box>
@@ -1448,43 +1497,61 @@ export default function AdminEmployeesPage() {
 
                       {/* Masa Kontrak & Masa Kerja */}
                       <TableCell>
-                        <Typography variant="caption" sx={{ color: '#334155', display: 'block', fontWeight: 600 }}>
-                          Mulai: <strong>{emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID') : (emp.contract_start_date ? new Date(emp.contract_start_date).toLocaleDateString('id-ID') : '-')}</strong>
-                        </Typography>
-                        {isPermanent ? (
-                          <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 800, display: 'block' }}>
-                            Karyawan Tetap
-                          </Typography>
-                        ) : isTrainee ? (
-                          <Typography variant="caption" sx={{ color: '#B45309', fontWeight: 700, display: 'block' }}>
-                            Selesai Magang: <strong>{emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}</strong>
-                          </Typography>
-                        ) : (
+                        {isResigned ? (
                           <>
-                            <Typography variant="caption" sx={{ color: '#334155', display: 'block' }}>
-                              Selesai: <strong>{emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}</strong>
+                            <Typography variant="caption" sx={{ color: '#334155', display: 'block', fontWeight: 600 }}>
+                              Bergabung: <strong>{emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID') : '-'}</strong>
                             </Typography>
-                            {rem !== null && (
-                              <Chip
-                                size="small"
-                                icon={isExpiring ? <WarningIcon sx={{ fontSize: '13px !important' }} /> : undefined}
-                                label={rem > 0 ? `${rem} Hari Tersisa` : 'Masa Kontrak Berakhir'}
-                                sx={{
-                                  height: 20,
-                                  fontSize: 10,
-                                  fontWeight: 800,
-                                  mt: 0.4,
-                                  bgcolor: rem <= 0 ? '#FEE2E2' : isExpiring ? '#FEF3C7' : '#F1F5F9',
-                                  color: rem <= 0 ? '#B91C1C' : isExpiring ? '#B45309' : '#475569',
-                                }}
-                              />
+                            <Typography variant="caption" sx={{ color: '#B91C1C', display: 'block', fontWeight: 700 }}>
+                              Keluar: <strong>{emp.exit_date ? new Date(emp.exit_date).toLocaleDateString('id-ID') : (emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-')}</strong>
+                            </Typography>
+                            {emp.years_of_service != null && (
+                              <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600, display: 'block', mt: 0.2 }}>
+                                Masa Kerja: {emp.years_of_service} Thn
+                              </Typography>
                             )}
                           </>
-                        )}
-                        {emp.years_of_service != null && (
-                          <Typography variant="caption" sx={{ color: '#018730', fontWeight: 800, display: 'block', mt: 0.4 }}>
-                            Masa Kerja: {emp.years_of_service} Thn
-                          </Typography>
+                        ) : (
+                          <>
+                            <Typography variant="caption" sx={{ color: '#334155', display: 'block', fontWeight: 600 }}>
+                              Mulai: <strong>{emp.join_date ? new Date(emp.join_date).toLocaleDateString('id-ID') : (emp.contract_start_date ? new Date(emp.contract_start_date).toLocaleDateString('id-ID') : '-')}</strong>
+                            </Typography>
+                            {isPermanent ? (
+                              <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 800, display: 'block' }}>
+                                Karyawan Tetap
+                              </Typography>
+                            ) : isTrainee ? (
+                              <Typography variant="caption" sx={{ color: '#B45309', fontWeight: 700, display: 'block' }}>
+                                Selesai Magang: <strong>{emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}</strong>
+                              </Typography>
+                            ) : (
+                              <>
+                                <Typography variant="caption" sx={{ color: '#334155', display: 'block' }}>
+                                  Selesai: <strong>{emp.contract_end_date ? new Date(emp.contract_end_date).toLocaleDateString('id-ID') : '-'}</strong>
+                                </Typography>
+                                {rem !== null && (
+                                  <Chip
+                                    size="small"
+                                    icon={isExpiring ? <WarningIcon sx={{ fontSize: '13px !important' }} /> : undefined}
+                                    label={rem > 0 ? `${rem} Hari Tersisa` : 'Masa Kontrak Berakhir'}
+                                    sx={{
+                                      height: 20,
+                                      fontSize: 10,
+                                      fontWeight: 800,
+                                      mt: 0.4,
+                                      bgcolor: rem <= 0 ? '#FEE2E2' : isExpiring ? '#FEF3C7' : '#F1F5F9',
+                                      color: rem <= 0 ? '#B91C1C' : isExpiring ? '#B45309' : '#475569',
+                                    }}
+                                  />
+                                )}
+                              </>
+                            )}
+                            {emp.years_of_service != null && (
+                              <Typography variant="caption" sx={{ color: '#018730', fontWeight: 800, display: 'block', mt: 0.4 }}>
+                                Masa Kerja: {emp.years_of_service} Thn
+                              </Typography>
+                            )}
+                          </>
                         )}
                       </TableCell>
 
