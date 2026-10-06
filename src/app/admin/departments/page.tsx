@@ -3,8 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Card, CardContent, Button, TextField, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, IconButton, Tooltip,
-  CircularProgress, Alert, Switch, FormControlLabel, Collapse, List,
-  ListItem, ListItemText, ListItemSecondaryAction, Divider, Badge,
+  CircularProgress, Alert, Switch, FormControlLabel, Collapse, Divider, Badge,
 } from '@mui/material';
 import {
   Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon,
@@ -234,29 +233,92 @@ export default function AdminDepartmentsPage() {
                 {/* Sections */}
                 {dept.sections.length > 0 && (
                   <Collapse in={!!expanded[dept.id]}>
-                    <Divider sx={{ mt: 1.5, mb: 1 }} />
-                    <Typography variant="overline" sx={{ color: '#64748B', fontSize: 11, fontWeight: 800 }}>SECTIONS</Typography>
-                    <List dense disablePadding>
+                    <Divider sx={{ mt: 1.5, mb: 1.5 }} />
+                    <Typography variant="overline" sx={{ color: '#64748B', fontSize: 11, fontWeight: 800, letterSpacing: 0.5 }}>
+                      SECTIONS ({dept.sections.length})
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 0.75 }}>
                       {dept.sections.map((sec) => (
-                        <ListItem key={sec.id} disablePadding sx={{ py: 0.5, px: 1, borderRadius: 1, '&:hover': { bgcolor: '#F8FAFC' } }}>
-                          <SectionIcon sx={{ fontSize: 16, color: '#94A3B8', mr: 1 }} />
-                          <ListItemText
-                            primary={sec.name}
-                            secondary={sec.description || undefined}
-                            primaryTypographyProps={{ fontSize: 13.5, fontWeight: 600 }}
-                          />
-                          <Chip
-                            label={sec.is_active ? 'Aktif' : 'Nonaktif'}
-                            size="small"
-                            sx={{ mr: 1, bgcolor: sec.is_active ? '#DCFCE7' : '#FEE2E2', color: sec.is_active ? '#15803D' : '#B91C1C', fontWeight: 800, fontSize: 10 }}
-                          />
-                          <ListItemSecondaryAction>
-                            <Tooltip title="Edit Section"><IconButton size="small" onClick={() => openEditSection(dept, sec)}><EditIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
-                            <Tooltip title="Hapus Section"><IconButton size="small" color="error" onClick={() => deleteSection(dept, sec)}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton></Tooltip>
-                          </ListItemSecondaryAction>
-                        </ListItem>
+                        <Box
+                          key={sec.id}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            py: 0.85,
+                            px: 1.5,
+                            borderRadius: 1.5,
+                            bgcolor: '#F8FAFC',
+                            border: '1px solid #E2E8F0',
+                            transition: 'all 0.15s ease',
+                            '&:hover': { bgcolor: '#F1F5F9', borderColor: '#CBD5E1' },
+                          }}
+                        >
+                          {/* Nama & Info Section */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, mr: 2 }}>
+                            <SectionIcon sx={{ fontSize: 16, color: '#64748B', mr: 1.25, flexShrink: 0 }} />
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', fontSize: 13.5 }}>
+                                {sec.name}
+                              </Typography>
+                              {sec.description && (
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: 11.5, lineHeight: 1.2 }}>
+                                  {sec.description}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+
+                          {/* Action Group: Badge Status + Tombol Edit + Tombol Hapus (tidak bertumpuk) */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                            <Chip
+                              label={sec.is_active ? 'Aktif' : 'Nonaktif'}
+                              size="small"
+                              sx={{
+                                bgcolor: sec.is_active ? '#DCFCE7' : '#FEE2E2',
+                                color: sec.is_active ? '#15803D' : '#B91C1C',
+                                fontWeight: 700,
+                                fontSize: 11,
+                                height: 24,
+                                borderRadius: 1,
+                              }}
+                            />
+                            <Tooltip title="Edit Section">
+                              <IconButton
+                                size="small"
+                                onClick={() => openEditSection(dept, sec)}
+                                sx={{
+                                  color: '#334155',
+                                  p: 0.6,
+                                  borderRadius: 1,
+                                  bgcolor: '#FFFFFF',
+                                  border: '1px solid #CBD5E1',
+                                  '&:hover': { bgcolor: '#F1F5F9', color: '#0F172A', borderColor: '#94A3B8' },
+                                }}
+                              >
+                                <EditIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Hapus Section">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => deleteSection(dept, sec)}
+                                sx={{
+                                  p: 0.6,
+                                  borderRadius: 1,
+                                  bgcolor: '#FFFFFF',
+                                  border: '1px solid #FECACA',
+                                  '&:hover': { bgcolor: '#FEE2E2', borderColor: '#FCA5A5' },
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
                       ))}
-                    </List>
+                    </Box>
                   </Collapse>
                 )}
               </CardContent>
