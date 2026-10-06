@@ -43,6 +43,7 @@ export default function AdminUsersPage() {
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -97,35 +98,52 @@ export default function AdminUsersPage() {
     'Warehouse & Delivery',
   ]);
 
-  const fetchUsers = () => {
+  const fetchUsers = async () => {
     setLoading(true);
-    fetch('/api/admin/users')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.users) setUsers(data.users);
-        if (data.departments && Array.isArray(data.departments)) {
-          setAvailableDepartments(data.departments);
-        }
-      })
-      .finally(() => setLoading(false));
+    setLoadError(null);
+    try {
+      const res = await fetch('/api/admin/users', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Gagal memuat pengguna (HTTP ${res.status})`);
+      const list = Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : [];
+      setUsers(list);
+      if (data.departments && Array.isArray(data.departments) && data.departments.length > 0) {
+        setAvailableDepartments(data.departments);
+      }
+    } catch (e: any) {
+      setLoadError(e?.message || 'Gagal memuat daftar pengguna. Periksa koneksi backend atau sesi login.');
+      // Keep existing users (if any) rather than blanking to avoid layout crash
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetch('/api/admin/session')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCurrentUserRole(data.role);
+    let cancelled = false;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/session', { cache: 'no-store', signal: ctrl.signal });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (data?.success) {
+          setCurrentUserRole(data.role || null);
           if (data.role === 'admin' || data.role === 'superadmin' || data.isSuperAdmin) {
-            fetchUsers();
+            await fetchUsers();
           } else {
             setLoading(false);
           }
         } else {
           setLoading(false);
         }
-      })
-      .catch(() => setLoading(false));
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      ctrl.abort();
+    };
   }, []);
 
   const handleConfirmResetPassword = async () => {
@@ -283,6 +301,44 @@ export default function AdminUsersPage() {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
         <CircularProgress sx={{ color: '#018730' }} />
+        <Typography variant="body2" sx={{ color: '#64748B', mt: 2 }}>
+          Memuat daftar akun...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <Box sx={{ maxWidth: 680, mx: 'auto', mt: 4 }}>
+        <Alert
+          severity="error"
+          sx={{ borderRadius: 2, mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={() => fetchUsers()} sx={{ fontWeight: 800 }}>
+              Coba Lagi
+            </Button>
+          }
+        >
+          {loadError}
+        </Alert>
+        <Card sx={{ p: 3, textAlign: 'center', borderRadius: 3, border: '1px solid #E2E8F0' }}>
+          <SecurityIcon sx={{ fontSize: 42, color: '#94A3B8', mb: 1 }} />
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+            Gagal memuat data akun
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
+            Backend tidak merespons atau sesi Anda kedaluwarsa. Periksa koneksi ke <code>BACKEND_API_URL</code> dan coba login ulang.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', mt: 2.5, flexWrap: 'wrap' }}>
+            <Button variant="contained" onClick={() => fetchUsers()} sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}>
+              Muat Ulang
+            </Button>
+            <Button variant="outlined" onClick={() => router.push('/login')} sx={{ fontWeight: 700, borderColor: '#CBD5E1', color: '#334155' }}>
+              Ke Login
+            </Button>
+          </Box>
+        </Card>
       </Box>
     );
   }
