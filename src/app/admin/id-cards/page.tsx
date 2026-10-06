@@ -116,8 +116,74 @@ const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
 const DEFAULT_HR_SIGNATURE =
   'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCAxNDAgNjAiPjxwYXRoIGQ9Ik0gMTUgNDUgUSAyNSAxNSwgNDAgMzAgVCA2NSAyNSBUIDkwIDQwIFQgMTE1IDIwIFQgMTMwIDM1IiBmaWxsPSJub25lIiBzdHJva2U9IiMwRjE3MkEiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNIDQ1IDM1USA1NSA1LCA1MCA0OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMEYxNzJBIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iOTUiIGN5PSIyMiIgcj0iMi41IiBmaWxsPSIjMEYxNzJBIi8+PC9zdmc=';
 
+// Helper untuk auto-crop / trim background putih dan transparan kosong dari tanda tangan
+// sehingga tanda tangan tersimpan hanya pada goresan aslinya tanpa batas kosong yang memperkecil atau memotong gambar
+const trimSignatureImage = (sourceCanvas: HTMLCanvasElement): string => {
+  const ctx = sourceCanvas.getContext('2d');
+  if (!ctx) return sourceCanvas.toDataURL('image/png');
+  const { width, height } = sourceCanvas;
+  const imgData = ctx.getImageData(0, 0, width, height);
+  const { data } = imgData;
+
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const a = data[idx + 3];
+
+      // Goresan terdeteksi jika bukan transparan dan bukan putih murni / kertas putih terang
+      const isStroke = a > 20 && !(r > 235 && g > 235 && b > 235);
+      if (isStroke) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // Jika kanvas kosong sama sekali
+  if (maxX === -1 || maxY === -1) {
+    return sourceCanvas.toDataURL('image/png');
+  }
+
+  // Berikan sedikit padding aman di sekeliling goresan tanda tangan
+  const pad = 6;
+  const cropX = Math.max(0, minX - pad);
+  const cropY = Math.max(0, minY - pad);
+  const cropW = Math.min(width - cropX, maxX - cropX + pad * 2);
+  const cropH = Math.min(height - cropY, maxY - cropY + pad * 2);
+
+  const trimmedCanvas = document.createElement('canvas');
+  trimmedCanvas.width = cropW;
+  trimmedCanvas.height = cropH;
+  const trimmedCtx = trimmedCanvas.getContext('2d');
+  if (!trimmedCtx) return sourceCanvas.toDataURL('image/png');
+
+  trimmedCtx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  // Jadikan pixel putih / abu-abu terang menjadi transparan agar tanda tangan terlihat seperti tinta asli di atas kartu
+  const tData = trimmedCtx.getImageData(0, 0, cropW, cropH);
+  const pixels = tData.data;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const pr = pixels[i];
+    const pg = pixels[i + 1];
+    const pb = pixels[i + 2];
+    const pa = pixels[i + 3];
+    if (pa > 0 && pr > 230 && pg > 230 && pb > 230) {
+      pixels[i + 3] = 0; // Transparan
+    }
+  }
+  trimmedCtx.putImageData(tData, 0, 0);
+
+  return trimmedCanvas.toDataURL('image/png');
+};
+
 // Interactive Digital Signature Canvas for HR with Scratch, Upload, Copy & Paste support
-// Supports scale adjustment for pasted/uploaded images
 const SignaturePad: React.FC<{
   value: string;
   onChange: (val: string) => void;
@@ -125,83 +191,43 @@ const SignaturePad: React.FC<{
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  // Stores the original pasted/uploaded image DataURL (before any scaling)
-  const [rawImage, setRawImage] = useState<string | null>(null);
-  // Scale percentage: 100 = fit to canvas, range 10–300
-  const [imageScale, setImageScale] = useState<number>(100);
 
-  // Draw the raw image onto the canvas at the given scale, centered
-  const drawImageToCanvas = (imageSrc: string, scale: number) => {
+  const drawTrimmedToCanvas = (src: string) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     const img = new (window as any).Image();
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Calculate the "fit" dimensions (aspect-ratio preserving fit into canvas)
-      const canvasW = canvas.width;
-      const canvasH = canvas.height;
-      const imgAspect = img.naturalWidth / img.naturalHeight;
-      const canvasAspect = canvasW / canvasH;
-
-      let fitW: number, fitH: number;
-      if (imgAspect > canvasAspect) {
-        // Image is wider than canvas → fit by width
-        fitW = canvasW;
-        fitH = canvasW / imgAspect;
+      const aspect = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
+      const canvasAspect = canvas.width / canvas.height;
+      let drawW, drawH;
+      if (aspect > canvasAspect) {
+        drawW = canvas.width * 0.85;
+        drawH = drawW / aspect;
       } else {
-        // Image is taller than canvas → fit by height
-        fitH = canvasH;
-        fitW = canvasH * imgAspect;
+        drawH = canvas.height * 0.85;
+        drawW = drawH * aspect;
       }
-
-      // Apply scale factor
-      const scaleFactor = scale / 100;
-      const drawW = fitW * scaleFactor;
-      const drawH = fitH * scaleFactor;
-
-      // Center on canvas
-      const drawX = (canvasW - drawW) / 2;
-      const drawY = (canvasH - drawH) / 2;
-
+      const drawX = (canvas.width - drawW) / 2;
+      const drawY = (canvas.height - drawH) / 2;
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
-
-      // Save the scaled result as the value
-      onChange(canvas.toDataURL('image/png'));
     };
-    img.src = imageSrc;
+    img.src = src;
   };
 
-  // When value changes externally (not from our own drawImageToCanvas), redraw
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     if (value) {
-      const img = new (window as any).Image();
-      img.onload = () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      };
-      img.src = value;
+      drawTrimmedToCanvas(value);
     } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     }
   }, [value]);
-
-  // Handle scale slider change – re-draw the raw image at new scale
-  const handleScaleChange = (_: Event, newValue: number | number[]) => {
-    const newScale = newValue as number;
-    setImageScale(newScale);
-    if (rawImage) {
-      drawImageToCanvas(rawImage, newScale);
-    }
-  };
 
   const processImageFile = (file: Blob | File) => {
     if (!file.type.startsWith('image/')) {
@@ -212,19 +238,27 @@ const SignaturePad: React.FC<{
     reader.onload = (evt) => {
       const res = evt.target?.result as string;
       if (res) {
-        // Store the original raw image and reset scale to 100%
-        setRawImage(res);
-        setImageScale(100);
-        // Draw it centered + fit at 100%
-        drawImageToCanvas(res, 100);
-        setFeedback('✓ Gambar tanda tangan berhasil ditempelkan (Paste)!');
-        setTimeout(() => setFeedback(null), 3500);
+        const img = new (window as any).Image();
+        img.onload = () => {
+          const tempC = document.createElement('canvas');
+          tempC.width = img.naturalWidth || img.width || 500;
+          tempC.height = img.naturalHeight || img.height || 160;
+          const tempCtx = tempC.getContext('2d');
+          if (tempCtx) {
+            tempCtx.drawImage(img, 0, 0);
+            const trimmed = trimSignatureImage(tempC);
+            drawTrimmedToCanvas(trimmed);
+            onChange(trimmed);
+            setFeedback('✓ Gambar tanda tangan berhasil ditempel (background dibersihkan & dipotong rapi)!');
+            setTimeout(() => setFeedback(null), 3500);
+          }
+        };
+        img.src = res;
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // Listen to Ctrl+V on the window
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -316,11 +350,6 @@ const SignaturePad: React.FC<{
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    // When user starts drawing manually, clear rawImage state so slider hides
-    if (rawImage) {
-      setRawImage(null);
-      setImageScale(100);
-    }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -352,7 +381,9 @@ const SignaturePad: React.FC<{
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
-    onChange(canvas.toDataURL('image/png'));
+    // Auto trim batas kosong setelah selesai menggambar
+    const trimmed = trimSignatureImage(canvas);
+    onChange(trimmed);
   };
 
   const handleClear = () => {
@@ -361,8 +392,6 @@ const SignaturePad: React.FC<{
     const ctx = canvas.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     onChange('');
-    setRawImage(null);
-    setImageScale(100);
     setFeedback(null);
   };
 
@@ -435,11 +464,11 @@ const SignaturePad: React.FC<{
 
       <canvas
         ref={canvasRef}
-        width={450}
-        height={130}
+        width={500}
+        height={160}
         style={{
           width: '100%',
-          height: '130px',
+          height: '145px',
           touchAction: 'none',
           background: '#F8FAFC',
           borderRadius: '6px',
@@ -455,71 +484,6 @@ const SignaturePad: React.FC<{
         onTouchMove={draw}
         onTouchEnd={stopDrawing}
       />
-
-      {/* Scale Slider – only visible when a pasted/uploaded image exists */}
-      {rawImage && (
-        <Box
-          sx={{
-            mt: 1.5,
-            p: 1.5,
-            bgcolor: '#FFFBEB',
-            border: '1px solid #FDE68A',
-            borderRadius: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-          }}
-        >
-          <ZoomOutIcon sx={{ fontSize: 20, color: '#92400E', flexShrink: 0 }} />
-          <Slider
-            value={imageScale}
-            onChange={handleScaleChange}
-            min={10}
-            max={300}
-            step={5}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(v) => `${v}%`}
-            sx={{
-              flexGrow: 1,
-              color: '#D97706',
-              '& .MuiSlider-thumb': {
-                width: 20,
-                height: 20,
-                bgcolor: '#FFFFFF',
-                border: '2px solid #D97706',
-                '&:hover': { boxShadow: '0 0 0 6px rgba(217, 119, 6, 0.15)' },
-              },
-              '& .MuiSlider-valueLabel': {
-                bgcolor: '#92400E',
-                borderRadius: 1,
-                fontSize: 12,
-                fontWeight: 700,
-              },
-              '& .MuiSlider-track': { height: 5 },
-              '& .MuiSlider-rail': { height: 5, bgcolor: '#FDE68A' },
-            }}
-          />
-          <ZoomInIcon sx={{ fontSize: 20, color: '#92400E', flexShrink: 0 }} />
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 800,
-              fontSize: 12,
-              color: '#92400E',
-              bgcolor: '#FEF3C7',
-              px: 1,
-              py: 0.3,
-              borderRadius: 1,
-              border: '1px solid #FDE68A',
-              minWidth: 48,
-              textAlign: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {imageScale}%
-          </Typography>
-        </Box>
-      )}
 
       <Box sx={{ mt: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="caption" sx={{ color: '#0369A1', bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', px: 1, py: 0.3, borderRadius: 1, display: 'inline-flex', alignItems: 'center', gap: 0.5, fontWeight: 700, fontSize: 11 }}>
@@ -562,6 +526,9 @@ export default function AdminIdCardsPage() {
   const [defaultHrSignature, setDefaultHrSignature] = useState<string>('');
   const [authorizerModalOpen, setAuthorizerModalOpen] = useState(false);
   const [tempSignature, setTempSignature] = useState<string>('');
+  // Scale tanda tangan untuk preview cetak ID Card (30-250%, default 100)
+  const [signatureScale, setSignatureScale] = useState<number>(100);
+  const [tempSignatureScale, setTempSignatureScale] = useState<number>(100);
 
   // Load Saved Format & Signature from localStorage on Mount
   useEffect(() => {
@@ -571,6 +538,15 @@ export default function AdminIdCardsPage() {
         setDefaultHrSignature(savedSignature);
       } else {
         setDefaultHrSignature(DEFAULT_HR_SIGNATURE);
+      }
+
+      const savedScale = localStorage.getItem('itsp_hr_signature_scale');
+      if (savedScale) {
+        const parsed = parseInt(savedScale, 10);
+        if (!isNaN(parsed) && parsed >= 30 && parsed <= 250) {
+          setSignatureScale(parsed);
+          setTempSignatureScale(parsed);
+        }
       }
 
       const savedFormat = localStorage.getItem('itsp_custom_idcard_format');
@@ -691,7 +667,25 @@ export default function AdminIdCardsPage() {
         console.error('Failed to save to localStorage:', e);
       }
     }
+    // Save signature scale
+    setSignatureScale(tempSignatureScale);
+    try {
+      localStorage.setItem('itsp_hr_signature_scale', String(tempSignatureScale));
+    } catch (e) {
+      console.error('Failed to save scale to localStorage:', e);
+    }
     setAuthorizerModalOpen(false);
+  };
+
+  const handleUpdateScale = (newScale: number) => {
+    const clamped = Math.max(50, Math.min(220, newScale));
+    setSignatureScale(clamped);
+    setTempSignatureScale(clamped);
+    try {
+      localStorage.setItem('itsp_hr_signature_scale', String(clamped));
+    } catch (e) {
+      console.error('Failed to save scale to localStorage:', e);
+    }
   };
 
   const handleUploadSignature = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -699,8 +693,21 @@ export default function AdminIdCardsPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
-      if (evt.target?.result) {
-        setTempSignature(evt.target.result as string);
+      const res = evt.target?.result as string;
+      if (res) {
+        const img = new (window as any).Image();
+        img.onload = () => {
+          const tempC = document.createElement('canvas');
+          tempC.width = img.naturalWidth || img.width || 500;
+          tempC.height = img.naturalHeight || img.height || 160;
+          const tempCtx = tempC.getContext('2d');
+          if (tempCtx) {
+            tempCtx.drawImage(img, 0, 0);
+            const trimmed = trimSignatureImage(tempC);
+            setTempSignature(trimmed);
+          }
+        };
+        img.src = res;
       }
     };
     reader.readAsDataURL(file);
@@ -851,7 +858,7 @@ export default function AdminIdCardsPage() {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              pb: 0.6,
+              pb: 0.4,
               borderBottom: '1.5px solid #000000',
               gap: 1,
             }}
@@ -904,12 +911,12 @@ export default function AdminIdCardsPage() {
           </Box>
 
           {/* Body: Pas Foto di Kiri + 4 Kolom Data di Kanan */}
-          <Box sx={{ display: 'flex', gap: 1, py: 0.6, flexGrow: 1, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, py: 0.4, flexGrow: 1, alignItems: 'center' }}>
             {/* Kotak Pas Foto Resmi */}
             <Box
               sx={{
-                width: 70,
-                height: 88,
+                width: 68,
+                height: 80,
                 border: '1.5px solid #1E40AF',
                 p: 0.2,
                 bgcolor: '#FFFFFF',
@@ -983,15 +990,59 @@ export default function AdminIdCardsPage() {
           </Box>
 
           {/* Footer: Authorizer's Signature */}
-          <Box className="notranslate" translate="no" sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', pt: 0.2 }}>
-            <Box className="notranslate" translate="no" sx={{ textAlign: 'center', width: '150px' }}>
-              <Box sx={{ height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Box
+            className="notranslate"
+            translate="no"
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'flex-end',
+              mt: 'auto',
+              pt: 0.2,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <Box
+              className="notranslate"
+              translate="no"
+              sx={{
+                textAlign: 'center',
+                width: '160px',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+              }}
+            >
+              {/* Wadah Tanda Tangan */}
+              <Box
+                sx={{
+                  height: `${Math.min(46, Math.max(24, Math.round(30 * (signatureScale / 100))))}px`,
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'visible', // JANGAN PERNAH POTONG TANDA TANGAN
+                }}
+              >
                 {defaultHrSignature ? (
                   <Box
                     component="img"
                     src={defaultHrSignature}
                     alt="Authorizer's Signature"
-                    sx={{ height: 28, maxWidth: 120, objectFit: 'contain' }}
+                    sx={{
+                      height: `${Math.round(28 * (signatureScale / 100))}px`,
+                      maxWidth: `${Math.round(140 * (signatureScale / 100))}px`,
+                      maxHeight: `${Math.round(52 * (signatureScale / 100))}px`,
+                      objectFit: 'contain',
+                      display: 'block',
+                      position: signatureScale > 130 ? 'absolute' : 'relative',
+                      bottom: signatureScale > 130 ? 0 : 'auto',
+                      transformOrigin: 'bottom center',
+                    }}
                   />
                 ) : (
                   <Typography sx={{ color: '#94A3B8', fontSize: 8 }}>
@@ -999,7 +1050,18 @@ export default function AdminIdCardsPage() {
                   </Typography>
                 )}
               </Box>
-              <Typography className="notranslate" translate="no" sx={{ fontSize: 8, fontWeight: 700, color: '#000000', lineHeight: 1.1 }}>
+              <Typography
+                className="notranslate"
+                translate="no"
+                sx={{
+                  fontSize: 8,
+                  fontWeight: 700,
+                  color: '#000000',
+                  lineHeight: 1.1,
+                  mt: 0.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {customFmt.labelAuthorizerSignature}
               </Typography>
             </Box>
@@ -1294,6 +1356,7 @@ export default function AdminIdCardsPage() {
             variant="outlined"
             onClick={() => {
               setTempSignature(defaultHrSignature);
+              setTempSignatureScale(signatureScale);
               setAuthorizerModalOpen(true);
             }}
             startIcon={<DrawIcon />}
@@ -1657,6 +1720,83 @@ export default function AdminIdCardsPage() {
                       Kartu Depan &amp; Belakang Saja
                     </Button>
                   </Stack>
+                </Box>
+
+                {/* Kontrol Ukuran / Scale Tanda Tangan Langsung di Live Print Preview */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 1.5,
+                    p: 1.5,
+                    bgcolor: '#FFFBEB',
+                    borderRadius: 2,
+                    border: '1.5px solid #FDE68A',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: '#92400E', fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      🔍 Ukuran Tanda Tangan di ID Card (Scale):
+                    </Typography>
+                    <Chip
+                      size="small"
+                      label={`${signatureScale}%`}
+                      sx={{ fontWeight: 800, bgcolor: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', height: 22 }}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: { xs: '100%', sm: 260 }, flexGrow: { xs: 1, sm: 0 } }}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleUpdateScale(Math.max(50, signatureScale - 10))}
+                      disabled={signatureScale <= 50}
+                      title="Perkecil Ukuran Tanda Tangan"
+                      sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
+                    >
+                      <ZoomOutIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+
+                    <Slider
+                      value={signatureScale}
+                      onChange={(_, v) => handleUpdateScale(v as number)}
+                      min={50}
+                      max={220}
+                      step={5}
+                      size="small"
+                      sx={{
+                        color: '#D97706',
+                        flexGrow: 1,
+                        '& .MuiSlider-thumb': {
+                          width: 16,
+                          height: 16,
+                          bgcolor: '#FFFFFF',
+                          border: '2px solid #D97706',
+                        },
+                      }}
+                    />
+
+                    <IconButton
+                      size="small"
+                      onClick={() => handleUpdateScale(Math.min(220, signatureScale + 10))}
+                      disabled={signatureScale >= 220}
+                      title="Perbesar Ukuran Tanda Tangan"
+                      sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
+                    >
+                      <ZoomInIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+
+                    {signatureScale !== 100 && (
+                      <Button
+                        size="small"
+                        onClick={() => handleUpdateScale(100)}
+                        sx={{ fontSize: 10, py: 0.2, px: 0.8, color: '#B45309', fontWeight: 700, minWidth: 'auto', textTransform: 'none' }}
+                      >
+                        Reset (100%)
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
 
                 {/* Banner Aksi Cepat: Edit Format & Teks ID Card (Dengan Live Preview) */}
@@ -2234,45 +2374,141 @@ export default function AdminIdCardsPage() {
           </Box>
 
           {tempSignature && (
-            <Box sx={{ mt: 2.5, p: 2, bgcolor: '#FFFFFF', borderRadius: 2, border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-                  Pratinjau Hasil Tanda Tangan:
+            <Box
+              sx={{
+                mt: 2.5,
+                p: 2,
+                bgcolor: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                borderRadius: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#92400E', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 12 }}>
+                  🔍 Ukuran Tanda Tangan di ID Card (Scale):
                 </Typography>
-                <Box component="img" src={tempSignature} alt="Signature Preview" sx={{ height: 50, maxWidth: 180, objectFit: 'contain' }} />
+                <Chip
+                  size="small"
+                  label={`${tempSignatureScale}%`}
+                  sx={{ fontWeight: 800, bgcolor: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A', height: 22 }}
+                />
               </Box>
-              <Stack direction="row" spacing={1}>
-                <Button
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <IconButton
                   size="small"
-                  variant="outlined"
-                  startIcon={<ContentCopyIcon sx={{ fontSize: 14 }} />}
-                  onClick={async () => {
-                    try {
-                      const res = await fetch(tempSignature);
-                      const blob = await res.blob();
-                      if (navigator.clipboard?.write) {
-                        await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
-                        alert('Gambar tanda tangan berhasil disalin (Copy) ke clipboard!');
-                        return;
-                      }
-                    } catch (e) {
-                      console.warn(e);
-                    }
-                    alert('Tanda tangan siap digunakan.');
+                  onClick={() => setTempSignatureScale(Math.max(50, tempSignatureScale - 10))}
+                  disabled={tempSignatureScale <= 50}
+                  sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
+                >
+                  <ZoomOutIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+                <Slider
+                  value={tempSignatureScale}
+                  onChange={(_, v) => setTempSignatureScale(v as number)}
+                  min={50}
+                  max={220}
+                  step={5}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(v) => `${v}%`}
+                  sx={{
+                    flexGrow: 1,
+                    color: '#D97706',
+                    '& .MuiSlider-thumb': {
+                      width: 20,
+                      height: 20,
+                      bgcolor: '#FFFFFF',
+                      border: '2px solid #D97706',
+                      '&:hover': { boxShadow: '0 0 0 6px rgba(217, 119, 6, 0.15)' },
+                    },
+                    '& .MuiSlider-track': { height: 6 },
+                    '& .MuiSlider-rail': { height: 6, bgcolor: '#FDE68A' },
                   }}
-                  sx={{ textTransform: 'none', fontSize: 11.5, fontWeight: 700, color: '#475569', borderColor: '#CBD5E1' }}
-                >
-                  Salin Gambar
-                </Button>
-                <Button
+                />
+                <IconButton
                   size="small"
-                  color="error"
-                  onClick={() => setTempSignature('')}
-                  sx={{ textTransform: 'none', fontSize: 11.5, fontWeight: 700 }}
+                  onClick={() => setTempSignatureScale(Math.min(220, tempSignatureScale + 10))}
+                  disabled={tempSignatureScale >= 220}
+                  sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
                 >
-                  Hapus
-                </Button>
-              </Stack>
+                  <ZoomInIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+                {tempSignatureScale !== 100 && (
+                  <Button
+                    size="small"
+                    onClick={() => setTempSignatureScale(100)}
+                    sx={{ fontSize: 11, fontWeight: 700, color: '#B45309', textTransform: 'none', minWidth: 'auto' }}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </Box>
+
+              {/* Simulasi Card Footer Preview */}
+              <Box sx={{ mt: 2, p: 2, bgcolor: '#FFFFFF', borderRadius: 1.5, border: '1px dashed #D97706', textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 800, fontSize: 11, mb: 1, display: 'block' }}>
+                  Simulasi Tampilan Tanda Tangan pada ID Card (Tidak Terpotong):
+                </Typography>
+                <Box
+                  sx={{
+                    height: `${Math.min(50, Math.max(26, Math.round(32 * (tempSignatureScale / 100))))}px`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'visible',
+                    mx: 'auto',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={tempSignature}
+                    alt="Scale Preview"
+                    sx={{
+                      height: `${Math.round(28 * (tempSignatureScale / 100))}px`,
+                      maxWidth: `${Math.round(140 * (tempSignatureScale / 100))}px`,
+                      maxHeight: `${Math.round(52 * (tempSignatureScale / 100))}px`,
+                      objectFit: 'contain',
+                      display: 'block',
+                    }}
+                  />
+                </Box>
+                <Typography sx={{ fontSize: 9, fontWeight: 700, color: '#000000', mt: 0.5 }}>
+                  Authorizer&apos;s Signature ........................
+                </Typography>
+
+                <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', mt: 1.5 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<ContentCopyIcon sx={{ fontSize: 13 }} />}
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(tempSignature);
+                        const blob = await res.blob();
+                        if (navigator.clipboard?.write) {
+                          await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
+                          alert('Gambar tanda tangan berhasil disalin (Copy) ke clipboard!');
+                          return;
+                        }
+                      } catch (e) {
+                        console.warn(e);
+                      }
+                      alert('Tanda tangan siap digunakan.');
+                    }}
+                    sx={{ textTransform: 'none', fontSize: 11, fontWeight: 700, color: '#475569', borderColor: '#CBD5E1' }}
+                  >
+                    Salin Gambar
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => setTempSignature('')}
+                    sx={{ textTransform: 'none', fontSize: 11, fontWeight: 700 }}
+                  >
+                    Hapus Tanda Tangan
+                  </Button>
+                </Stack>
+              </Box>
             </Box>
           )}
         </DialogContent>
