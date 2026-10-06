@@ -48,6 +48,8 @@ export default function AdminJobsPage() {
       .then((d)=>{
         if(d.departmentsFull && Array.isArray(d.departmentsFull) && d.departmentsFull.length > 0){
           setDeptsFull(d.departmentsFull);
+        } else if (d.departments && Array.isArray(d.departments) && d.departments.length > 0) {
+          setDeptsFull(d.departments.map((name: string, i: number) => ({ id: i + 1, name, code: '', is_active: true, sort_order: i, sections: [] })));
         }
       })
       .catch(()=>{});

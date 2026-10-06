@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       body: JSON.stringify({ department_id, ...rest }),
     });
-    return NextResponse.json({ success: true, section: data.data, message: data.message });
+    return NextResponse.json({ success: true, section: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Gagal membuat section." }, { status: 500 });
   }
@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest) {
       method: "PUT",
       body: JSON.stringify(body),
     });
-    return NextResponse.json({ success: true, section: data.data, message: data.message });
+    return NextResponse.json({ success: true, section: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Gagal memperbarui section." }, { status: 500 });
   }

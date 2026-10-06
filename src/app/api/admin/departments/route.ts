@@ -8,11 +8,12 @@ export async function GET() {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-    const data = await fetchFromBackend("/departments?active_only=false");
+    const res = await fetchFromBackend("/departments?active_only=false");
+    const list: any[] = Array.isArray(res) ? res : (res?.data || []);
     return NextResponse.json({
       success: true,
-      departments: (data.data || []).map((d: any) => d.name),   // backward compat for jobs page
-      departmentsFull: data.data || [],                           // full objects with sections
+      departments: list.map((d: any) => d.name),   // backward compat for jobs page
+      departmentsFull: list,                        // full objects with sections
     });
   } catch (error: any) {
     console.error("Fetch departments error:", error);
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     const body = await req.json();
     const data = await fetchFromBackend("/departments", { method: "POST", body: JSON.stringify(body) });
-    return NextResponse.json({ success: true, department: data.data, message: data.message });
+    return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Gagal membuat departemen." }, { status: 500 });
   }
@@ -41,7 +42,7 @@ export async function PUT(req: NextRequest) {
     const { id, ...body } = await req.json();
     if (!id) return NextResponse.json({ error: "ID departemen diperlukan." }, { status: 400 });
     const data = await fetchFromBackend(`/departments/${id}`, { method: "PUT", body: JSON.stringify(body) });
-    return NextResponse.json({ success: true, department: data.data, message: data.message });
+    return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Gagal memperbarui departemen." }, { status: 500 });
   }
