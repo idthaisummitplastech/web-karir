@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     if (!requireHr(session)) return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
     const body = await req.json();
-    const { title, department, location, type, experience, requirements, description, isOpen, openingDate, closingDate } = body;
+    const { title, department, section, location, type, experience, requirements, description, isOpen, openingDate, closingDate } = body;
     if (!title?.trim() || !department?.trim() || !requirements?.trim() || !description?.trim()) {
       return NextResponse.json({ error: "Judul, departemen, kualifikasi & deskripsi wajib diisi." }, { status: 400 });
     }
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         title: title.trim(),
         department: department.trim(),
+        section: section?.trim() || null,
         location: location?.trim() || "Karawang / Cikarang",
         type: type?.trim() || "Full-Time",
         experience: experience?.trim() || "1-3 Tahun",
@@ -89,6 +90,7 @@ export async function PUT(req: Request) {
     const payload: any = {};
     if (updateData.title !== undefined) payload.title = updateData.title.trim();
     if (updateData.department !== undefined) payload.department = updateData.department.trim();
+    if (updateData.section !== undefined) payload.section = updateData.section?.trim() || null;
     if (updateData.location !== undefined) payload.location = updateData.location.trim();
     if (updateData.type !== undefined) payload.type = updateData.type;
     if (updateData.experience !== undefined) payload.experience = updateData.experience;

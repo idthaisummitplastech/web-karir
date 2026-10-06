@@ -35,6 +35,7 @@ import {
   Menu as MenuIcon,
   Close as CloseIcon,
   AccountCircle as AccountIcon,
+  AccountTree as DeptIcon,
 } from '@mui/icons-material';
 import BrandLogo from '@/components/BrandLogo';
 import LanguageToggle from '@/components/LanguageToggle';
@@ -75,6 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
       { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
       { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
       { label: 'Bank Soal Psikotes', href: '/admin/questions', icon: <QuizIcon /> },
       { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
       { label: 'Pengaturan MCU & Template Pesan', href: '/admin/settings', icon: <SettingsIcon /> },
@@ -85,6 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
       { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
       { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
       { label: 'Bank Soal Ujian Online', href: '/admin/questions', icon: <QuizIcon /> },
       { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
       { label: 'Pengaturan MCU & Default', href: '/admin/settings', icon: <SettingsIcon /> },

@@ -1,32 +1,12 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, Button, TextField, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip, CircularProgress, Alert, Switch, FormControlLabel, Autocomplete } from '@mui/material';
+import { Box, Typography, Card, CardContent, Button, TextField, MenuItem, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip, CircularProgress, Alert, Switch, FormControlLabel } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Work as WorkIcon, Link as LinkIcon } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 
-interface Job { id: number; title: string; department: string; location: string; type: string; experience: string; requirements: string; description: string; isOpen: boolean; openingDate: string|null; closingDate: string|null; createdAt: string; effectiveOpen?: boolean; statusLabel?: string; _count?: { applicants: number }; }
-const DEFAULT_DEPTS = [
-  'Accounting & Finance',
-  'Assembly',
-  'HQ Office',
-  'HR & GA',
-  'Injection',
-  'Interseat',
-  'Local Manager',
-  'Maintenance',
-  'Marketing',
-  'Painting',
-  'Planning',
-  'Production',
-  'Production Engineering',
-  'Purchasing',
-  'Quality Assurance',
-  'Rack',
-  'SYD & IT',
-  'Store',
-  'Thai Manager',
-  'Warehouse & Delivery',
-];
+interface Section { id: number; name: string; is_active: boolean; }
+interface DeptFull { id: number; name: string; is_active: boolean; sections: Section[]; }
+interface Job { id: number; title: string; department: string; section?: string; location: string; type: string; experience: string; requirements: string; description: string; isOpen: boolean; openingDate: string|null; closingDate: string|null; createdAt: string; effectiveOpen?: boolean; statusLabel?: string; _count?: { applicants: number }; }
 const LOCS = ['Plant 1 Karawang','Plant 2 Cikarang','Karawang / Cikarang'];
 const TYPES = ['Full-Time','Kontrak','Magang','Shift'];
 const EXPS = ['Fresh Graduate','Fresh Graduate / Pengalaman 1 Tahun','1-3 Tahun','1-2 Tahun','Minimal 2 Tahun'];
@@ -35,7 +15,7 @@ const fmtDate = (iso: string|null) => { if(!iso) return '-'; return new Date(iso
 
 export default function AdminJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [deptsList, setDeptsList] = useState<string[]>(DEFAULT_DEPTS);
+  const [deptsFull, setDeptsFull] = useState<DeptFull[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
@@ -45,7 +25,8 @@ export default function AdminJobsPage() {
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<number|null>(null);
   const [fTitle, setFTitle] = useState('');
-  const [fDept, setFDept] = useState(DEFAULT_DEPTS[0]);
+  const [fDept, setFDept] = useState('');
+  const [fSection, setFSection] = useState('');
   const [fLoc, setFLoc] = useState(LOCS[0]);
   const [fType, setFType] = useState(TYPES[0]);
   const [fExp, setFExp] = useState(EXPS[2]);
@@ -56,21 +37,24 @@ export default function AdminJobsPage() {
   const [fClosing, setFClosing] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6);
+
+  // Sections available based on selected dept
+  const activeSections = deptsFull.find((d) => d.name === fDept)?.sections.filter((s) => s.is_active) ?? [];
   const fetchJobs = () => { setLoading(true); fetch('/api/admin/jobs').then((r)=>r.json()).then((d)=>{ if(d.jobs) setJobs(d.jobs); }).catch(()=>{}).finally(()=>setLoading(false)); };
   useEffect(()=>{
     fetchJobs();
     fetch('/api/admin/departments')
       .then((r)=>r.json())
       .then((d)=>{
-        if(d.departments && Array.isArray(d.departments) && d.departments.length > 0){
-          setDeptsList(d.departments);
+        if(d.departmentsFull && Array.isArray(d.departmentsFull) && d.departmentsFull.length > 0){
+          setDeptsFull(d.departmentsFull);
         }
       })
       .catch(()=>{});
   },[]);
-  const openCreate = () => { setEditing(null); setFTitle(''); setFDept(deptsList[0] || 'Production'); setFLoc(LOCS[0]); setFType(TYPES[0]); setFExp(EXPS[2]); setFReq(''); setFDesc(''); setFOpen(true); setFOpening(''); setFClosing(''); setDialogOpen(true); };
-  const openEdit = (j: Job) => { setEditing(j); setFTitle(j.title); setFDept(j.department || ''); setFLoc(j.location); setFType(j.type); setFExp(j.experience); setFReq(j.requirements); setFDesc(j.description); setFOpen(j.isOpen); setFOpening(toInputDate(j.openingDate)); setFClosing(toInputDate(j.closingDate)); setDialogOpen(true); };
-  const handleSave = async (e: React.FormEvent) => { e.preventDefault(); const dept = fDept.trim(); if (!fTitle.trim()||!dept||!fReq.trim()||!fDesc.trim()) { alert('Judul, departemen, kualifikasi & deskripsi wajib diisi.'); return; } if (fOpening && fClosing && new Date(fOpening).getTime() > new Date(fClosing).getTime()) { alert('Tanggal buka tidak boleh sesudah tanggal tutup.'); return; } setSaving(true); try { const payload:any={title:fTitle.trim(),department:dept,location:fLoc,type:fType,experience:fExp,requirements:fReq.trim(),description:fDesc.trim(),isOpen:fOpen,openingDate:fOpening||null,closingDate:fClosing||null}; let res; if(editing) res=await fetch('/api/admin/jobs',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,id:editing.id})}); else res=await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error); setFeedback({type:'success',text:data.message}); setDialogOpen(false); fetchJobs(); } catch(err:any){ alert(err.message); } finally{ setSaving(false); } };
+  const openCreate = () => { setEditing(null); setFTitle(''); setFDept(deptsFull.find(d=>d.is_active)?.name || ''); setFSection(''); setFLoc(LOCS[0]); setFType(TYPES[0]); setFExp(EXPS[2]); setFReq(''); setFDesc(''); setFOpen(true); setFOpening(''); setFClosing(''); setDialogOpen(true); };
+  const openEdit = (j: Job) => { setEditing(j); setFTitle(j.title); setFDept(j.department || ''); setFSection((j as any).section || ''); setFLoc(j.location); setFType(j.type); setFExp(j.experience); setFReq(j.requirements); setFDesc(j.description); setFOpen(j.isOpen); setFOpening(toInputDate(j.openingDate)); setFClosing(toInputDate(j.closingDate)); setDialogOpen(true); };
+  const handleSave = async (e: React.FormEvent) => { e.preventDefault(); const dept = fDept.trim(); if (!fTitle.trim()||!dept||!fReq.trim()||!fDesc.trim()) { alert('Judul, departemen, kualifikasi & deskripsi wajib diisi.'); return; } if (fOpening && fClosing && new Date(fOpening).getTime() > new Date(fClosing).getTime()) { alert('Tanggal buka tidak boleh sesudah tanggal tutup.'); return; } setSaving(true); try { const payload:any={title:fTitle.trim(),department:dept,section:fSection.trim()||null,location:fLoc,type:fType,experience:fExp,requirements:fReq.trim(),description:fDesc.trim(),isOpen:fOpen,openingDate:fOpening||null,closingDate:fClosing||null}; let res; if(editing) res=await fetch('/api/admin/jobs',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...payload,id:editing.id})}); else res=await fetch('/api/admin/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); const data=await res.json(); if(!res.ok) throw new Error(data.error); setFeedback({type:'success',text:data.message}); setDialogOpen(false); fetchJobs(); } catch(err:any){ alert(err.message); } finally{ setSaving(false); } };
   const handleToggle = async (j: Job) => { setTogglingId(j.id); try{ const res=await fetch('/api/admin/jobs',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:j.id,isOpen:!j.isOpen})}); const data=await res.json(); if(!res.ok) throw new Error(data.error); setFeedback({type:'success',text:`Lowongan "${j.title}" ${!j.isOpen?'DIBUKA':'DITUTUP'}.`}); fetchJobs(); }catch(err:any){ alert(err.message);} finally{ setTogglingId(null);} };
   const handleDelete = async (j: Job) => { if(!confirm(`Hapus lowongan "${j.title}"?`)) return; try{ const res=await fetch(`/api/admin/jobs?id=${j.id}`,{method:'DELETE'}); const data=await res.json(); if(!res.ok) throw new Error(data.error); setFeedback({type:'success',text:data.message}); fetchJobs(); }catch(err:any){ alert(err.message);} };
   const filtered = jobs.filter((j)=>{ const s=search.toLowerCase(); const mS=!s||j.title.toLowerCase().includes(s)||j.department.toLowerCase().includes(s); if(!mS) return false; if(filter==='All') return true; if(filter==='Dibuka') return j.effectiveOpen ?? j.isOpen ?? true; if(filter==='Ditutup') return !(j.effectiveOpen ?? j.isOpen ?? true); return (j.statusLabel||'')===filter; });
@@ -114,7 +98,7 @@ export default function AdminJobsPage() {
                     <Chip label={`${j._count?.applicants||0} pelamar`} size="small" variant="outlined" />
                   </Box>
                   <Typography variant="h6" sx={{ fontWeight: 800 }}>{j.title}</Typography>
-                  <Typography variant="body2" sx={{ color: '#018730', fontWeight: 700 }}>{j.department} • {j.location} • {j.type}</Typography>
+                  <Typography variant="body2" sx={{ color: '#018730', fontWeight: 700 }}>{j.department}{(j as any).section ? ` › ${(j as any).section}` : ''} • {j.location} • {j.type}</Typography>
                   <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1 }}>Buka: {fmtDate(j.openingDate)} | Tutup: {fmtDate(j.closingDate)} {j.closingDate?' (otomatis tutup 23:59)':'(tanpa batas)'}</Typography>
                   <Typography variant="body2" sx={{ color: '#475569', mt: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{j.description}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, p: 1.5, bgcolor: j.isOpen?'#F0FDF4':'#FEF2F2', borderRadius: 2, border: '1px solid #E2E8F0' }}>
@@ -151,23 +135,14 @@ export default function AdminJobsPage() {
         <DialogContent>
           <Box component="form" id="job-form" onSubmit={handleSave} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
             <TextField fullWidth required label="Judul Posisi" value={fTitle} onChange={(e)=>setFTitle(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
-            <Autocomplete
-              freeSolo
-              options={deptsList}
-              value={fDept}
-              onChange={(_, val) => setFDept(val || '')}
-              onInputChange={(_, val) => setFDept(val)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  fullWidth
-                  required
-                  label="Departemen"
-                  placeholder="Pilih departemen dari data karyawan"
-                  helperText="Sesuai penamaan departemen karyawan atau ketik baru"
-                />
-              )}
-            />
+            <TextField fullWidth required select label="Departemen" value={fDept} onChange={(e) => { setFDept(e.target.value); setFSection(''); }} helperText="Pilih departemen sesuai data karyawan">
+              {deptsFull.filter(d => d.is_active).map((d) => <MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>)}
+              {deptsFull.length === 0 && <MenuItem value="" disabled>Memuat departemen...</MenuItem>}
+            </TextField>
+            <TextField fullWidth select label="Section (Opsional)" value={fSection} onChange={(e) => setFSection(e.target.value)} disabled={activeSections.length === 0} helperText={activeSections.length === 0 ? 'Departemen ini tidak memiliki section' : 'Sub-bagian dalam departemen'}>
+              <MenuItem value="">(Tidak ada / semua section)</MenuItem>
+              {activeSections.map((s) => <MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>)}
+            </TextField>
             <TextField fullWidth select label="Lokasi" value={fLoc} onChange={(e)=>setFLoc(e.target.value)}>{LOCS.map((d)=><MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField>
             <TextField fullWidth select label="Tipe" value={fType} onChange={(e)=>setFType(e.target.value)}>{TYPES.map((d)=><MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField>
             <TextField fullWidth select label="Pengalaman" value={fExp} onChange={(e)=>setFExp(e.target.value)}>{EXPS.map((d)=><MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField>
