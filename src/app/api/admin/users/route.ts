@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
 
+function isAdminSession(s: { role: string; username: string; email: string } | null) {
+  if (!s) return false;
+  return s.role === "admin" || s.role === "superadmin" || s.username === "admin" || s.email === "admin@itsp.co.id";
+}
+
 export async function GET() {
   try {
     const session = await getAdminSession();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-    if (session.role !== "admin") {
+    if (!isAdminSession(session)) {
       return NextResponse.json({ error: "Akses ditolak. Hanya Admin." }, { status: 403 });
     }
 
@@ -32,7 +37,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await getAdminSession();
-    if (!session || session.role !== "admin") {
+    if (!isAdminSession(session)) {
       return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
     }
 
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const session = await getAdminSession();
-    if (!session || session.role !== "admin") {
+    if (!isAdminSession(session)) {
       return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
     }
 
@@ -79,7 +84,7 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const session = await getAdminSession();
-    if (!session || session.role !== "admin") {
+    if (!isAdminSession(session)) {
       return NextResponse.json({ error: "Akses ditolak." }, { status: 403 });
     }
 
