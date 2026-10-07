@@ -28,6 +28,8 @@ import {
   Tooltip,
   Autocomplete,
   Divider,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   LockReset as ResetPasswordIcon,
@@ -857,6 +859,30 @@ export default function AdminUsersPage() {
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
               />
+              <TextField
+                select
+                fullWidth
+                label="Akses Portal"
+                value={newPortalAccess}
+                onChange={(e) => setNewPortalAccess(e.target.value)}
+                helperText="perusahaan / karir / keduanya"
+              >
+                <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                <MenuItem value="karir">Karir</MenuItem>
+                <MenuItem value="both">Keduanya</MenuItem>
+              </TextField>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newIsActive}
+                      onChange={(e) => setNewIsActive(e.target.checked)}
+                      sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
+                    />
+                  }
+                  label={<Typography variant="body2" fontWeight={800}>{newIsActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>}
+                />
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
@@ -935,6 +961,29 @@ export default function AdminUsersPage() {
                 onChange={(e) => setEditNewPassword(e.target.value)}
                 helperText="Biarkan kosong jika tetap menggunakan password saat ini."
               />
+              <TextField
+                select
+                fullWidth
+                label="Akses Portal"
+                value={editPortalAccess}
+                onChange={(e) => setEditPortalAccess(e.target.value)}
+              >
+                <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                <MenuItem value="karir">Karir</MenuItem>
+                <MenuItem value="both">Keduanya</MenuItem>
+              </TextField>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={editIsActive}
+                      onChange={(e) => setEditIsActive(e.target.checked)}
+                      sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
+                    />
+                  }
+                  label={<Typography variant="body2" fontWeight={800}>{editIsActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>}
+                />
+              </Box>
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
