@@ -63,7 +63,7 @@ jobs:
           Copy-Item "$liveDir\.env.local" "$buildDir\.env.local" -Force -ErrorAction SilentlyContinue
           Copy-Item "$liveDir\.env.production" "$buildDir\.env.production" -Force -ErrorAction SilentlyContinue
           Set-Location $buildDir
-          Write-Host "npm ci di buildDir..."; npm.cmd ci --legacy-peer-deps; if ($LASTEXITCODE -ne 0) { throw "npm ci gagal" }
+          Write-Host "npm ci di buildDir..."; npm.cmd ci --legacy-peer-deps; if ($LASTEXITCODE -ne 0) { Write-Host "npm ci gagal - fallback npm install (lock drift npm 11)"; npm.cmd install --legacy-peer-deps; if ($LASTEXITCODE -ne 0) { throw "npm install gagal" } }
           Write-Host "next build di buildDir (live web masih ON)..."; npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw "npm run build gagal" }
           if (!(Test-Path "$buildDir\.next\BUILD_ID")) { throw ".next/BUILD_ID tidak ditemukan setelah build" }
           Write-Host "Build sukses - siap swap."
