@@ -206,7 +206,7 @@ export default function LoginPage() {
               translate="no"
               label={
                 <span className="notranslate" translate="no">
-                  {language === 'id' ? 'Portal Pelamar' : 'Applicant Portal'}
+                  {language === 'id' ? 'Applicant Portal' : 'Applicant Portal'}
                 </span>
               }
             />
@@ -315,7 +315,7 @@ export default function LoginPage() {
                       <CircularProgress size={24} color="inherit" />
                     ) : (
                       <span className="notranslate" translate="no">
-                        {language === 'id' ? 'Masuk ke Portal Pelamar' : 'Login to Applicant Portal'}
+                        {language === 'id' ? 'Masuk ke Applicant Portal' : 'Login to Applicant Portal'}
                       </span>
                     )}
                   </Button>
@@ -441,7 +441,7 @@ export default function LoginPage() {
                         sx={{ py: 1.3, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
                       >
                         <span className="notranslate" translate="no">
-                          {language === 'id' ? 'Batal' : 'Cancel'}
+                          {language === 'id' ? 'Cancel' : 'Cancel'}
                         </span>
                       </Button>
                       <Button

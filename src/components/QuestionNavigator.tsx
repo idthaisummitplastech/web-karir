@@ -25,7 +25,7 @@ interface Props {
   title?: string;
 }
 
-export default function QuestionNavigator({ open, onClose, questions, answers, currentIndex, onJump, accent = '#018730', title = 'Daftar Soal Ujian' }: Props) {
+export default function QuestionNavigator({ open, onClose, questions, answers, currentIndex, onJump, accent = '#018730', title = 'Exam Question List' }: Props) {
   const pgList = questions.map((q, i) => ({ q, i })).filter(({ q }) => (q.questionType || 'single_choice') !== 'essay');
   const essayList = questions.map((q, i) => ({ q, i })).filter(({ q }) => (q.questionType || 'single_choice') === 'essay');
   const renderGrid = (list: { q: any; i: number }[], label: string, badge: string, badgeBg: string, badgeFg: string) => {
@@ -76,7 +76,7 @@ export default function QuestionNavigator({ open, onClose, questions, answers, c
         {renderGrid(essayList, 'Essay / Uraian', 'Selalu di bagian paling akhir', '#DBEAFE', '#1E40AF')}
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} variant="contained" sx={{ bgcolor: accent, fontWeight: 700 }}>Kembali ke Soal</Button>
+        <Button onClick={onClose} variant="contained" sx={{ bgcolor: accent, fontWeight: 700 }}>Back to Questions</Button>
       </DialogActions>
     </Dialog>
   );

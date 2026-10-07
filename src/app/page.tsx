@@ -557,7 +557,7 @@ export default function HomePage() {
 
                     <Box sx={{ p: 1.8, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 3 }}>
                       <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 0.5 }}>
-                        {language === 'en' ? 'Key Qualifications:' : 'Kualifikasi Utama:'}
+                        {language === 'en' ? 'Key Qualifications:' : 'Qualifications Utama:'}
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#64748B', lineHeight: 1.5, display: 'block' }}>
                         {job.requirements}

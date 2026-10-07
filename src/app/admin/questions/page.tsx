@@ -440,7 +440,7 @@ export default function AdminQuestionsPage() {
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            Bank Soal & Pengaturan Ujian Online
+            Question Bank & Online Exam Settings
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
             Kelola soal ujian psikotes & tes teknis departemen. Mendukung pertanyaan bergambar (diagram mesin, skema mold, pola logika) dan opsi jawaban berganda.
@@ -451,7 +451,7 @@ export default function AdminQuestionsPage() {
           title={
             adminSession?.role === 'user_dept' && activeTab === 0
               ? 'Wewenang HR: Soal Psikotes dikelola oleh Tim HR. User Departemen hanya berwenang menambah soal teknis di Tab 2.'
-              : 'Tambah Soal Ujian Baru'
+              : 'Add New Exam Question'
           }
         >
           <span>
@@ -493,7 +493,7 @@ export default function AdminQuestionsPage() {
           </Box>
           <Box sx={{ mt: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button variant="contained" disabled={savingExamCfg} onClick={handleSaveExamCfg} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {savingExamCfg ? 'Saving...' : 'Simpan Jumlah Soal'}
+              {savingExamCfg ? 'Saving...' : 'Save Jumlah Soal'}
             </Button>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
               Contoh: PG 10 + Essay 5. Bila bank kurang, dipakai semua yang ada.
@@ -659,7 +659,7 @@ export default function AdminQuestionsPage() {
             >
               {departmentsList.map((d) => (
                 <MenuItem key={d} value={d}>
-                  {d === 'All' ? 'Semua Departemen' : d}
+                  {d === 'All' ? 'All Departments' : d}
                 </MenuItem>
               ))}
             </TextField>
@@ -956,7 +956,7 @@ export default function AdminQuestionsPage() {
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
         <form onSubmit={handleSaveQuestion}>
           <DialogTitle sx={{ fontWeight: 800, color: '#018730' }}>
-            {editingId ? 'Edit Soal Ujian' : 'Tambah Soal Ujian Baru'}
+            {editingId ? 'Edit Exam Question' : 'Add New Exam Question'}
           </DialogTitle>
           <DialogContent dividers>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 2.5 }}>
@@ -964,23 +964,23 @@ export default function AdminQuestionsPage() {
                 select
                 fullWidth
                 required
-                label="Kategori Tes"
+                label="Test Category"
                 value={formCategory}
                 disabled={adminSession?.role === 'user_dept'}
                 onChange={(e) => setFormCategory(e.target.value as any)}
                 helperText={adminSession?.role === 'user_dept' ? 'User Dept mengelola Tes Teknis Kejuruan' : ''}
               >
                 {adminSession?.role !== 'user_dept' && (
-                  <MenuItem value="psikotes">Tes Psikotes Online (Tahap 2 - HR)</MenuItem>
+                  <MenuItem value="psikotes">Online Psychometric Test (Stage 2 - HR)</MenuItem>
                 )}
-                <MenuItem value="user_test">Tes Teknis Departemen / User (Tahap 3)</MenuItem>
+                <MenuItem value="user_test">Department / User Technical Test (Stage 3)</MenuItem>
               </TextField>
 
               <TextField
                 select
                 fullWidth
                 required
-                label="Bentuk / Tipe Soal"
+                label="Question Type"
                 value={formQuestionType}
                 onChange={(e) => setFormQuestionType(e.target.value as any)}
                 helperText={
@@ -991,12 +991,12 @@ export default function AdminQuestionsPage() {
                     : 'Soal Essay / Studi Kasus (Review User): Pelamar mengisi uraian teknis.'
                 }
               >
-                <MenuItem value="single_choice">Pilihan Ganda (1 Kunci Jawaban Benar - Otomatis)</MenuItem>
+                <MenuItem value="single_choice">Multiple Choice (1 Correct Answer - Auto Scored)</MenuItem>
                 {(adminSession?.role === 'hr' || adminSession?.role === 'admin' || formCategory === 'psikotes') && (
-                  <MenuItem value="multi_choice">Pilihan Karakter Diri (Pilih Maks 2 - Review HR)</MenuItem>
+                  <MenuItem value="multi_choice">Personality Traits (Select Max 2 - HR Review)</MenuItem>
                 )}
                 {(adminSession?.role === 'user_dept' || adminSession?.role === 'admin' || formCategory === 'user_test') && (
-                  <MenuItem value="essay">Soal Essay / Uraian Studi Kasus (Review User Dept)</MenuItem>
+                  <MenuItem value="essay">Essay / Case Study (Dept User Review)</MenuItem>
                 )}
               </TextField>
 
@@ -1039,7 +1039,7 @@ export default function AdminQuestionsPage() {
                     fullWidth
                     required
                     autoFocus
-                    label="Nama Departemen Baru"
+                    label="Department Name Baru"
                     placeholder="misal: Maintenance, PPIC, Moulding, dll"
                     value={customDeptInput}
                     onChange={(e) => {
@@ -1216,7 +1216,7 @@ export default function AdminQuestionsPage() {
                 fullWidth
                 required
                 type="number"
-                label="Urutan Tampil"
+                label="Display Order"
                 value={formSortOrder}
                 onChange={(e) => setFormSortOrder(Number(e.target.value))}
               />
@@ -1224,7 +1224,7 @@ export default function AdminQuestionsPage() {
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
             <Button onClick={() => setDialogOpen(false)} sx={{ color: '#64748B' }}>
-              Batal
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -1232,7 +1232,7 @@ export default function AdminQuestionsPage() {
               disabled={submitting}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
             >
-              {submitting ? 'Saving...' : 'Simpan Soal Ujian'}
+              {submitting ? 'Saving...' : 'Save Soal Ujian'}
             </Button>
           </DialogActions>
         </form>

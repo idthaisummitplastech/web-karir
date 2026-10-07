@@ -70,7 +70,7 @@ const PHRASE_DICTIONARY: [RegExp, string][] = [
   [/Kontrak/gi, 'Contract'],
   [/Tetap/gi, 'Permanent'],
   [/Produksi/gi, 'Production'],
-  [/Kualifikasi Utama/gi, 'Key Qualifications'],
+  [/Qualifications Utama/gi, 'Key Qualifications'],
   [/Tanggung Jawab/gi, 'Responsibilities'],
 ];
 

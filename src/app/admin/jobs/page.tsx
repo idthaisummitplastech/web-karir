@@ -136,13 +136,13 @@ export default function AdminJobsPage() {
         <DialogTitle sx={{ fontWeight: 800 }}>{editing?'Ubah Lowongan':'Buat Lowongan Baru'}</DialogTitle>
         <DialogContent>
           <Box component="form" id="job-form" onSubmit={handleSave} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
-            <TextField fullWidth required label="Judul Posisi" value={fTitle} onChange={(e)=>setFTitle(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
-            <TextField fullWidth required select label="Departemen" value={fDept} onChange={(e) => { setFDept(e.target.value); setFSection(''); }} helperText="Pilih departemen sesuai data karyawan">
+            <TextField fullWidth required label="Position Title" value={fTitle} onChange={(e)=>setFTitle(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
+            <TextField fullWidth required select label="Departemen" value={fDept} onChange={(e) => { setFDept(e.target.value); setFSection(''); }} helperText="Select department from employee master data">
               {deptsFull.filter(d => d.is_active).map((d) => <MenuItem key={d.id} value={d.name}>{d.name}</MenuItem>)}
-              {deptsFull.length === 0 && <MenuItem value="" disabled>Memuat departemen...</MenuItem>}
+              {deptsFull.length === 0 && <MenuItem value="" disabled>Loading departments...</MenuItem>}
             </TextField>
-            <TextField fullWidth select label="Section (Opsional)" value={fSection} onChange={(e) => setFSection(e.target.value)} disabled={activeSections.length === 0} helperText={activeSections.length === 0 ? 'Departemen ini tidak memiliki section' : 'Sub-bagian dalam departemen'}>
-              <MenuItem value="">(Tidak ada / semua section)</MenuItem>
+            <TextField fullWidth select label="Section (Opsional)" value={fSection} onChange={(e) => setFSection(e.target.value)} disabled={activeSections.length === 0} helperText={activeSections.length === 0 ? 'This department has no sections' : 'Sub-section within department'}>
+              <MenuItem value="">(None / all sections)</MenuItem>
               {activeSections.map((s) => <MenuItem key={s.id} value={s.name}>{s.name}</MenuItem>)}
             </TextField>
             <TextField fullWidth select label="Lokasi" value={fLoc} onChange={(e)=>setFLoc(e.target.value)}>{LOCS.map((d)=><MenuItem key={d} value={d}>{d}</MenuItem>)}</TextField>
@@ -159,13 +159,13 @@ export default function AdminJobsPage() {
                 <TextField fullWidth type="date" label="Tanggal Tutup Otomatis" value={fClosing} onChange={(e)=>setFClosing(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} helperText="Tutup 23:59 di tanggal tsb" />
               </Box>
             </Box>
-            <TextField fullWidth multiline rows={3} required label="Kualifikasi" value={fReq} onChange={(e)=>setFReq(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
-            <TextField fullWidth multiline rows={3} required label="Deskripsi" value={fDesc} onChange={(e)=>setFDesc(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
+            <TextField fullWidth multiline rows={3} required label="Qualifications" value={fReq} onChange={(e)=>setFReq(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
+            <TextField fullWidth multiline rows={3} required label="Description" value={fDesc} onChange={(e)=>setFDesc(e.target.value)} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={()=>setDialogOpen(false)}>Batal</Button>
-          <Button variant="contained" type="submit" form="job-form" disabled={saving} sx={{ bgcolor: '#018730', fontWeight: 700 }}>{saving?'Saving...':(editing?'Simpan':'Publikasikan')}</Button>
+          <Button onClick={()=>setDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" type="submit" form="job-form" disabled={saving} sx={{ bgcolor: '#018730', fontWeight: 700 }}>{saving?'Saving...':(editing?'Save':'Publish')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

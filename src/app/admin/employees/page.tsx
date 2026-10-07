@@ -845,8 +845,8 @@ export default function AdminEmployeesPage() {
       'Jabatan / Posisi',
       'Lokasi Pabrik',
       'Status Kontrak (PKWT/PKWTT)',
-      'Tanggal Mulai Kontrak (Join Date)',
-      'Tanggal Selesai Kontrak (End Date)',
+      'Start Date Kontrak (Join Date)',
+      'End Date Kontrak (End Date)',
       'Gaji Disepakati',
       'Nama Kontak Darurat',
       'Hubungan Kontak Darurat',
@@ -1161,7 +1161,7 @@ export default function AdminEmployeesPage() {
           </Card>
         </Grid>
 
-        {/* Card 2: Karyawan Tetap (PKWTT) */}
+        {/* Card 2: Permanent Employee (PKWTT) */}
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <Card
             onClick={() => {
@@ -1183,7 +1183,7 @@ export default function AdminEmployeesPage() {
           >
             <CardContent sx={{ p: 2.5 }}>
               <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
-                Karyawan Tetap (PKWTT)
+                Permanent Employee (PKWTT)
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#15803D', mt: 0.5 }}>
                 {totalPkwtt}
@@ -1420,7 +1420,7 @@ export default function AdminEmployeesPage() {
                 }}
               >
                 <MenuItem value="">
-                  <em>Semua Departemen</em>
+                  <em>All Departments</em>
                 </MenuItem>
                 {departmentOptions.map((dept) => (
                   <MenuItem key={dept} value={dept}>
@@ -1687,7 +1687,7 @@ export default function AdminEmployeesPage() {
                       variant="outlined"
                       sx={{ mt: 2, textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
                     >
-                      Buka Kelola Pelamar
+                      Open Applicant Management
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -2046,7 +2046,7 @@ export default function AdminEmployeesPage() {
             disabled={savingSeq}
             sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
           >
-            {savingSeq ? 'Saving...' : 'Simpan Penyesuaian'}
+            {savingSeq ? 'Saving...' : 'Save Penyesuaian'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2351,7 +2351,7 @@ export default function AdminEmployeesPage() {
                 <TextField
                   fullWidth
                   type="date"
-                  label="Tanggal Mulai (Join Date)"
+                  label="Start Date (Join Date)"
                   slotProps={{ inputLabel: { shrink: true } }}
                   value={editJoinDate}
                   onChange={(e) => setEditJoinDate(e.target.value)}
@@ -2365,7 +2365,7 @@ export default function AdminEmployeesPage() {
                   slotProps={{ inputLabel: { shrink: true } }}
                   value={editEndDate}
                   onChange={(e) => setEditEndDate(e.target.value)}
-                  helperText="Kosongkan jika Karyawan Tetap (PKWTT)"
+                  helperText="Kosongkan jika Permanent Employee (PKWTT)"
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
@@ -2578,14 +2578,14 @@ export default function AdminEmployeesPage() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
-          <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
+          <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
             onClick={handleSaveEditContract}
             disabled={updatingEmp}
             sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
           >
-            {updatingEmp ? 'Saving...' : 'Simpan Seluruh Data Karyawan'}
+            {updatingEmp ? 'Saving...' : 'Save Seluruh Data Karyawan'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2829,7 +2829,7 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12 }}><Divider sx={{ my: 1 }} /></Grid>
 
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Mulai Kontrak (Join Date)</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Start Date Kontrak (Join Date)</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {selectedEmp.join_date ? new Date(selectedEmp.join_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : (selectedEmp.contract_start_date ? new Date(selectedEmp.contract_start_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : '-')}
                       </Typography>
@@ -2837,13 +2837,13 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tanggal Akhir Kontrak</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                        {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : 'Karyawan Tetap (PKWTT)'}
+                        {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : 'Permanent Employee (PKWTT)'}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Catatan HR &amp; Registrasi SK</Typography>
                       <Typography variant="body2" sx={{ color: '#334155', bgcolor: '#F8FAFC', p: 1.5, borderRadius: 1.5, mt: 0.5 }}>
-                        {selectedEmp.notes || 'Tidak ada catatan tambahan.'}
+                        {selectedEmp.notes || 'No additional notes.'}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -2861,10 +2861,10 @@ export default function AdminEmployeesPage() {
                           <Table size="small">
                             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                               <TableRow>
-                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tahap Kontrak</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tanggal Mulai</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tanggal Selesai</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Status Tahap</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Contract Stage</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Start Date</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>End Date</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Stage Status</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -2883,7 +2883,7 @@ export default function AdminEmployeesPage() {
                                     </TableCell>
                                     <TableCell>
                                       {isCurrent ? (
-                                        <Chip size="small" label="Kontrak Berjalan / Aktif" color="success" sx={{ fontWeight: 800, fontSize: 11 }} />
+                                        <Chip size="small" label="Active / Ongoing Contract" color="success" sx={{ fontWeight: 800, fontSize: 11 }} />
                                       ) : (
                                         <Chip size="small" label="Selesai" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 600, fontSize: 11 }} />
                                       )}
@@ -3167,7 +3167,7 @@ export default function AdminEmployeesPage() {
               {detailTab === 4 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 2 }}>
-                    Arsip Dokumen Fisik / Digital (11 Berkas Pendaftaran):
+                    Physical / Digital Document Archive (11 Registration Files):
                   </Typography>
 
                   <Grid container spacing={2}>
@@ -3435,7 +3435,7 @@ export default function AdminEmployeesPage() {
 
           <DialogActions sx={{ p: 2.5, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
             <Button onClick={() => setImportModalOpen(false)} disabled={importing} sx={{ color: '#64748B' }}>
-              Batal
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -3495,7 +3495,7 @@ export default function AdminEmployeesPage() {
 
         <DialogActions sx={{ p: 2.5, bgcolor: '#F8FAFC', justifyContent: 'space-between' }}>
           <Button onClick={() => setDeleteAllModalOpen(false)} disabled={deletingAll} sx={{ color: '#64748B' }}>
-            Batal
+            Cancel
           </Button>
           <Button
             variant="contained"
@@ -3543,7 +3543,7 @@ export default function AdminEmployeesPage() {
 
         <DialogActions sx={{ p: 2.5, bgcolor: '#F8FAFC', justifyContent: 'space-between' }}>
           <Button onClick={() => setDeleteSingleModalOpen(false)} disabled={deletingSingle} sx={{ color: '#64748B' }}>
-            Batal
+            Cancel
           </Button>
           <Button
             variant="contained"
@@ -3633,7 +3633,7 @@ export default function AdminEmployeesPage() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5, bgcolor: '#F8FAFC', justifyContent: 'space-between' }}>
-          <Button onClick={() => setTerminateModalOpen(false)} disabled={terminating} sx={{ color: '#64748B' }}>Batal</Button>
+          <Button onClick={() => setTerminateModalOpen(false)} disabled={terminating} sx={{ color: '#64748B' }}>Cancel</Button>
           <Button
             variant="contained"
             onClick={handleTerminateEmployee}
@@ -3740,11 +3740,11 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="Lokasi Kerja" value={createLocation} onChange={(e) => setCreateLocation(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" type="date" label="Tanggal Mulai / Join Date *" value={createJoinDate} onChange={(e) => setCreateJoinDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                  <TextField fullWidth size="small" type="date" label="Start Date / Join Date *" value={createJoinDate} onChange={(e) => setCreateJoinDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
                 {createContractStatus !== 'PKWTT' && (
                   <Grid size={{ xs: 12, md: 4 }}>
-                    <TextField fullWidth size="small" type="date" label="Tanggal Selesai Kontrak" value={createEndDate} onChange={(e) => setCreateEndDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField fullWidth size="small" type="date" label="End Date Kontrak" value={createEndDate} onChange={(e) => setCreateEndDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
                   </Grid>
                 )}
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -3783,7 +3783,7 @@ export default function AdminEmployeesPage() {
               {createTab < 2 && <Button onClick={() => setCreateTab((t) => t + 1)} sx={{ color: '#018730', fontWeight: 700 }}>Selanjutnya →</Button>}
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button onClick={() => setCreateModalOpen(false)} disabled={creating} sx={{ color: '#64748B' }}>Batal</Button>
+              <Button onClick={() => setCreateModalOpen(false)} disabled={creating} sx={{ color: '#64748B' }}>Cancel</Button>
               <Button
                 type="submit"
                 variant="contained"
@@ -3791,7 +3791,7 @@ export default function AdminEmployeesPage() {
                 startIcon={creating ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <PersonAddIcon />}
                 sx={{ fontWeight: 800, bgcolor: '#0F172A', '&:hover': { bgcolor: '#1E293B' } }}
               >
-                {creating ? 'Saving...' : 'Simpan Karyawan Baru'}
+                {creating ? 'Saving...' : 'Save Karyawan Baru'}
               </Button>
             </Box>
           </DialogActions>
@@ -3846,7 +3846,7 @@ export default function AdminEmployeesPage() {
             fullWidth
             select
             size="small"
-            label="Masa Simpan Riwayat Keluar"
+            label="Masa Save Riwayat Keluar"
             value={retentionMonths}
             onChange={(e) => setRetentionMonths(Number(e.target.value))}
             sx={{ mb: 2 }}
@@ -3888,7 +3888,7 @@ export default function AdminEmployeesPage() {
               startIcon={savingRetention ? <CircularProgress size={16} sx={{ color: '#FFFFFF' }} /> : <SettingsIcon />}
               sx={{ fontWeight: 800, bgcolor: '#4C1D95', '&:hover': { bgcolor: '#3B0764' } }}
             >
-              {savingRetention ? 'Saving...' : 'Simpan Pengaturan'}
+              {savingRetention ? 'Saving...' : 'Save Pengaturan'}
             </Button>
           </Box>
         </DialogActions>

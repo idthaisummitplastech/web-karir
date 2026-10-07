@@ -50,66 +50,66 @@ const DEFAULT_EMAIL_TEMPLATES: Record<
   { name: string; stage: string; subject: string; body: string; variables: string[] }
 > = {
   account_created: {
-    name: '1. Pendaftaran Akun Pelamar & Password Baru',
-    stage: 'Tahap 1: Pendaftaran / Akun Baru',
-    subject: '[PT ITSP] Konfirmasi Pendaftaran & Kredensial Akun - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nTerima kasih atas minat Anda untuk berkarir bersama PT Indonesia Thai Summit Plastech untuk posisi {posisi}.\n\nBerkas lamaran Anda telah berhasil tercatat dalam sistem e-Recruitment ATS kami. Anda dapat masuk ke Portal Pelamar untuk memantau status seleksi dengan kredensial berikut:\n\n• Email Login: {email}\n• Password Awal: {password}\n• Tautan Portal: {link_portal}\n\nMohon jaga kerahasiaan kredensial login Anda. Informasi hasil screening berkas akan kami perbarui sesegera mungkin.`,
+    name: '1. Applicant Account Registration & New Password',
+    stage: 'Stage 1: Registration / New Account',
+    subject: '[PT ITSP] Registration Confirmation & Account Credentials - {posisi}',
+    body: `Dear {nama},\n\nThank you for your interest in building your career with PT Indonesia Thai Summit Plastech for the position of {posisi}.\n\nYour application has been successfully recorded in our e-Recruitment ATS. You can log in to the Applicant Portal to track your selection status with the following credentials:\n\n• Email Login: {email}\n• Password Awal: {password}\n• Tautan Portal: {link_portal}\n\nPlease keep your login credentials confidential. We will update you on the document screening results as soon as possible.`,
     variables: ['{nama}', '{posisi}', '{email}', '{password}', '{link_portal}'],
   },
   screening_passed: {
-    name: '2. Lolos Screening & Undangan Psikotes Online',
-    stage: 'Tahap 2: Tes Psikotes Online',
-    subject: '[PT ITSP] Hasil Screening & Undangan Tes Psikotes Online - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nBerdasarkan hasil verifikasi berkas administrasi dan kualifikasi untuk posisi {posisi}, Tim Human Capital Management PT Indonesia Thai Summit Plastech menyatakan bahwa Anda:\n\nLOLOS TAHAP SCREENING DOKUMEN & ADMINISTRASI\n\nSelanjutnya, Anda diundang untuk mengikuti Tahap 2: Ujian Psikotes Online & Profiling Karakteristik Diri pada:\n\n• Jadwal Pelaksanaan: {jadwal}\n• Lokasi Ujian: Portal Karir Resmi PT ITSP\n• Token Sesi Ujian: {token}\n\nSelama ujian berlangsung, peserta dilarang berpindah tab browser atau membuka aplikasi lain. Sistem dilengkapi sensor anti-kecurangan otomatis.`,
+    name: '2. Passed Screening & Online Psychometric Invitation',
+    stage: 'Stage 2: Online Psychometric Test',
+    subject: '[PT ITSP] Screening Result & Online Psychometric Test Invitation - {posisi}',
+    body: `Dear {nama},\n\nBased on the administrative verification and qualification review for the position of {posisi}, the PT Indonesia Thai Summit Plastech Human Capital Management Team confirms that you have:\n\nPASSED DOCUMENT & ADMINISTRATIVE SCREENING\n\nYou are now invited to Stage 2: Online Psychometric Test & Personality Profiling scheduled for:\n\n• Schedule: {jadwal}\n• Venue: PT ITSP Official Career Portal\n• Exam Session Token: {token}\n\nDuring the exam, switching browser tabs or opening other apps is prohibited. The system is equipped with automated anti-cheating detection.`,
     variables: ['{nama}', '{posisi}', '{jadwal}', '{token}', '{link_portal}'],
   },
   psikotes_passed: {
-    name: '3. Lolos Psikotes & Undangan Ujian Teknis Kejuruan',
-    stage: 'Tahap 3: Tes Teknis User Departemen',
-    subject: '[PT ITSP] Hasil Psikotes & Undangan Ujian Teknis Kejuruan - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nSelamat! Berdasarkan hasil evaluasi psikotes online, Anda dinyatakan LOLOS dan berhak melanjutkan ke Tahap 3: Ujian Teknis Kejuruan & Studi Kasus yang disiapkan langsung oleh Tim User Departemen terkait.\n\n• Jadwal Ujian: {jadwal}\n• Lokasi: Portal Karir PT ITSP\n• Token Sesi Ujian: {token}\n\nUjian teknis mencakup pemahaman spesifik kejuruan, studi kasus operasional, dan pertanyaan esai analitis. Harap persiapkan diri Anda dengan baik.`,
+    name: '3. Passed Psychometric & Technical Assessment Invitation',
+    stage: 'Stage 3: Department User Technical Test',
+    subject: '[PT ITSP] Psychometric Result & Technical Assessment Invitation - {posisi}',
+    body: `Dear {nama},\n\nCongratulations! Based on the online psychometric evaluation, you have PASSED and are eligible to proceed to Stage 3: Technical Proficiency & Case Study Assessment prepared by the relevant Department User Team.\n\n• Exam Schedule: {jadwal}\n• Venue: PT ITSP Career Portal\n• Exam Session Token: {token}\n\nThe technical assessment covers job-specific knowledge, operational case studies, and analytical essay questions. Please prepare thoroughly.`,
     variables: ['{nama}', '{posisi}', '{jadwal}', '{token}', '{link_portal}'],
   },
   interview_hr: {
-    name: '4. Undangan Interview HR Recruitment',
-    stage: 'Tahap 4: Interview HR',
-    subject: '[PT ITSP] Undangan Sesi Wawancara HR Recruitment - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nTerima kasih atas partisipasi Anda dalam tahapan seleksi teknis. Kami mengundang Anda untuk menghadiri sesi Wawancara HR Recruitment (Human Capital Management) untuk posisi {posisi} pada:\n\n• Hari / Tanggal: {jadwal}\n• Media / Lokasi: {lokasi}\n• Kontak PIC: Tim Rekrutmen PT ITSP\n\nHarap hadir tepat waktu dan menyiapkan dokumen identitas diri serta berkas pendukung lainnya.`,
+    name: '4. HR Recruitment Interview Invitation',
+    stage: 'Stage 4: HR Interview',
+    subject: '[PT ITSP] HR Recruitment Interview Session Invitation - {posisi}',
+    body: `Dear {nama},\n\nThank you for your participation in the technical selection stage. We invite you to attend the HR Recruitment Interview session (Human Capital Management) for the position of {posisi} on:\n\n• Day / Date: {jadwal}\n• Medium / Location: {lokasi}\n• Contact PIC: PT ITSP Recruitment Team\n\nPlease arrive on time and prepare your identification documents and supporting files.`,
     variables: ['{nama}', '{posisi}', '{jadwal}', '{lokasi}', '{link_portal}'],
   },
   interview_user: {
-    name: '5. Undangan Interview User Departemen',
-    stage: 'Tahap 5: Interview User',
-    subject: '[PT ITSP] Undangan Wawancara Teknis User Departemen - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nAnda dinyatakan lolos sesi wawancara HR dan berhak melanjutkan ke Tahap 5: Interview Teknis User Departemen bersama jajaran supervisor & manager divisi terkait untuk posisi {posisi}.\n\n• Hari / Tanggal: {jadwal}\n• Lokasi / Link: {lokasi}\n\nSesi ini bertujuan untuk mendalami kompetensi teknis, studi kasus praktis di lapangan industri manufaktur, dan kesiapan operasional pabrik.`,
+    name: '5. Department User Interview Invitation',
+    stage: 'Stage 5: User Interview',
+    subject: '[PT ITSP] Department User Technical Interview Invitation - {posisi}',
+    body: `Dear {nama},\n\nYou have passed the HR interview session and are eligible to proceed to Stage 5: Department User Technical Interview with the supervisory & managerial team of the relevant division for the position of {posisi}.\n\n• Day / Date: {jadwal}\n• Location / Link: {lokasi}\n\nThis session aims to explore technical competencies, practical case studies on the manufacturing shop floor, and plant operational readiness.`,
     variables: ['{nama}', '{posisi}', '{jadwal}', '{lokasi}', '{link_portal}'],
   },
   mcu_referral: {
     name: '6. Surat Rujukan Medical Check-Up (MCU)',
-    stage: 'Tahap 6: Medical Check-Up',
-    subject: '[PT ITSP] Surat Pengantar Medical Check-Up (MCU) - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nSelamat atas keberhasilan Anda melalui tahapan interview user. Langkah selanjutnya adalah Tahap 6: Pemeriksaan Kesehatan Kerja (Medical Check-Up) untuk posisi {posisi}.\n\n• Fasilitas Kesehatan Rekanan: {klinik_mcu}\n• Alamat Fasilitas: {alamat_mcu}\n• Estimasi Tarif: {biaya_mcu}\n• Petunjuk Medis: Wajib berpuasa 10-12 jam sebelum pengambilan sampel darah. Minum air putih tetap diperbolehkan.\n\nHarap unggah bukti pembayaran kwitansi dan hasil rekam medis MCU Anda ke Portal Pelamar untuk diverifikasi oleh dokter okupasi perusahaan.`,
+    stage: 'Stage 6: Medical Check-Up',
+    subject: '[PT ITSP] Medical Check-Up (MCU) Referral Letter - {posisi}',
+    body: `Dear {nama},\n\nCongratulations on passing the user interview stage. The next step is Stage 6: Occupational Medical Check-Up for the position of {posisi}.\n\n• Partner Medical Facility: {klinik_mcu}\n• Facility Address: {alamat_mcu}\n• Estimated Cost: {biaya_mcu}\n• Medical Instructions: Please fast for 10-12 hours before blood sampling. Plain water is allowed.\n\nPlease upload your MCU payment receipt and medical records to the Applicant Portal for verification by the company occupational physician.`,
     variables: ['{nama}', '{posisi}', '{klinik_mcu}', '{alamat_mcu}', '{biaya_mcu}', '{link_portal}'],
   },
   offering_issued: {
-    name: '7. Penerbitan Surat Penawaran Kerja (Offering Letter)',
-    stage: 'Tahap 7: Offering Letter',
-    subject: '[PT ITSP] Resmi: Surat Penawaran Kerja (Offering Letter) - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nBerdasarkan hasil evaluasi komprehensif dan status kesehatan FIT TO WORK, Manajemen PT Indonesia Thai Summit Plastech dengan bangga menawarkan posisi {posisi} kepada Anda.\n\n• Paket Kompensasi & Gaji: {gaji_offer}\n• Tunjangan: BPJS Kesehatan, BPJS Ketenagakerjaan, Transportasi & Makan Pabrik\n• Tautan Review Surat Penawaran: {link_portal}\n\nSilakan tinjau draf offering letter resmi dan bubuhkan tanda tangan persetujuan secara digital di portal karir sebelum batas waktu yang ditentukan.`,
+    name: '7. Issuance of Employment Offer Letter',
+    stage: 'Stage 7: Offering Letter',
+    subject: '[PT ITSP] Official: Employment Offer Letter - {posisi}',
+    body: `Dear {nama},\n\nBased on the comprehensive evaluation and FIT TO WORK medical status, the Management of PT Indonesia Thai Summit Plastech is pleased to offer you the position of {posisi}.\n\n• Compensation & Salary Package: {gaji_offer}\n• Benefits: Health & Employment Social Security (BPJS), Transportation & Plant Meals\n• Offer Letter Review Link: {link_portal}\n\nPlease review the official offer letter draft and affix your digital acceptance signature on the career portal before the deadline.`,
     variables: ['{nama}', '{posisi}', '{gaji_offer}', '{link_portal}'],
   },
   contract_signed: {
-    name: '8. Konfirmasi Kontrak Kerja & Hari Pertama Masuk',
-    stage: 'Tahap 8: Hired / Onboarding',
-    subject: '[PT ITSP] Selamat Bergabung & Jadwal Masuk Kerja Pertama - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nSelamat bergabung secara resmi di keluarga besar PT Indonesia Thai Summit Plastech (Thai Summit Group)!\n\nKontrak kerja digital Anda telah diverifikasi oleh Departemen HR. Informasi hari pertama kerja (Onboarding Program) Anda:\n\n• Tanggal Mulai Bekerja: {tanggal_masuk}\n• Lokasi Pabrik: {lokasi}\n• Kartu Identitas: ID Card Sementara dapat Anda unduh dari portal pelamar untuk ditunjukkan kepada petugas pos keamanan gerbang pabrik.\n\nSelamat berkarya dan mencapai prestasi terbaik bersama kami!`,
+    name: '8. Employment Contract Confirmation & First Day',
+    stage: 'Stage 8: Hired / Onboarding',
+    subject: '[PT ITSP] Welcome Aboard & First Day Schedule - {posisi}',
+    body: `Dear {nama},\n\nWelcome officially to the extended family of PT Indonesia Thai Summit Plastech (Thai Summit Group)!\n\nYour digital employment contract has been verified by the HR Department. Your first-day (Onboarding Program) details:\n\n• Start Date: {tanggal_masuk}\n• Plant Location: {lokasi}\n• ID Card: A temporary ID card can be downloaded from the applicant portal to present to the plant gate security.\n\nWe look forward to your best achievements with us!`,
     variables: ['{nama}', '{posisi}', '{tanggal_masuk}', '{lokasi}', '{link_portal}'],
   },
   rejection_notice: {
-    name: '9. Pemberitahuan Status Seleksi Santun (Rejection Letter)',
-    stage: 'Status: Tidak Lolos',
-    subject: '[PT ITSP] Pemberitahuan Status Seleksi - {posisi}',
-    body: `Yth. Sdr/i. {nama},\n\nTerima kasih banyak atas waktu, dedikasi, serta minat yang Anda tunjukkan dalam mengikuti proses seleksi penerimaan karyawan di PT Indonesia Thai Summit Plastech untuk posisi {posisi}.\n\nSetelah mempertimbangkan secara seksama profil seluruh kandidat pada {tahap_gagal}, saat ini kami belum dapat melanjutkan proses lamaran Anda ke tahapan berikutnya karena kualifikasi yang belum sesuai dengan kebutuhan spesifik posisi saat ini.\n\nData profil Anda tetap tersimpan dalam Talent Pool kami, dan kami tidak akan ragu untuk menghubungi Anda kembali apabila terdapat lowongan lain di masa mendatang yang sesuai. Kami mendoakan yang terbaik bagi kesuksesan karir profesional Anda.`,
+    name: '9. Courteous Selection Status Notification (Rejection Letter)',
+    stage: 'Status: Not Passed',
+    subject: '[PT ITSP] Selection Status Notification - {posisi}',
+    body: `Dear {nama},\n\nThank you for the time, dedication, and interest you have shown throughout our employee selection process at PT Indonesia Thai Summit Plastech for the position of {posisi}.\n\nAfter carefully reviewing all candidate profiles at {tahap_gagal}, we are currently unable to advance your application to the next stage as your qualifications do not yet align with the specific needs of this position.\n\nYour profile will remain in our Talent Pool, and we will not hesitate to contact you again should a future vacancy match your qualifications. We wish you every success in your professional career.`,
     variables: ['{nama}', '{posisi}', '{tahap_gagal}'],
   },
 };
@@ -257,7 +257,7 @@ export default function AdminSettingsPage() {
       .catch(() => {});
   }, []);
 
-  // Simpan Server SMTP & Multi-Kanal (Super Admin)
+  // Save Server SMTP & Multi-Kanal (Super Admin)
   const handleSaveSmtpAndChannels = async () => {
     setSaving(true);
     setSuccessMsg(null);
@@ -480,7 +480,7 @@ export default function AdminSettingsPage() {
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', mb: 0.5 }}>
-            Pengaturan Sistem, Server Email & Observability
+            System Settings, Email Server & Observability
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
             Konfigurasi master template seleksi, server SMTP multi-kanal resmi PT ITSP, dan monitoring log Grafana Cloud.
@@ -654,7 +654,7 @@ export default function AdminSettingsPage() {
                   '&:hover': { bgcolor: '#005c21' },
                 }}
               >
-                {saving ? 'Menyimpan Template...' : 'Simpan Seluruh Template Email'}
+                {saving ? 'Saving Template...' : 'Save Seluruh Template Email'}
               </Button>
             </CardContent>
           </Card>
@@ -741,7 +741,7 @@ export default function AdminSettingsPage() {
                   required
                   multiline
                   rows={3}
-                  label="Instruksi & Persiapan Medis Pelamar"
+                  label="Medical Instructions & Applicant Preparation"
                   value={mcuInstructions}
                   onChange={(e) => setMcuInstructions(e.target.value)}
                   sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}
@@ -833,7 +833,7 @@ export default function AdminSettingsPage() {
               '&:hover': { bgcolor: '#005c21' },
             }}
           >
-            {saving ? 'Menyimpan Perubahan...' : 'Simpan Pengaturan Default'}
+            {saving ? 'Saving Changes...' : 'Save Default Settings'}
           </Button>
         </form>
       )}
@@ -1092,7 +1092,7 @@ export default function AdminSettingsPage() {
               '&:hover': { bgcolor: '#005c21' },
             }}
           >
-            {saving ? 'Menyimpan Seluruh Konfigurasi...' : 'Simpan Seluruh Pengaturan Server & Multi-Kanal'}
+            {saving ? 'Saving All Configuration...' : 'Save All Server & Multi-Channel Settings'}
           </Button>
 
           {/* DIALOG TAMBAH KANAL BARU */}
@@ -1136,7 +1136,7 @@ export default function AdminSettingsPage() {
               />
             </DialogContent>
             <DialogActions sx={{ p: 2.5 }}>
-              <Button onClick={() => setDialogChannelOpen(false)}>Batal</Button>
+              <Button onClick={() => setDialogChannelOpen(false)}>Cancel</Button>
               <Button variant="contained" onClick={handleAddChannel} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
                 Tambahkan Kanal
               </Button>
@@ -1248,7 +1248,7 @@ export default function AdminSettingsPage() {
                   URL Dashboard Grafana Cloud Belum Dikonfigurasi
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#94A3B8', maxWidth: 520, mb: 3, lineHeight: 1.6 }}>
-                  Pratinjau dashboard saat ini belum dapat ditampilkan karena URL Dashboard Grafana masih kosong. Silakan lengkapi <strong>URL Instance / Dashboard Grafana</strong> pada formulir konfigurasi di bawah ini, lalu klik <strong>Simpan Pengaturan</strong>.
+                  Pratinjau dashboard saat ini belum dapat ditampilkan karena URL Dashboard Grafana masih kosong. Silakan lengkapi <strong>URL Instance / Dashboard Grafana</strong> pada formulir konfigurasi di bawah ini, lalu klik <strong>Save Pengaturan</strong>.
                 </Typography>
                 <Button
                   variant="outlined"
@@ -1301,7 +1301,7 @@ export default function AdminSettingsPage() {
                 startIcon={<SaveIcon />}
                 sx={{ bgcolor: '#018730', fontWeight: 800, px: 4, py: 1.2, '&:hover': { bgcolor: '#005c21' } }}
               >
-                Simpan Endpoint Grafana
+                Save Endpoint Grafana
               </Button>
             </CardContent>
           </Card>

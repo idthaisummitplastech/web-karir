@@ -336,9 +336,9 @@ export const translations: Record<Language, CareerTranslations> = {
   },
   id: {
     // Navigation
-    nav_jobs: 'Lowongan Kerja',
-    nav_stages: '7 Tahap Seleksi',
-    nav_portal: 'Portal Pelamar',
+    nav_jobs: 'Job Vacancies',
+    nav_stages: '7 Selection Stages',
+    nav_portal: 'Applicant Portal',
     nav_login: 'Login',
     nav_admin: 'Login Pegawai',
 
@@ -347,8 +347,8 @@ export const translations: Record<Language, CareerTranslations> = {
     hero_title_1: 'Bangun Karir Masa Depan Anda Bersama',
     hero_title_2: 'Pemimpin Inovasi Otomotif',
     hero_subtitle: 'Bergabunglah dengan tim manufaktur otomotif kelas dunia. Temukan peluang karir strategis di bidang plastic injection molding, tooling presisi, pengecatan robotik, dan perakitan interior.',
-    hero_btn_explore: 'Jelajahi Lowongan',
-    hero_btn_portal: 'Cek Status Lamaran',
+    hero_btn_explore: 'Explore Vacancies',
+    hero_btn_portal: 'Check Application Status',
     hero_stat_plants: '2 Pabrik Modern',
     hero_stat_plants_sub: 'Karawang & Cikarang',
     hero_stat_oem: 'Mitra OEM Tier-1',
@@ -358,9 +358,9 @@ export const translations: Record<Language, CareerTranslations> = {
 
     // Search & Filter
     search_placeholder: 'Cari posisi, departemen, atau lokasi...',
-    dept_filter_all: 'Semua Departemen',
+    dept_filter_all: 'All Departments',
     dept_filter_label: 'Departemen',
-    results_count: 'Lowongan Tersedia Ditemukan',
+    results_count: 'Available Vacancies Found',
 
     // 7 Stages
     stages_badge: 'REKRUTMEN TRANSPARAN',
@@ -399,8 +399,8 @@ export const translations: Record<Language, CareerTranslations> = {
 
     // Job Detail Modal
     modal_title: 'Rincian Lowongan & Spesifikasi Posisi',
-    modal_desc_header: 'Deskripsi & Tanggung Jawab Pekerjaan',
-    modal_req_header: 'Kualifikasi & Persyaratan Kandidat',
+    modal_desc_header: 'Description & Tanggung Jawab Pekerjaan',
+    modal_req_header: 'Qualifications & Persyaratan Kandidat',
     modal_btn_apply: 'Lamar Posisi Ini',
     modal_btn_close: 'Tutup',
 
@@ -456,9 +456,9 @@ export const translations: Record<Language, CareerTranslations> = {
     admin_users_dialogNewPasswordLabel: 'Password Baru (Kosongkan untuk acak otomatis)',
     admin_users_dialogNewPasswordPlaceholder: 'Misal: itsp2026! atau kosongkan',
     admin_users_dialogNewPasswordHelper: 'Jika dikosongkan, sistem akan mengenerate password acak aman.',
-    admin_users_btnCancel: 'Batal',
+    admin_users_btnCancel: 'Cancel',
     admin_users_btnSaving: 'Menyimpan...',
-    admin_users_btnSaveNewPassword: 'Simpan Password Baru',
+    admin_users_btnSaveNewPassword: 'Save Password Baru',
     admin_users_btnResetting: 'Mereset...',
     admin_users_dialogAddTitle: 'Tambah Akun HR / User Departemen',
     admin_users_dialogAddDesc: 'Buat kredensial untuk HR atau User Departemen dengan kontrol akses portal.',
@@ -481,7 +481,7 @@ export const translations: Record<Language, CareerTranslations> = {
     admin_users_fieldNewPasswordOpt: 'Password Baru (Opsional)',
     admin_users_fieldNewPasswordPlaceholder: 'Kosongkan jika tidak diubah',
     admin_users_fieldNewPasswordHelper: 'Kosongkan untuk mempertahankan password saat ini.',
-    admin_users_btnSaveChanges: 'Simpan Perubahan',
+    admin_users_btnSaveChanges: 'Save Perubahan',
     admin_users_confirmResetMfa: 'Reset pengaturan MFA Google Authenticator untuk akun',
     admin_users_confirmResetMfaSuffix: 'Akun ini akan diwajibkan melakukan setup MFA ulang pada login berikutnya.',
     admin_users_confirmDelete: 'Hapus akun',

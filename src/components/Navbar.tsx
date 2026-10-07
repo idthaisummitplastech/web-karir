@@ -55,7 +55,7 @@ export default function Navbar() {
           <Link href="/" style={{ textDecoration: 'none', minWidth: 0, flex: 1, display: 'flex', alignItems: 'center' }}>
             <BrandLogo
               title="PT INDONESIA THAI SUMMIT PLASTECH"
-              subtitle="PORTAL KARIR RESMI & ATS"
+              subtitle="OFFICIAL CAREER PORTAL & ATS"
               size="medium"
             />
           </Link>

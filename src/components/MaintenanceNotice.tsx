@@ -29,8 +29,8 @@ interface MaintenanceNoticeProps {
 }
 
 export default function MaintenanceNotice({
-  title = 'Services Karir Sedang Dalam Pemeliharaan & Integrasi',
-  subtitle = 'Halaman atau lowongan yang Anda tuju sedang dalam proses pembaruan oleh Tim Recruitment & HR PT Indonesia Thai Summit Plastech untuk memastikan proses seleksi berjalan lancar dan akurat.',
+  title = 'Career Services Under Maintenance & Integration',
+  subtitle = 'The page or vacancy you are looking for is being updated by the PT Indonesia Thai Summit Plastech Recruitment & HR Team to ensure a smooth and accurate selection process.',
   isNotFound = false,
 }: MaintenanceNoticeProps) {
   return (
@@ -104,7 +104,7 @@ export default function MaintenanceNotice({
           </Box>
 
           <Chip
-            label={isNotFound ? '🛠️ HALAMAN / LOWONGAN DALAM PROSES' : '⚡ PEMELIHARAAN SISTEM REKRUTMEN'}
+            label={isNotFound ? '🛠️ PAGE / VACANCY IN PROGRESS' : '⚡ RECRUITMENT SYSTEM MAINTENANCE'}
             sx={{
               bgcolor: 'rgba(1, 135, 48, 0.1)',
               color: '#018730',
@@ -170,7 +170,7 @@ export default function MaintenanceNotice({
                   </Typography>
                 </Stack>
                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block', lineHeight: 1.4 }}>
-                  PT ITSP tidak memungut biaya apa pun dalam proses rekrutmen.
+                  PT ITSP does not charge any fees at any stage of the recruitment process.
                 </Typography>
               </Box>
             </Grid>
@@ -179,11 +179,11 @@ export default function MaintenanceNotice({
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
                   <SupportAgentIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
-                    Bantuan HR
+                    HR Support
                   </Typography>
                 </Stack>
                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block', lineHeight: 1.4 }}>
-                  Hubungi tim rekrutmen via email resmi perusahaan.
+                  Contact the recruitment team via the official company email.
                 </Typography>
               </Box>
             </Grid>
@@ -212,7 +212,7 @@ export default function MaintenanceNotice({
                 '&:hover': { bgcolor: '#016d26' },
               }}
             >
-              Beranda Karir
+              Career Home
             </Button>
             <Button
               component={Link}
@@ -234,7 +234,7 @@ export default function MaintenanceNotice({
                 },
               }}
             >
-              Portal Pelamar
+              Applicant Portal
             </Button>
             <Button
               component="a"
@@ -265,7 +265,7 @@ export default function MaintenanceNotice({
             sx={{ color: '#64748B', fontSize: 13 }}
           >
             <EmailIcon sx={{ fontSize: 16, color: '#fc4509' }} />
-            <span>Kontak HR & Rekrutmen: info.itsp@thaisummit.co.id</span>
+            <span>HR & Recruitment Contact: info.itsp@thaisummit.co.id</span>
           </Stack>
         </Card>
       </Container>

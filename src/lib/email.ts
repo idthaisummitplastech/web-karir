@@ -32,7 +32,7 @@ export async function sendMailDirect({
   channel?: 'web_karir' | 'web_perusahaan' | string;
   customSmtp?: SmtpConfigOverride;
 }): Promise<{ success: boolean; error?: string }> {
-  // SMTP 100% via env — tanpa host/email hardcoded di code (lihat .env.example).
+  // SMTP 100% via env — no host/email hardcoded in code (lihat .env.example).
   // Ganti/rotasi cukup via env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS,
   // SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_TARGET_HOST (opsional override),
   // SMTP_TLS_SNI (opsional override SNI).
@@ -46,7 +46,7 @@ export async function sendMailDirect({
   let replyTo = senderEmail;
 
   if (customSmtp && customSmtp.host && customSmtp.username) {
-    // Gunakan konfigurasi langsung dari form uji coba Super Admin
+    // Use direct configuration from Super Admin test form
     host = customSmtp.host;
     port = parseInt(String(customSmtp.port || '587'));
     user = customSmtp.username;
@@ -61,8 +61,8 @@ export async function sendMailDirect({
   const from = senderName && senderEmail ? `"${senderName}" <${senderEmail}>` : senderEmail || user || '';
 
   if (!host || !user || !pass || !senderEmail) {
-    console.warn('[EMAIL WARNING] Konfigurasi SMTP belum lengkap via env (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM_EMAIL)');
-    const err = 'Konfigurasi SMTP belum lengkap via env (SMTP_HOST / SMTP_USER / SMTP_PASS / SMTP_FROM_EMAIL kosong). Isi file .env — lihat .env.example.';
+    console.warn('[EMAIL WARNING] SMTP configuration incomplete via env (SMTP_HOST/SMTP_USER/SMTP_PASS/SMTP_FROM_EMAIL)');
+    const err = 'SMTP configuration incomplete via env (SMTP_HOST / SMTP_USER / SMTP_PASS / SMTP_FROM_EMAIL kosong). Isi file .env — lihat .env.example.';
     // Log ke Grafana
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
       pushEmailLogToGrafana({
@@ -95,7 +95,7 @@ export async function sendMailDirect({
         pass,
       },
       tls: {
-        rejectUnauthorized: false, // Aman untuk mail server korporat on-premise seperti Zimbra
+        rejectUnauthorized: false, // Safe for on-premise corporate mail servers such as Zimbra
         servername,
       },
     });
@@ -149,7 +149,7 @@ export async function sendMailDirect({
       },
     });
 
-    console.log('[EMAIL SENT] Berhasil mengirim email ke:', to, 'Message ID:', info.messageId);
+    console.log('[EMAIL SENT] Successfully sent email to:', to, 'Message ID:', info.messageId);
 
     // Kirim Log Sukses ke Grafana Cloud secara Non-blocking
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
@@ -164,7 +164,7 @@ export async function sendMailDirect({
 
     return { success: true };
   } catch (error: any) {
-    console.error('[EMAIL ERROR] Gagal mengirim email ke:', to, error.message);
+    console.error('[EMAIL ERROR] Failed to send email to:', to, error.message);
 
     // Kirim Log Gagal ke Grafana Cloud secara Non-blocking
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
@@ -317,7 +317,7 @@ export function formatCorporateEmailBody(content: string): string {
       `;
 
       if (detectedUrl) {
-        boxHtml += renderActionButton('Masuk ke Portal Karir PT ITSP &rarr;', detectedUrl);
+        boxHtml += renderActionButton('Go to PT ITSP Career Portal &rarr;', detectedUrl);
       }
 
       htmlParts.push(boxHtml);
@@ -331,7 +331,7 @@ export function formatCorporateEmailBody(content: string): string {
           </tr>
         </table>
       `);
-    } else if (block.startsWith('Yth. ')) {
+    } else if (block.startsWith('Yth. ') || block.startsWith('Dear ') || block.startsWith('Dear,')) {
       htmlParts.push(`
         <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
           ${block}
@@ -354,7 +354,7 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
   const formattedContent = formatCorporateEmailBody(bodyContent);
 
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="id">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -385,7 +385,7 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
                     <td valign="middle" align="left" style="text-align: left;">
                       <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #fed7aa; font-weight: 700; margin-bottom: 4px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Human Capital Management</div>
                       <div style="font-size: 18px; font-weight: 800; color: #ffffff; line-height: 1.25; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; letter-spacing: -0.01em;">PT INDONESIA THAI SUMMIT PLASTECH</div>
-                      <div style="font-size: 12px; color: #d1fae5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 4px;">Sistem Rekrutmen Terpadu &amp; Portal Karir Resmi</div>
+                      <div style="font-size: 12px; color: #d1fae5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-top: 4px;">Integrated Recruitment System &amp; Official Career Portal</div>
                     </td>
                     <td valign="middle" align="right" width="70" style="width: 70px; text-align: right; padding-left: 15px;">
                       <table border="0" cellpadding="0" cellspacing="0" align="right" style="border-collapse: collapse;">
@@ -415,7 +415,7 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
                 Plant 1: Kawasan Industri KIIC, Lot FF-3, Karawang Barat 41361<br />
                 Plant 2: Greenland International Industrial Center (GIIC), Deltamas, Cikarang Pusat 17530<br />
                 <div style="margin-top: 10px; color: #64748b; font-size: 11px;">
-                  Email ini dikirimkan otomatis oleh Sistem ATS Resmi PT ITSP. Mohon tidak membalas langsung ke alamat email ini.
+                  This email was sent automatically by the PT ITSP Official ATS. Please do not reply directly to this address.
                 </div>
               </td>
             </tr>
@@ -437,33 +437,33 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
 export function emailAccountCreated(name: string, position: string, email: string, tempPass: string, appUrl: string) {
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Terima kasih atas minat dan antusiasme Anda untuk bergabung dengan <strong>PT Indonesia Thai Summit Plastech</strong> untuk posisi <strong>${position}</strong>.
+      Thank you for your interest in joining <strong>PT Indonesia Thai Summit Plastech</strong> for the position of <strong>${position}</strong>.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Berkas lamaran Anda telah kami terima dalam sistem. Akun portal kandidat Anda telah aktif, silakan login untuk memantau status perkembangan seleksi 7 tahap Anda secara langsung:
+      We have received your application. Your candidate portal account is now active — please log in to track your 7-stage selection progress:
     </p>
     
     ${renderInfoBoxTable([
-      { label: 'Email Login:', value: email, isHighlight: true },
-      { label: 'Password Sementara:', value: tempPass, isHighlight: true, isMono: true },
-      { label: 'Posisi Dilamar:', value: position },
-      { label: 'Tahap Saat Ini:', value: 'Tahap 1: Screening Dokumen & CV', isBadge: true },
+      { label: 'Login Email:', value: email, isHighlight: true },
+      { label: 'Temporary Password:', value: tempPass, isHighlight: true, isMono: true },
+      { label: 'Applied Position:', value: position },
+      { label: 'Current Stage:', value: 'Stage 1: Document & CV Screening', isBadge: true },
     ])}
 
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Silakan akses portal pelamar menggunakan tautan di bawah ini:
+      Please access the applicant portal via the link below:
     </p>
     
-    ${renderActionButton('Masuk ke Portal Karir PT ITSP &rarr;', `${appUrl}/login`)}
+    ${renderActionButton('Go to PT ITSP Career Portal &rarr;', `${appUrl}/login`)}
 
     <p style="margin: 16px 0 0 0; font-size: 13.5px; line-height: 1.6; color: #64748b; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Mohon jaga kerahasiaan kredensial login Anda. Informasi hasil screening berkas akan kami perbarui sesegera mungkin.
+      Please keep your login credentials confidential. We will update you on the document screening results as soon as possible.
     </p>
   `;
-  return generateCorporateEmailWrapper('Konfirmasi Pendaftaran Lamaran - PT ITSP', body);
+  return generateCorporateEmailWrapper('Application Registration Confirmation - PT ITSP', body);
 }
 
 // 2. Lolos Screening Dokumen & Undangan Psikotes
@@ -478,13 +478,13 @@ export function emailScreeningPassed(
 ) {
   const mapsUrl = customMapsUrl || getPlantMapsUrl(location);
   const items = [
-    { label: 'Mata Ujian:', value: 'Tes Psikotes & Potensi Akademik Online' },
-    { label: 'Jadwal Pelaksanaan:', value: scheduledAt || 'Akan diumumkan / Terbuka di Dashboard', isHighlight: true },
-    { label: 'Tempat / Lokasi:', value: location || 'Portal Karir Online PT ITSP', isHighlight: true },
-    { label: 'Token Sesi Ujian:', value: examToken || 'PSIKO2026', isHighlight: true, isMono: true },
+    { label: 'Exam Subject:', value: 'Online Psychometric & Aptitude Test' },
+    { label: 'Schedule:', value: scheduledAt || 'To be announced / Open on Dashboard', isHighlight: true },
+    { label: 'Venue / Location:', value: location || 'PT ITSP Online Career Portal', isHighlight: true },
+    { label: 'Exam Session Token:', value: examToken || 'PSIKO2026', isHighlight: true, isMono: true },
     {
-      label: 'Terms Khusus:',
-      value: 'Tombol tes akan aktif pada jadwal yang ditentukan. Masukkan Token Sesi Ujian di atas pada halaman ujian portal.',
+      label: 'Important Notes:',
+      value: 'The test button will be enabled at the scheduled time. Enter the Exam Session Token above on the portal test page.',
     },
   ];
 
@@ -493,7 +493,7 @@ export function emailScreeningPassed(
     mapsBtn = `
       <div style="margin: 10px 0 6px 0; text-align: left;">
         <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
-          🗺️ Buka Rute Google Maps Pabrik &rarr;
+          🗺️ Open Plant Google Maps Route &rarr;
         </a>
       </div>
     `;
@@ -501,22 +501,22 @@ export function emailScreeningPassed(
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Berdasarkan hasil evaluasi kualifikasi dan verifikasi berkas administrasi yang Anda kirimkan, Tim Rekrutmen <strong>PT Indonesia Thai Summit Plastech</strong> menyatakan bahwa Anda:
+      Based on the qualification review and administrative verification you submitted, the Recruitment Team of <strong>PT Indonesia Thai Summit Plastech</strong> confirms that you have:
     </p>
     
     <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 20px auto;">
       <tr>
         <td align="center" bgcolor="#dcfce7" style="background-color: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 12px 26px; font-weight: 700; font-size: 14.5px; color: #15803d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-          LOLOS TAHAP SCREENING DOKUMEN & ADMINISTRASI
+          PASSED DOCUMENT & ADMINISTRATIVE SCREENING
         </td>
       </tr>
     </table>
 
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Selanjutnya, Anda diundang untuk mengikuti <strong>Tahap 2: Tes Psikotes Online</strong> yang akan dilaksanakan pada:
+      You are now invited to proceed to <strong>Stage 2: Online Psychometric Test</strong> scheduled for:
     </p>
 
     ${renderInfoBoxTable(items)}
@@ -526,9 +526,9 @@ export function emailScreeningPassed(
       <strong>⚠️ Perhatian Sistem Anti-Kecurangan:</strong> Selama ujian berlangsung, peserta dilarang keras membuka tab browser baru atau berpindah aplikasi. Sistem dilengkapi sensor proctoring otomatis yang akan menghentikan ujian jika terjadi pelanggaran berulang.
     </div>
 
-    ${renderActionButton('Buka Portal & Cek Jadwal Tes &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('Open Portal & Check Test Schedule &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Undangan Tes Psikotes Online - PT ITSP', body);
+  return generateCorporateEmailWrapper('Online Psychometric Test Invitation - PT ITSP', body);
 }
 
 // 3. Lolos Psikotes & Undangan Tes User / Teknis
@@ -543,11 +543,11 @@ export function emailPsikotesPassed(
 ) {
   const mapsUrl = customMapsUrl || getPlantMapsUrl(location);
   const items = [
-    { label: 'Materi Ujian:', value: 'Uji Kompetensi Teknis & Keahlian Bidang' },
-    { label: 'Jadwal Pelaksanaan:', value: scheduledAt || 'Sesuai Jadwal di Dashboard', isHighlight: true },
-    { label: 'Tempat / Lokasi:', value: location || 'Portal Karir Online PT ITSP', isHighlight: true },
-    { label: 'Token Sesi Ujian:', value: examToken || 'USER2026', isHighlight: true, isMono: true },
-    { label: 'Akses Ujian:', value: 'Masukkan Token Ujian User di atas pada halaman ujian portal.' },
+    { label: 'Exam Subject:', value: 'Technical Competency & Field Expertise Assessment' },
+    { label: 'Schedule:', value: scheduledAt || 'Per Schedule on Dashboard', isHighlight: true },
+    { label: 'Venue / Location:', value: location || 'PT ITSP Online Career Portal', isHighlight: true },
+    { label: 'Exam Session Token:', value: examToken || 'USER2026', isHighlight: true, isMono: true },
+    { label: 'Exam Access:', value: 'Enter the User Exam Token above on the portal test page.' },
   ];
 
   let mapsBtn = '';
@@ -555,7 +555,7 @@ export function emailPsikotesPassed(
     mapsBtn = `
       <div style="margin: 10px 0 6px 0; text-align: left;">
         <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #fc4509; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
-          🗺️ Buka Rute Google Maps Pabrik &rarr;
+          🗺️ Open Plant Google Maps Route &rarr;
         </a>
       </div>
     `;
@@ -563,21 +563,21 @@ export function emailPsikotesPassed(
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Selamat! Anda dinyatakan <strong>LOLOS Tahap 2: Tes Psikotes Online</strong> untuk posisi <strong>${position}</strong> di PT Indonesia Thai Summit Plastech.
+      Congratulations! You have <strong>PASSED Stage 2: Online Psychometric Test</strong> for the position of <strong>${position}</strong> di PT Indonesia Thai Summit Plastech.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Anda berhak melanjutkan ke <strong>Tahap 3: Tes Teknis / User Test Departemen</strong>:
+      You are eligible to proceed to <strong>Stage 3: Department Technical / User Test</strong>:
     </p>
     
     ${renderInfoBoxTable(items)}
     ${mapsBtn}
 
-    ${renderActionButton('Akses Ujian Teknis di Dashboard &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('Access Technical Exam on Dashboard &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Undangan Tes Teknis / User Test - PT ITSP', body);
+  return generateCorporateEmailWrapper('Technical / User Test Invitation - PT ITSP', body);
 }
 
 // 4. Undangan Interview HR (Teams / Zoom / Onsite)
@@ -602,12 +602,12 @@ export function emailHrInterviewInvite(
 
   const items: Array<{ label: string; value: string; isHighlight?: boolean; isMono?: boolean }> = [
     { label: 'Posisi:', value: position },
-    { label: 'Jadwal Waktu:', value: scheduleInfo.scheduledAt, isHighlight: true },
+    { label: 'Schedule:', value: scheduleInfo.scheduledAt, isHighlight: true },
     {
-      label: 'Mode Interview:',
+      label: 'Interview Mode:',
       value: isOnline
         ? `VIRTUAL ONLINE (${(scheduleInfo.meetingPlatform || 'MS Teams').toUpperCase()})`
-        : 'ONSITE DI PABRIK PERUSAHAAN',
+        : 'ONSITE AT COMPANY PLANT',
       isHighlight: true,
     },
   ];
@@ -615,8 +615,8 @@ export function emailHrInterviewInvite(
   if (isOnline) {
     if (scheduleInfo.meetingLink) {
       items.push({
-        label: 'Tautan Meeting:',
-        value: `<a href="${scheduleInfo.meetingLink}" target="_blank" style="color: #018730; font-weight: bold; text-decoration: underline;">Klik di sini untuk bergabung &rarr;</a>`,
+        label: 'Meeting Link:',
+        value: `<a href="${scheduleInfo.meetingLink}" target="_blank" style="color: #018730; font-weight: bold; text-decoration: underline;">Click here to join &rarr;</a>`,
       });
     }
     if (scheduleInfo.meetingPasscode) {
@@ -628,7 +628,7 @@ export function emailHrInterviewInvite(
       value: scheduleInfo.locationAddress || 'Kawasan Industri KIIC, Lot FF-3, Karawang Barat',
     });
     if (scheduleInfo.roomName) {
-      items.push({ label: 'Ruangan:', value: scheduleInfo.roomName });
+      items.push({ label: 'Room:', value: scheduleInfo.roomName });
     }
   }
 
@@ -637,31 +637,31 @@ export function emailHrInterviewInvite(
     mapsBtn = `
       <div style="margin: 10px 0 6px 0; text-align: left;">
         <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
-          🗺️ Petunjuk Arah Google Maps (Menuju Pabrik) &rarr;
+          🗺️ Google Maps Directions (To Plant) &rarr;
         </a>
       </div>
     `;
   }
 
   const notice = isOnline
-    ? `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Terms Virtual Interview:</strong> Mohon bergabung 10 menit sebelum jadwal dimulai, menggunakan koneksi internet stabil, kamera aktif (On-Camera), serta mengenakan kemeja formal rapi.</p>`
-    : `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Terms Onsite:</strong> Mohon hadir 15 menit sebelum waktu interview, melapor ke pos security pabrik dengan menunjukkan KTP asli, mengenakan pakaian kemeja formal berkerah dan sepatu tertutup.</p>`;
+    ? `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Virtual Interview Terms:</strong> Please join 10 minutes before the scheduled time with a stable internet connection, camera on, and wearing formal attire.</p>`
+    : `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Onsite Terms:</strong> Please arrive 15 minutes before the interview time, report to the plant security post with your original ID (KTP), wearing a collared formal shirt and closed shoes.</p>`;
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Selamat! Berdasarkan hasil evaluasi tes online, Tim Human Capital Management <strong>PT Indonesia Thai Summit Plastech</strong> mengundang Anda untuk mengikuti <strong>Tahap 4: Interview HR (Wawancara SDM)</strong>.
+      Congratulations! Based on the online test evaluation, the Human Capital Management Team of <strong>PT Indonesia Thai Summit Plastech</strong> invites you to attend <strong>Stage 4: HR Interview</strong>.
     </p>
     
     ${renderInfoBoxTable(items)}
     ${mapsBtn}
     ${notice}
 
-    ${renderActionButton('Buka Ruang Tunggu Interview di Dashboard &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('Open Interview Waiting Room on Dashboard &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Undangan Resmi Interview HR - PT ITSP', body);
+  return generateCorporateEmailWrapper('Official HR Interview Invitation - PT ITSP', body);
 }
 
 // 5. Undangan Interview User Departemen
@@ -687,21 +687,21 @@ export function emailUserInterviewInvite(
   const items: Array<{ label: string; value: string; isHighlight?: boolean }> = [
     { label: 'Posisi:', value: position },
     { label: 'Waktu Pelaksanaan:', value: scheduleInfo.scheduledAt, isHighlight: true },
-    { label: 'Pewawancara:', value: scheduleInfo.interviewerName || 'Tim Kepala Departemen & Supervisor Terkait' },
-    { label: 'Mode Interview:', value: isOnline ? `VIRTUAL (${(scheduleInfo.meetingPlatform || 'MS Teams').toUpperCase()})` : 'ONSITE DI PABRIK', isHighlight: true },
+    { label: 'Interviewer:', value: scheduleInfo.interviewerName || 'Department Head & Related Supervisors' },
+    { label: 'Interview Mode:', value: isOnline ? `VIRTUAL (${(scheduleInfo.meetingPlatform || 'MS Teams').toUpperCase()})` : 'ONSITE AT PLANT', isHighlight: true },
   ];
 
   if (isOnline) {
     if (scheduleInfo.meetingLink) {
       items.push({
-        label: 'Tautan Meeting:',
+        label: 'Meeting Link:',
         value: `<a href="${scheduleInfo.meetingLink}" target="_blank" style="color: #018730; font-weight: bold; text-decoration: underline;">Gabung Video Meeting &rarr;</a>`,
       });
     }
   } else {
-    items.push({ label: 'Lokasi:', value: scheduleInfo.locationAddress || 'Pabrik PT ITSP' });
+    items.push({ label: 'Location:', value: scheduleInfo.locationAddress || 'PT ITSP Plant' });
     if (scheduleInfo.roomName) {
-      items.push({ label: 'Ruangan:', value: scheduleInfo.roomName });
+      items.push({ label: 'Room:', value: scheduleInfo.roomName });
     }
   }
 
@@ -710,7 +710,7 @@ export function emailUserInterviewInvite(
     mapsBtn = `
       <div style="margin: 10px 0 6px 0; text-align: left;">
         <a href="${mapsUrl}" target="_blank" style="display: inline-block; background: #fc4509; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
-          🗺️ Petunjuk Arah Google Maps (Menuju Pabrik) &rarr;
+          🗺️ Google Maps Directions (To Plant) &rarr;
         </a>
       </div>
     `;
@@ -718,18 +718,18 @@ export function emailUserInterviewInvite(
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Anda dinyatakan <strong>LOLOS Tahap Interview HR</strong> dan diundang untuk melanjutkan ke <strong>Tahap 5: Interview User / Departemen Terkait</strong> bersama jajaran pimpinan divisi.
+      You have <strong>PASSED the HR Interview Stage</strong> and are invited to proceed to <strong>Stage 5: Department / User Interview</strong> with the division leadership.
     </p>
     
     ${renderInfoBoxTable(items)}
     ${mapsBtn}
 
-    ${renderActionButton('Lihat Rincian di Portal Karir &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('View Details on Career Portal &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Undangan Interview User / Departemen - PT ITSP', body);
+  return generateCorporateEmailWrapper('Department / User Interview Invitation - PT ITSP', body);
 }
 
 // 6. Rujukan Medical Check-Up (MCU) Rekanan
@@ -750,51 +750,51 @@ export function emailMcuReferral(
     'https://maps.google.com/?q=Klinik+Kimia+Farma+Galuh+Mas+Karawang';
 
   const items = [
-    { label: 'Fasilitas Rekanan:', value: clinicName, isHighlight: true },
-    { label: 'Alamat Rujukan:', value: clinicAddress },
-    { label: 'Estimasi Biaya:', value: estimatedCost, isHighlight: true },
-    { label: 'Petunjuk Medis:', value: instructions },
+    { label: 'Partner Facility:', value: clinicName, isHighlight: true },
+    { label: 'Referral Address:', value: clinicAddress },
+    { label: 'Estimated Cost:', value: estimatedCost, isHighlight: true },
+    { label: 'Medical Instructions:', value: instructions },
   ];
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Selamat! Anda telah menyelesaikan seluruh rangkaian wawancara teknis dan dinyatakan berhak melanjutkan ke <strong>Tahap 6: Pemeriksaan Kesehatan Medis (Medical Check-Up / MCU)</strong>.
+      Congratulations! You have completed the full technical interview series and are eligible to proceed to <strong>Stage 6: Medical Check-Up (MCU)</strong>.
     </p>
     
     ${renderInfoBoxTable(items)}
 
     <div style="margin: 10px 0 6px 0; text-align: left;">
       <a href="${clinicMapsUrl}" target="_blank" style="display: inline-block; background: #018730; color: #ffffff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 13px;">
-        🗺️ Buka Rute Google Maps Klinik / RS Rekanan &rarr;
+        🗺️ Open Partner Clinic / Hospital Google Maps Route &rarr;
       </a>
     </div>
 
     <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 14px 18px; margin: 18px 0; font-size: 13.5px; color: #1e40af; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6;">
-      ℹ️ <strong>Catatan Penting:</strong> Anda <em>tidak perlu mengunggah berkas apa pun</em> ke website. Hasil pemeriksaan resmi akan dikirimkan secara langsung dan rahasia oleh pihak klinik/RS rekanan kepada Tim HR PT ITSP. Status kelolosan medis Anda akan diperbarui otomatis di portal pelamar.
+      ℹ️ <strong>Important Note:</strong> You <em>do not need to upload any files</em> to the website. Official results will be sent directly and confidentially by the partner clinic/hospital to the PT ITSP HR Team. Your medical clearance status will be updated automatically on the applicant portal.
     </div>
 
-    ${renderActionButton('Lihat Surat Pengantar MCU di Portal &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('View MCU Referral Letter on Portal &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Surat Pengantar Medical Check-Up (MCU) - PT ITSP', body);
+  return generateCorporateEmailWrapper('Medical Check-Up (MCU) Referral Letter - PT ITSP', body);
 }
 
 // 7. Lolos MCU & Penerbitan Offering Letter
 export function emailOfferingIssued(name: string, position: string, appUrl: string) {
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Berdasarkan hasil verifikasi pemeriksaan medis (Fit to Work) dan pertimbangan manajemen, kami dengan bangga menginformasikan bahwa Anda dinyatakan <strong>LOLOS SELEKSI PENERIMAAN KARYAWAN</strong> di <strong>PT Indonesia Thai Summit Plastech</strong>.
+      Based on the medical examination verification (Fit to Work) and management consideration, we are pleased to inform you that you have been declared <strong>SELECTED AS AN EMPLOYEE</strong> at <strong>PT Indonesia Thai Summit Plastech</strong>.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Surat Penawaran Resmi (<strong>Offering Letter</strong>) untuk posisi <strong>${position}</strong> telah diterbitkan di portal kandidat Anda. Rincian gaji pokok, tunjangan, benefit kesehatan, dan tanggal mulai kerja dapat Anda tinjau secara lengkap di portal.
+      Official Offer Letter for the position of <strong>${position}</strong> has been issued on your candidate portal. Base salary, allowances, health benefits, and start date can be reviewed in full on the portal.
     </p>
 
-    ${renderActionButton('Tinjau & Setujui Offering Letter &rarr;', `${appUrl}/portal/dashboard`, '#ea580c')}
+    ${renderActionButton('Review & Accept Offer Letter &rarr;', `${appUrl}/portal/dashboard`, '#ea580c')}
   `;
   return generateCorporateEmailWrapper('Resmi: Penawaran Kerja (Offering Letter) - PT ITSP', body);
 }
@@ -808,56 +808,56 @@ export function emailContractSigningInvite(
   appUrl: string
 ) {
   const items = [
-    { label: 'Jadwal Kehadiran:', value: signingDate, isHighlight: true },
-    { label: 'Lokasi Pabrik:', value: plantLocation },
-    { label: 'Pakaian:', value: 'Kemeja putih formal, celana panjang hitam bahan, dan sepatu kerja tertutup.' },
+    { label: 'Attendance Schedule:', value: signingDate, isHighlight: true },
+    { label: 'Plant Location:', value: plantLocation },
+    { label: 'Attire:', value: 'Formal white shirt, black trousers, and closed work shoes.' },
     {
-      label: 'Dokumen Wajib:',
+      label: 'Required Documents:',
       value:
-        'KTP asli & fotokopi 2 lbr, NPWP, Buku Rekening Mandiri/BCA, Pasfoto 3x4 (2 lembar latar merah), Ijazah asli & SKCK aktif.',
+        'Original ID (KTP) & 2 photocopies, Tax ID (NPWP), Mandiri/BCA bank book, 3x4 photos (2 red background), original diploma & active police clearance (SKCK).',
     },
   ];
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Terima kasih atas persetujuan Anda terhadap Surat Penawaran Kerja resmi kami. Selamat datang di keluarga besar <strong>PT Indonesia Thai Summit Plastech</strong>!
+      Thank you for accepting our official Employment Offer. Welcome to the extended family of <strong>PT Indonesia Thai Summit Plastech</strong>!
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Anda diundang untuk hadir ke pabrik kami guna penandatanganan Kontrak Kerja Fisik (PKWT) serta pengambilan seragam & orientasi kerja awal:
+      You are invited to our plant for the Physical Employment Contract (PKWT) signing, uniform collection & initial orientation:
     </p>
     
     ${renderInfoBoxTable(items)}
 
-    ${renderActionButton('Lihat Panduan Kedatangan di Portal &rarr;', `${appUrl}/portal/dashboard`)}
+    ${renderActionButton('View Arrival Guide on Portal &rarr;', `${appUrl}/portal/dashboard`)}
   `;
-  return generateCorporateEmailWrapper('Undangan Penandatanganan Kontrak Kerja - PT ITSP', body);
+  return generateCorporateEmailWrapper('Employment Contract Signing Invitation - PT ITSP', body);
 }
 
 // 9. Surat Penolakan Resmi (Bila Belum Memenuhi Syarat)
 export function emailRejectionNotice(name: string, position: string, stageName: string) {
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Yth. Sdr/i. ${name},
+      Dear ${name},
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Terima kasih banyak atas waktu, dedikasi, serta minat yang Anda tunjukkan dalam mengikuti proses seleksi penerimaan karyawan di <strong>PT Indonesia Thai Summit Plastech</strong> untuk posisi <strong>${position}</strong>.
+      Thank you for the time, dedication, and interest you have shown throughout our employee selection process at <strong>PT Indonesia Thai Summit Plastech</strong> for the position of <strong>${position}</strong>.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Setelah mempertimbangkan secara seksama profil seluruh kandidat pada <strong>${stageName}</strong>, kami menginformasikan bahwa untuk saat ini kami belum dapat melanjutkan proses lamaran Anda ke tahapan berikutnya.
+      After carefully reviewing all candidate profiles at <strong>${stageName}</strong> we regret to inform you that we are unable to advance your application to the next stage at this time.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Keputusan ini murni didasarkan pada kesesuaian profil teknis dan kebutuhan spesifik posisi yang saat ini dibuka, dan bukan merupakan refleksi dari kemampuan serta potensi Anda sebagai profesional.
+      This decision is based solely on technical profile fit and the specific requirements of the currently open position, and does not reflect your abilities or professional potential.
     </p>
     <p style="margin: 0 0 14px 0; font-size: 14px; line-height: 1.65; color: #334155; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Data profil Anda akan tetap tersimpan secara rahasia dalam basis data talenta (<em>Talent Pool</em>) kami, dan kami tidak akan ragu untuk menghubungi Anda kembali apabila terdapat lowongan lain di masa mendatang yang sesuai dengan kualifikasi Anda.
+      Your profile will remain confidentially stored in our talent pool, and we will not hesitate to contact you should a future vacancy match your qualifications.
     </p>
     <p style="margin: 16px 0 0 0; font-size: 13.5px; line-height: 1.6; color: #64748b; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-      Kami mendoakan yang terbaik bagi kesuksesan karir dan masa depan profesional Anda.
+      We wish you the very best in your career and professional future.
     </p>
   `;
-  return generateCorporateEmailWrapper('Pemberitahuan Status Seleksi - PT ITSP', body);
+  return generateCorporateEmailWrapper('Selection Status Notification - PT ITSP', body);
 }
 

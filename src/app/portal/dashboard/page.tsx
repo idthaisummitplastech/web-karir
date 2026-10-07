@@ -592,7 +592,7 @@ export default function ApplicantDashboard() {
                   <CancelIcon sx={{ color: '#DC2626', fontSize: 26 }} />
                   <Box>
                     <Typography variant="subtitle2" sx={{ color: '#991B1B', fontWeight: 800 }}>
-                      Status Seleksi: Belum Memenuhi Kualifikasi pada Tahap {applicant?.failedAtStage}
+                      Status Seleksi: Belum Memenuhi Qualifications pada Tahap {applicant?.failedAtStage}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#7F1D1D' }}>
                       {applicant?.rejectionReason || 'Terima kasih atas partisipasi Anda. Profil Anda tersimpan dalam Talent Pool kami.'}
@@ -1782,7 +1782,7 @@ export default function ApplicantDashboard() {
             className="notranslate"
             translate="no"
           >
-            Batal
+            Cancel
           </Button>
           <Button
             key="btn-verify-token"

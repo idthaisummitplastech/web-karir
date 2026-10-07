@@ -297,7 +297,7 @@ export default function UserTestExamPage() {
               onClick={() => router.push('/portal/dashboard')}
               sx={{ bgcolor: '#018730', color: '#FFFFFF', fontWeight: 700, px: 4, py: 1.3, borderRadius: 2 }}
             >
-              Kembali ke Dashboard Pelamar &rarr;
+              Back to Applicant Dashboard &rarr;
             </Button>
           </Card>
         ) : (
@@ -384,7 +384,7 @@ export default function UserTestExamPage() {
                             });
                           } else {
                             if (currentSelections.length >= 2) {
-                              alert('Anda sudah memilih 2 pilihan. Batalkan salah satu pilihan terlebih dahulu jika ingin menggantinya.');
+                              alert('Anda sudah memilih 2 pilihan. Cancelkan salah satu pilihan terlebih dahulu jika ingin menggantinya.');
                               return;
                             }
                             setAnswers({
@@ -549,7 +549,7 @@ export default function UserTestExamPage() {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button variant="contained" fullWidth onClick={() => setShowWarningModal(false)} sx={{ bgcolor: '#DC2626' }}>
-            Kembali ke Ujian
+            Back to Exam
           </Button>
         </DialogActions>
       </Dialog>
@@ -569,7 +569,7 @@ export default function UserTestExamPage() {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>
-          <Button onClick={() => setShowConfirmModal(false)}>Batal</Button>
+          <Button onClick={() => setShowConfirmModal(false)}>Cancel</Button>
           <Button variant="contained" onClick={() => handleSubmitExam(false)} sx={{ bgcolor: '#018730' }}>
             Kirim Ujian
           </Button>
@@ -584,7 +584,7 @@ export default function UserTestExamPage() {
         currentIndex={currentIndex}
         onJump={(idx) => setCurrentIndex(idx)}
         accent="#fc4509"
-        title="Daftar Soal Teknis (PG Acak + Essay Akhir)"
+        title="Technical Question List (Random MCQ + Final Essay)"
       />
 
       <Footer />

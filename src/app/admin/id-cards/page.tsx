@@ -1967,7 +1967,7 @@ export default function AdminIdCardsPage() {
                       },
                     }}
                   >
-                    {selectedEmp.idCardPrinted ? 'Batalkan Status Cetak' : 'Tandai Selesai Dicetak'}
+                    {selectedEmp.idCardPrinted ? 'Cancelkan Status Cetak' : 'Tandai Selesai Dicetak'}
                   </Button>
                 </Box>
               )}
@@ -2270,13 +2270,13 @@ export default function AdminIdCardsPage() {
           </Button>
 
           <Stack direction="row" spacing={1.5}>
-            <Button onClick={() => setFormatModalOpen(false)}>Batal</Button>
+            <Button onClick={() => setFormatModalOpen(false)}>Cancel</Button>
             <Button
               variant="contained"
               onClick={handleSaveCustomFormat}
               sx={{ bgcolor: '#018730', fontWeight: 800, px: 3, '&:hover': { bgcolor: '#005c21' } }}
             >
-              Simpan Format Kartu
+              Save Format Kartu
             </Button>
           </Stack>
         </DialogActions>
@@ -2514,7 +2514,7 @@ export default function AdminIdCardsPage() {
         </DialogContent>
 
         <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9' }}>
-          <Button onClick={() => setAuthorizerModalOpen(false)}>Batal</Button>
+          <Button onClick={() => setAuthorizerModalOpen(false)}>Cancel</Button>
           <Button
             variant="contained"
             onClick={handleSaveDefaultSignature}
@@ -2525,7 +2525,7 @@ export default function AdminIdCardsPage() {
               '&:hover': { bgcolor: '#005c21' },
             }}
           >
-            Simpan Tanda Tangan Default
+            Save Tanda Tangan Default
           </Button>
         </DialogActions>
       </Dialog>

@@ -3,11 +3,11 @@
  * PT Indonesia Thai Summit Plastech (PT ITSP)
  */
 
-export const DEFAULT_OFFERING_CLAUSES = `1. Hubungan kerja dituangkan dalam Perjanjian Kerja Waktu Tertentu (PKWT) sesuai dengan peraturan perundang-undangan ketenagakerjaan yang berlaku di Republik Indonesia.
-2. Calon karyawan berhak atas jaminan sosial ketenagakerjaan dan kesehatan (BPJS Ketenagakerjaan & BPJS Kesehatan) terhitung sejak tanggal efektif bergabung.
-3. Fasilitas kerja meliputi fasilitas makan kantin pabrik, tunjangan shift kerja manufaktur, serta perlengkapan Alat Pelindung Diri (APD) dan seragam kerja standar PT ITSP.
-4. Masa orientasi dan evaluasi performa kerja (probationary review) berlaku selama 3 (tiga) bulan pertama masa penempatan.
-5. Calon karyawan wajib mematuhi seluruh Tata Tertib & Peraturan Company (PP) PT Indonesia Thai Summit Plastech serta menjaga kerahasiaan informasi korporat (Strictly Confidential).`;
+export const DEFAULT_OFFERING_CLAUSES = `1. The employment relationship is governed by a Fixed-Term Employment Agreement (PKWT) in accordance with the prevailing Indonesian labor laws and regulations.
+2. The prospective employee is entitled to employment and health social security (BPJS Ketenagakerjaan & BPJS Kesehatan) effective from the official joining date.
+3. Work facilities include canteen meals at the plant, manufacturing shift allowances, and standard Personal Protective Equipment (PPE) and uniforms provided by PT ITSP.
+4. An orientation and probationary performance review period applies during the first 3 (three) months of placement.
+5. The prospective employee must comply with all Company Rules & Regulations (PP) of PT Indonesia Thai Summit Plastech and maintain strict confidentiality of corporate information (Strictly Confidential).`;
 
 export interface OfferingLetterData {
   candidateName: string;
@@ -28,17 +28,17 @@ export interface OfferingLetterData {
 }
 
 export const generateOfferingLetterHtml = (data: OfferingLetterData): string => {
-  const candidateName = data.candidateName || 'Kandidat Terpilih';
-  const position = data.position || 'Staff Operasional';
-  const dept = data.department || 'Manufaktur & Produksi';
-  const location = data.location || 'Kawasan Industri KIIC Karawang Barat, Jawa Barat';
-  const salary = data.salary || 'Sesuai Standar Kompensasi PT ITSP';
-  let joinDate = data.joinDate?.trim() ? data.joinDate.trim() : 'Ditetapkan Sesuai Jadwal Orientasi';
+  const candidateName = data.candidateName || 'Selected Candidate';
+  const position = data.position || 'Operations Staff';
+  const dept = data.department || 'Manufacturing & Production';
+  const location = data.location || 'KIIC Industrial Estate, West Karawang, West Java';
+  const salary = data.salary || 'Per PT ITSP Compensation Standard';
+  let joinDate = data.joinDate?.trim() ? data.joinDate.trim() : 'To Be Determined Per Orientation Schedule';
   if (joinDate && /^\d{4}-\d{2}-\d{2}$/.test(joinDate)) {
     const [y, m, d] = joinDate.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     if (!isNaN(dateObj.getTime())) {
-      joinDate = dateObj.toLocaleDateString('id-ID', {
+      joinDate = dateObj.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -50,7 +50,7 @@ export const generateOfferingLetterHtml = (data: OfferingLetterData): string => 
     ? data.refNumber.trim()
     : `ITSP/HRD-REC/OL/${curYear}/${String(data.candidateId || 1).padStart(4, '0')}`;
 
-  const dateStr = new Date().toLocaleDateString('id-ID', {
+  const dateStr = new Date().toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -75,10 +75,10 @@ export const generateOfferingLetterHtml = (data: OfferingLetterData): string => 
     .join('\n');
 
   return `<!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Surat Penawaran Resmi (Offering Letter) - ${candidateName} - PT ITSP</title>
+  <title>Official Offering Letter - ${candidateName} - PT ITSP</title>
   <style>
     @page {
       size: A4;
@@ -331,18 +331,18 @@ export const generateOfferingLetterHtml = (data: OfferingLetterData): string => 
 <body>
   <div class="print-bar">
     <div style="font-weight:700; font-size:13px; display:flex; align-items:center; gap:8px;">
-      <span>📄 Dokumen Surat Penawaran Resmi (Offering Letter PT ITSP)</span>
+      <span>📄 Official Offering Letter Document (PT ITSP)</span>
       <span style="background:#1e293b; padding:2px 8px; border-radius:4px; font-size:11px; color:#a7f3d0;">
-        E-Signature Terverifikasi HR
+        HR Verified E-Signature
       </span>
     </div>
-    <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan sebagai PDF</button>
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
   </div>
 
   <div class="header">
     <div>
       <div class="company-title">PT INDONESIA THAI SUMMIT PLASTECH</div>
-      <div class="company-sub">Manufaktur Komponen Plastik Otomotif Berstandar Internasional</div>
+      <div class="company-sub">International Standard Automotive Plastic Components Manufacturing</div>
       <div class="company-sub">Kawasan Industri KIIC, Jl. Maligi Raya Kav. 1-1A, Karawang Barat 41361, Jawa Barat - Indonesia</div>
       <div class="doc-badge">DOCUMENT VERIFIED • HC MANAGEMENT SYSTEM</div>
     </div>
@@ -354,94 +354,94 @@ export const generateOfferingLetterHtml = (data: OfferingLetterData): string => 
   </div>
 
   <div class="doc-title">
-    <h2>SURAT PENAWARAN KERJA (OFFERING LETTER)</h2>
-    <p>Nomor Registrasi Korporat: ${refNum}</p>
+    <h2>EMPLOYMENT OFFER LETTER</h2>
+    <p>Corporate Registration No.: ${refNum}</p>
   </div>
 
   <table class="meta">
     <tr>
-      <td class="label">Tanggal Terbit</td>
+      <td class="label">Issue Date</td>
       <td class="separator">:</td>
       <td class="value">${dateStr}</td>
     </tr>
     <tr>
-      <td class="label">Nama Lengkap Kandidat</td>
+      <td class="label">Candidate Full Name</td>
       <td class="separator">:</td>
       <td class="value"><strong>${candidateName}</strong></td>
     </tr>
     <tr>
-      <td class="label">Posisi Jabatan</td>
+      <td class="label">Position</td>
       <td class="separator">:</td>
       <td class="value"><strong>${position}</strong></td>
     </tr>
     <tr>
-      <td class="label">Departemen / Divisi</td>
+      <td class="label">Department / Division</td>
       <td class="separator">:</td>
       <td class="value">${dept}</td>
     </tr>
     <tr>
-      <td class="label">Lokasi Penempatan</td>
+      <td class="label">Placement Location</td>
       <td class="separator">:</td>
       <td class="value">${location}</td>
     </tr>
     <tr>
-      <td class="label">Tanggal Mulai Bekerja (Join Date)</td>
+      <td class="label">Start Date (Join Date)</td>
       <td class="separator">:</td>
       <td class="value"><strong>${joinDate}</strong></td>
     </tr>
   </table>
 
-  <p>Dengan hormat,</p>
-  <p>Berdasarkan seluruh hasil rangkaian proses seleksi rekrutmen dan uji kelayakan medis (Medical Check-Up) yang telah Anda selesaikan, Manajemen <strong>PT INDONESIA THAI SUMMIT PLASTECH</strong> dengan bangga menerbitkan Surat Penawaran Kerja Resmi kepada Anda dengan rincian kompensasi berikut:</p>
+  <p>Dear Candidate,</p>
+  <p>Based on the full recruitment selection process and medical fitness examination (Medical Check-Up) you have completed, the Management of <strong>PT INDONESIA THAI SUMMIT PLASTECH</strong> is pleased to issue this Official Employment Offer with the following compensation details:</p>
 
   <div class="salary-box">
-    <div class="salary-label">Rincian Paket Kompensasi & Penawaran:</div>
+    <div class="salary-label">Compensation & Offer Package Details:</div>
     <div class="salary-amount">${salary}</div>
-    <div class="salary-desc">*Paket kompensasi resmi yang ditetapkan oleh Tim Human Capital Management PT ITSP sesuai standar industri manufaktur otomotif.</div>
+    <div class="salary-desc">*Official compensation package established by PT ITSP Human Capital Management per automotive manufacturing industry standards.</div>
   </div>
 
-  ${data.notes ? `<div class="notes-box"><strong>Catatan Khusus dari HR:</strong><br>${data.notes}</div>` : ''}
+  ${data.notes ? `<div class="notes-box"><strong>Special Notes from HR:</strong><br>${data.notes}</div>` : ''}
 
-  <div class="section-title">Terms Pokok Hubungan Kerja:</div>
+  <div class="section-title">Principal Terms of Employment:</div>
   <ol class="clauses">
     ${clausesHtml}
   </ol>
 
   <p style="margin-top: 14px; font-size: 12px; color: #475569;">
-    Apabila Anda menyetujui seluruh ketentuan dan rincian penawaran kerja di atas, silakan bubuhkan tanda tangan Anda pada kolom yang disediakan di bawah ini dan unggah kembali berkas ke Portal Karir PT ITSP.
+    If you agree to all terms and offer details above, please affix your signature in the space provided below and re-upload the document to the PT ITSP Career Portal.
   </p>
 
   <div class="signatures">
-    <!-- Pihak Pertama (HR PT ITSP) -->
+    <!-- First Party (HR PT ITSP) -->
     <div class="sign-col">
       <p class="sign-role-title">PT INDONESIA THAI SUMMIT PLASTECH</p>
-      <p class="sign-role-sub">Pihak Pemberi Penawaran Kerja</p>
+      <p class="sign-role-sub">Offering Party</p>
       <div class="sign-space">
         ${
           data.signerSignature
-            ? `<img src="${data.signerSignature}" alt="Tanda Tangan Digital HR" class="sign-img" />`
-            : `<div class="stamp-badge">✓ E-SIGNATURE RESMI TERVALIDASI HR</div>`
+            ? `<img src="${data.signerSignature}" alt="HR Digital Signature" class="sign-img" />`
+            : `<div class="stamp-badge">✓ HR VALIDATED OFFICIAL E-SIGNATURE</div>`
         }
       </div>
       <p class="sign-name">( ${signerName} )</p>
       <p class="sign-date">${signerTitle}</p>
-      <p class="sign-date" style="color:#018730; font-weight:700;">Tertanda Tangan Digital Resmi</p>
+      <p class="sign-date" style="color:#018730; font-weight:700;">Official Digital Signature</p>
     </div>
 
-    <!-- Pihak Kedua (Calon Karyawan) -->
+    <!-- Second Party (Prospective Employee) -->
     <div class="sign-col">
-      <p class="sign-role-title">Penerima Penawaran Kerja</p>
-      <p class="sign-role-sub">Menyatakan Setuju & Menerima</p>
+      <p class="sign-role-title">Offeree</p>
+      <p class="sign-role-sub">Agrees & Accepts</p>
       <div class="sign-space">
         ${
           data.candidateSignature
-            ? `<img src="${data.candidateSignature}" alt="Tanda Tangan Pelamar" class="sign-img" />`
-            : `<span style="color:#94a3b8; font-size:11px; font-style:italic;">(Tanda Tangan Penerima Penawaran)</span>`
+            ? `<img src="${data.candidateSignature}" alt="Applicant Signature" class="sign-img" />`
+            : `<span style="color:#94a3b8; font-size:11px; font-style:italic;">(Offeree Signature)</span>`
         }
       </div>
       <p class="sign-name">( ${candidateName} )</p>
-      <p class="sign-date">Calon Karyawan PT ITSP</p>
-      <p class="sign-date">${data.signedAt ? `Ditandatangani pada: ${data.signedAt}` : 'Tanggal: ....................'}</p>
+      <p class="sign-date">Prospective Employee PT ITSP</p>
+      <p class="sign-date">${data.signedAt ? `Signed on: ${data.signedAt}` : 'Date: ....................'}</p>
     </div>
   </div>
 </body>

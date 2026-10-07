@@ -75,7 +75,7 @@ export default function AdminDepartmentsPage() {
   };
   const saveDept = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fName.trim()) { alert('Nama departemen wajib diisi.'); return; }
+    if (!fName.trim()) { alert('Department name is required.'); return; }
     setSaving(true);
     try {
       const payload = { name: fName.trim(), code: fCode.trim() || null, description: fDesc.trim() || null, is_active: fActive, sort_order: fOrder };
@@ -98,7 +98,7 @@ export default function AdminDepartmentsPage() {
       const res = await fetch(`/api/admin/departments?id=${d.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showFeedback('success', data.message || 'Departemen dihapus.');
+      showFeedback('success', data.message || 'Department deleted.');
       fetch_depts();
     } catch (err: any) { alert(err.message); }
   };
@@ -127,18 +127,18 @@ export default function AdminDepartmentsPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showFeedback('success', data.message || 'Section disimpan.');
+      showFeedback('success', data.message || 'Section saved.');
       setMode(null); fetch_depts();
     } catch (err: any) { alert(err.message); }
     finally { setSaving(false); }
   };
   const deleteSection = async (dept: Department, sec: Section) => {
-    if (!confirm(`Hapus section "${sec.name}" dari ${dept.name}?`)) return;
+    if (!confirm(`Delete section "${sec.name}" dari ${dept.name}?`)) return;
     try {
       const res = await fetch(`/api/admin/sections?id=${sec.id}&department_id=${dept.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showFeedback('success', data.message || 'Section dihapus.');
+      showFeedback('success', data.message || 'Section deleted.');
       fetch_depts();
     } catch (err: any) { alert(err.message); }
   };
@@ -152,14 +152,14 @@ export default function AdminDepartmentsPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Kelola Departments & Sections</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Manage Departments & Sections</Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
-            Tambah / ubah departemen dan sub-bagian (section) yang digunakan pada lowongan pekerjaan.
+            Add / edit departments and sub-sections used in job postings.
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDept}
           sx={{ bgcolor: '#018730', fontWeight: 700, borderRadius: 2, '&:hover': { bgcolor: '#005c21' } }}>
-          Tambah Departemen
+          Add Department
         </Button>
       </Box>
 
@@ -167,13 +167,13 @@ export default function AdminDepartmentsPage() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
         <Card sx={{ borderRadius: 2.5, border: '1px solid #BBF7D0', bgcolor: '#F0FDF4' }}>
           <CardContent sx={{ py: '12px !important' }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: '#15803D' }}>TOTAL DEPARTEMEN</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: '#15803D' }}>TOTAL DEPARTMENTS</Typography>
             <Typography variant="h4" sx={{ fontWeight: 800 }}>{depts.length}</Typography>
           </CardContent>
         </Card>
         <Card sx={{ borderRadius: 2.5, border: '1px solid #BFDBFE', bgcolor: '#EFF6FF' }}>
           <CardContent sx={{ py: '12px !important' }}>
-            <Typography variant="caption" sx={{ fontWeight: 800, color: '#1D4ED8' }}>TOTAL SECTION</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 800, color: '#1D4ED8' }}>TOTAL SECTIONSSSS</Typography>
             <Typography variant="h4" sx={{ fontWeight: 800 }}>{depts.reduce((a, d) => a + d.sections.length, 0)}</Typography>
           </CardContent>
         </Card>
@@ -192,8 +192,8 @@ export default function AdminDepartmentsPage() {
       ) : depts.length === 0 ? (
         <Card sx={{ p: 6, textAlign: 'center' }}>
           <DeptIcon sx={{ fontSize: 48, color: '#94A3B8' }} />
-          <Typography variant="h6" sx={{ mt: 1 }}>Belum ada departemen</Typography>
-          <Button variant="contained" onClick={openCreateDept} sx={{ mt: 2, bgcolor: '#018730' }}>Tambah Pertama</Button>
+          <Typography variant="h6" sx={{ mt: 1 }}>No departments yet</Typography>
+          <Button variant="contained" onClick={openCreateDept} sx={{ mt: 2, bgcolor: '#018730' }}>Add First</Button>
         </Card>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -219,9 +219,9 @@ export default function AdminDepartmentsPage() {
                     {dept.description && <Typography variant="caption" sx={{ color: '#64748B' }}>{dept.description}</Typography>}
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                    <Tooltip title="Tambah Section"><IconButton size="small" onClick={() => { openCreateSection(dept); setExpanded((p) => ({ ...p, [dept.id]: true })); }} sx={{ color: '#1D4ED8' }}><AddIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Edit Departemen"><IconButton size="small" onClick={() => openEditDept(dept)}><EditIcon fontSize="small" /></IconButton></Tooltip>
-                    <Tooltip title="Hapus Departemen"><IconButton size="small" color="error" onClick={() => deleteDept(dept)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Add Section"><IconButton size="small" onClick={() => { openCreateSection(dept); setExpanded((p) => ({ ...p, [dept.id]: true })); }} sx={{ color: '#1D4ED8' }}><AddIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Edit Department"><IconButton size="small" onClick={() => openEditDept(dept)}><EditIcon fontSize="small" /></IconButton></Tooltip>
+                    <Tooltip title="Delete Department"><IconButton size="small" color="error" onClick={() => deleteDept(dept)}><DeleteIcon fontSize="small" /></IconButton></Tooltip>
                     {dept.sections.length > 0 && (
                       <IconButton size="small" onClick={() => toggleExpand(dept.id)}>
                         {expanded[dept.id] ? <CollapseIcon /> : <ExpandIcon />}
@@ -299,7 +299,7 @@ export default function AdminDepartmentsPage() {
                                 <EditIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Hapus Section">
+                            <Tooltip title="Delete Section">
                               <IconButton
                                 size="small"
                                 color="error"
@@ -330,26 +330,26 @@ export default function AdminDepartmentsPage() {
       {/* ── Dialog: Department ─────────────────────────────────────────────── */}
       <Dialog open={isDeptDialog} onClose={() => setMode(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>
-          {mode === 'dept-edit' ? 'Edit Departemen' : 'Tambah Departemen Baru'}
+          {mode === 'dept-edit' ? 'Edit Department' : 'Add Department Baru'}
         </DialogTitle>
         <DialogContent>
           <Box component="form" id="dept-form" onSubmit={saveDept} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField fullWidth required label="Nama Departemen" value={fName} onChange={(e) => setFName(e.target.value)}
+            <TextField fullWidth required label="Department Name" value={fName} onChange={(e) => setFName(e.target.value)}
               placeholder="contoh: SYD & IT" />
-            <TextField fullWidth label="Kode (Opsional)" value={fCode} onChange={(e) => setFCode(e.target.value)}
-              placeholder="contoh: SYD_IT" helperText="Kode singkat untuk identifikasi" />
-            <TextField fullWidth multiline rows={2} label="Deskripsi (Opsional)" value={fDesc} onChange={(e) => setFDesc(e.target.value)} />
-            <TextField fullWidth type="number" label="Urutan Tampil" value={fOrder} onChange={(e) => setFOrder(Number(e.target.value))}
-              helperText="Angka kecil tampil lebih atas" />
+            <TextField fullWidth label="Code (Optional)" value={fCode} onChange={(e) => setFCode(e.target.value)}
+              placeholder="contoh: SYD_IT" helperText="Short code for identification" />
+            <TextField fullWidth multiline rows={2} label="Description (Optional)" value={fDesc} onChange={(e) => setFDesc(e.target.value)} />
+            <TextField fullWidth type="number" label="Display Order" value={fOrder} onChange={(e) => setFOrder(Number(e.target.value))}
+              helperText="Lower numbers appear higher" />
             <FormControlLabel control={<Switch checked={fActive} onChange={(e) => setFActive(e.target.checked)} color="success" />}
-              label={fActive ? 'Aktif (tampil di dropdown lowongan)' : 'Nonaktif (tersembunyi)'} />
+              label={fActive ? 'Active (visible in job dropdown)' : 'Inactive (hidden)'} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setMode(null)}>Batal</Button>
+          <Button onClick={() => setMode(null)}>Cancel</Button>
           <Button variant="contained" type="submit" form="dept-form" disabled={saving}
             sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-            {saving ? 'Saving...' : (mode === 'dept-edit' ? 'Save Changes' : 'Tambah Departemen')}
+            {saving ? 'Saving...' : (mode === 'dept-edit' ? 'Save Changes' : 'Add Department')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -357,22 +357,22 @@ export default function AdminDepartmentsPage() {
       {/* ── Dialog: Section ────────────────────────────────────────────────── */}
       <Dialog open={isSecDialog} onClose={() => setMode(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>
-          {mode === 'section-edit' ? 'Edit Section' : `Tambah Section — ${selectedDept?.name}`}
+          {mode === 'section-edit' ? 'Edit Section' : `Add Section — ${selectedDept?.name}`}
         </DialogTitle>
         <DialogContent>
           <Box component="form" id="sec-form" onSubmit={saveSection} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField fullWidth required label="Nama Section" value={fsName} onChange={(e) => setFsName(e.target.value)}
+            <TextField fullWidth required label="Section Name" value={fsName} onChange={(e) => setFsName(e.target.value)}
               placeholder="contoh: System Development" />
-            <TextField fullWidth multiline rows={2} label="Deskripsi (Opsional)" value={fsDesc} onChange={(e) => setFsDesc(e.target.value)} />
+            <TextField fullWidth multiline rows={2} label="Description (Optional)" value={fsDesc} onChange={(e) => setFsDesc(e.target.value)} />
             <FormControlLabel control={<Switch checked={fsActive} onChange={(e) => setFsActive(e.target.checked)} color="success" />}
               label={fsActive ? 'Aktif' : 'Nonaktif'} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setMode(null)}>Batal</Button>
+          <Button onClick={() => setMode(null)}>Cancel</Button>
           <Button variant="contained" type="submit" form="sec-form" disabled={saving}
             sx={{ bgcolor: '#1D4ED8', fontWeight: 700 }}>
-            {saving ? 'Saving...' : (mode === 'section-edit' ? 'Save Changes' : 'Tambah Section')}
+            {saving ? 'Saving...' : (mode === 'section-edit' ? 'Save Changes' : 'Add Section')}
           </Button>
         </DialogActions>
       </Dialog>

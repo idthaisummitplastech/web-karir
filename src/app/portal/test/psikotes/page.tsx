@@ -304,7 +304,7 @@ export default function PsikotesExamPage() {
               onClick={() => router.push('/portal/dashboard')}
               sx={{ bgcolor: '#018730', color: '#FFFFFF', fontWeight: 700, px: 4, py: 1.3, borderRadius: 2 }}
             >
-              Kembali ke Dashboard Pelamar &rarr;
+              Back to Applicant Dashboard &rarr;
             </Button>
           </Card>
         ) : (
@@ -563,7 +563,7 @@ export default function PsikotesExamPage() {
             onClick={() => setShowWarningModal(false)}
             sx={{ bgcolor: '#DC2626', fontWeight: 700 }}
           >
-            Saya Mengerti & Kembali ke Ujian
+            Saya Mengerti & Back to Exam
           </Button>
         </DialogActions>
       </Dialog>
@@ -594,7 +594,7 @@ export default function PsikotesExamPage() {
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>
           <Button onClick={() => setShowConfirmModal(false)} sx={{ color: '#64748B' }}>
-            Periksa Kembali
+            Review Again
           </Button>
           <Button
             variant="contained"
@@ -615,7 +615,7 @@ export default function PsikotesExamPage() {
         currentIndex={currentIndex}
         onJump={(idx) => setCurrentIndex(idx)}
         accent="#018730"
-        title="Daftar Soal Psikotes (PG Acak + Essay Akhir)"
+        title="Psychometric Question List (Random MCQ + Final Essay)"
       />
 
       <Footer />

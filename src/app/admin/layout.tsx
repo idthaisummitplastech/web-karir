@@ -67,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const [dynamicNav, setDynamicNav] = useState<{ label: string; href: string; icon: React.ReactElement }[] | null>(null);
-  const titleEnMap: Record<string,string> = {'Data Pelamar (7 Tahap)':'Applicant Data (7 Stages)','Data Karyawan':'Employee Data','Kelola Lowongan':'Manage Job Vacancies','Departemen & Section':'Departments & Sections','Bank Soal Ujian Online':'Online Test Question Bank','Cetak ID Card Karyawan':'Print Employee ID Cards','Pengaturan MCU & Default':'MCU Settings & Defaults','Kelola Akun & Reset Password':'Manage Accounts & Reset Password (Admin)'};
+  const titleEnMap: Record<string,string> = {'Applicant Data (7 Stages)':'Applicant Data (7 Stages)','Data Karyawan':'Employee Data','Kelola Lowongan':'Manage Job Vacancies','Departemen & Section':'Departments & Sections','Bank Soal Ujian Online':'Online Test Question Bank','Cetak ID Card Karyawan':'Print Employee ID Cards','Pengaturan MCU & Default':'MCU Settings & Defaults','Kelola Akun & Reset Password':'Manage Accounts & Reset Password (Admin)'};
   const iconMap: Record<string, React.ReactElement> = { PeopleIcon: <PeopleIcon />, EmployeeIcon: <EmployeeIcon />, WorkIcon: <WorkIcon />, DeptIcon: <DeptIcon />, QuizIcon: <QuizIcon />, BadgeIcon: <BadgeIcon />, SettingsIcon: <SettingsIcon />, SecurityIcon: <SecurityIcon />, AdminPanelSettingsIcon: <SecurityIcon /> };
   React.useEffect(() => {
     if (!currentUserRole) return;
