@@ -163,6 +163,8 @@ export interface CareerTranslations {
   admin_layout_signOut: string;
   admin_layout_ariaOpenMenu: string;
   admin_layout_menuTitle: string;
+  admin_layout_verifiedAccount: string;
+  admin_layout_defaultUser: string;
 }
 
 export const translations: Record<Language, CareerTranslations> = {
@@ -329,6 +331,8 @@ export const translations: Record<Language, CareerTranslations> = {
     admin_layout_signOut: 'Sign Out',
     admin_layout_ariaOpenMenu: 'Open navigation menu',
     admin_layout_menuTitle: 'ATS MANAGEMENT MENU',
+    admin_layout_verifiedAccount: 'Verified Account',
+    admin_layout_defaultUser: 'Internal ATS User',
   },
   id: {
     // Navigation
@@ -493,5 +497,7 @@ export const translations: Record<Language, CareerTranslations> = {
     admin_layout_signOut: 'Keluar',
     admin_layout_ariaOpenMenu: 'Buka menu navigasi',
     admin_layout_menuTitle: 'MENU MANAJEMEN ATS',
+    admin_layout_verifiedAccount: 'Akun Terverifikasi',
+    admin_layout_defaultUser: 'User Internal ATS',
   },
 };

@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ? '👑 Super Administrator'
       : currentUserRole === 'hr'
       ? '👤 HR Recruitment'
-      : '🔧 User Departemen';
+      : t('admin_layout_roleDept');
 
   const roleBgColor =
     currentUserRole === 'admin' || currentUserRole === 'superadmin'
@@ -302,10 +302,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <AccountIcon sx={{ color: '#4ADE80', fontSize: 32 }} />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3 }}>
-                {currentUserName || 'User Internal ATS'}
+                {currentUserName || t('admin_layout_defaultUser')}
               </Typography>
               <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
-                Verified Account
+                {t('admin_layout_verifiedAccount')}
               </Typography>
             </Box>
           </Box>

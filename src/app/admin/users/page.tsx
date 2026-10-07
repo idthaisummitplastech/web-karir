@@ -530,7 +530,7 @@ export default function AdminUsersPage() {
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
                       <Chip label={(u.isActive ?? u.is_active ?? true) ? t('admin_users_chipActive') : t('admin_users_chipInactive')} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
-                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? t('admin_users_portalBoth') : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Company' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
+                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? t('admin_users_portalBoth') : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? t('admin_users_portalCompany') : t('admin_users_portalKarir')} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
                     </Box>
 
                    
@@ -677,8 +677,8 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell>
                           <TextField select size="small" value={u.portalAccess ?? u.portal_access ?? 'both'} onChange={(e) => handlePortalChangeRow(u, e.target.value)} sx={{ minWidth: 130, '& .MuiInputBase-root': { fontSize: 12, fontWeight: 700 } }}>
-                            <MenuItem value="perusahaan">Company</MenuItem>
-                            <MenuItem value="karir">Karir</MenuItem>
+                            <MenuItem value="perusahaan">{t('admin_users_portalCompany')}</MenuItem>
+                            <MenuItem value="karir">{t('admin_users_portalKarir')}</MenuItem>
                             <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
                           </TextField>
                         </TableCell>
@@ -870,8 +870,8 @@ export default function AdminUsersPage() {
                 onChange={(e) => setNewPortalAccess(e.target.value)}
                 helperText={`${t('admin_users_portalCompany')} / ${t('admin_users_portalKarir')} / ${t('admin_users_portalBoth')}`}
               >
-                <MenuItem value="perusahaan">Company</MenuItem>
-                <MenuItem value="karir">Karir</MenuItem>
+                <MenuItem value="perusahaan">{t('admin_users_portalCompany')}</MenuItem>
+                <MenuItem value="karir">{t('admin_users_portalKarir')}</MenuItem>
                 <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
               </TextField>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -971,8 +971,8 @@ export default function AdminUsersPage() {
                 value={editPortalAccess}
                 onChange={(e) => setEditPortalAccess(e.target.value)}
               >
-                <MenuItem value="perusahaan">Company</MenuItem>
-                <MenuItem value="karir">Karir</MenuItem>
+                <MenuItem value="perusahaan">{t('admin_users_portalCompany')}</MenuItem>
+                <MenuItem value="karir">{t('admin_users_portalKarir')}</MenuItem>
                 <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
               </TextField>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
