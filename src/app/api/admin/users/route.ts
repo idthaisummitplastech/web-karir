@@ -30,7 +30,7 @@ export async function GET() {
     });
   } catch (error: any) {
     console.error("Fetch users error:", error);
-    return NextResponse.json({ error: "Gagal memuat daftar pengguna." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load user list." }, { status: 500 });
   }
 }
 
@@ -96,6 +96,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true, message: "Pengguna berhasil dihapus." });
   } catch (error: any) {
     console.error("Delete user error:", error);
-    return NextResponse.json({ error: error.message || "Gagal menghapus pengguna." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to delete user." }, { status: 500 });
   }
 }

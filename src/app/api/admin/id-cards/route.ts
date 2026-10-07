@@ -70,7 +70,7 @@ export async function GET() {
     return NextResponse.json({ success: true, employees: list });
   } catch (error: any) {
     console.error("Fetch id-cards error:", error);
-    return NextResponse.json({ error: "Gagal memuat data karyawan untuk ID Card." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load employee data for ID Card." }, { status: 500 });
   }
 }
 
@@ -94,6 +94,6 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: true, message: "Status ID Card diperbarui." });
   } catch (error: any) {
     console.error("Toggle ID card error:", error);
-    return NextResponse.json({ error: error.message || "Gagal memperbarui status ID Card." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to update ID Card status." }, { status: 400 });
   }
 }

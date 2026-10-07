@@ -129,7 +129,7 @@ export default function AdminSettingsPage() {
   // Isi resmi via env: SMTP_HOST/SMTP_USER (lihat .env.example) atau data dari /api/admin/settings.
   const [smtpServer, setSmtpServer] = useState({
     id: 1,
-    name: 'Server Email Resmi PT ITSP',
+    name: 'Server Official Email PT ITSP',
     host: '',
     port: 587,
     username: '',
@@ -164,7 +164,7 @@ export default function AdminSettingsPage() {
     },
     {
       appCode: 'web_perusahaan',
-      appName: 'Website Profil Perusahaan',
+      appName: 'Website Profil Company',
       senderName: 'PT ITSP Marketing',
       senderEmail: '',
       replyTo: '',
@@ -605,7 +605,7 @@ export default function AdminSettingsPage() {
 
               <TextField
                 fullWidth
-                label="Subjek Email Resmi"
+                label="Subjek Official Email"
                 value={currentTemplateVal.subject}
                 onChange={(e) => {
                   setEmailTemplates({
@@ -671,7 +671,7 @@ export default function AdminSettingsPage() {
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField
                   size="small"
-                  label="Alamat Email Tujuan Uji Coba"
+                  label="Email Address Tujuan Uji Coba"
                   value={testEmailTarget}
                   onChange={(e) => setTestEmailTarget(e.target.value)}
                   sx={{ minWidth: 320, flexGrow: 1, bgcolor: '#FFFFFF' }}
@@ -855,7 +855,7 @@ export default function AdminSettingsPage() {
 
             <CardContent sx={{ p: 3 }}>
               <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                Konfigurasikan akun server email induk perusahaan. Seluruh website (Web Karir, Web Perusahaan, dll.) akan mengirim email melalui server ini dengan identitas nama pengirim yang disesuaikan.
+                Konfigurasikan akun server email induk perusahaan. Seluruh website (Web Karir, Web Company, dll.) akan mengirim email melalui server ini dengan identitas nama pengirim yang disesuaikan.
               </Typography>
 
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 2.5, mb: 2.5 }}>
@@ -1048,7 +1048,7 @@ export default function AdminSettingsPage() {
                       />
                       <TextField
                         size="small"
-                        label="Alamat Email Pengirim"
+                        label="Email Address Pengirim"
                         value={ch.senderEmail}
                         onChange={(e) => {
                           const updated = [...channels];

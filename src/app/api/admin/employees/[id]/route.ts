@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   } catch (error: any) {
     console.error("Fetch employee detail error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memuat rincian data karyawan." },
+      { error: error.message || "Failed to load employee details." },
       { status: 404, headers: ANTI_CACHE_HEADERS }
     );
   }
@@ -58,7 +58,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   } catch (error: any) {
     console.error("Update employee error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memperbarui data karyawan." },
+      { error: error.message || "Failed to update employee data." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }
@@ -83,7 +83,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   } catch (error: any) {
     console.error("Delete employee error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal menghapus data karyawan." },
+      { error: error.message || "Failed to delete employee data." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }

@@ -76,7 +76,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login gagal. Periksa kembali email & password Anda.');
+      if (!res.ok) throw new Error(data.error || 'Login failed. Please check your email & password.');
 
       router.push('/portal/dashboard');
     } catch (err: any) {
@@ -124,7 +124,7 @@ export default function LoginPage() {
         return;
       }
 
-      if (!res.ok) throw new Error(data.error || 'Login gagal.');
+      if (!res.ok) throw new Error(data.error || 'Login failed.');
 
       router.push('/admin/applicants');
     } catch (err: any) {
@@ -416,7 +416,7 @@ export default function LoginPage() {
                         fullWidth
                         required
                         autoFocus
-                        placeholder="Contoh: 123456"
+                        placeholder="Example: 123456"
                         value={adminMfaCode}
                         onChange={(e) => setAdminMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                         slotProps={{
@@ -536,16 +536,16 @@ export default function LoginPage() {
                       <Box sx={{ mb: 3, p: 2, bgcolor: '#FEF3C7', borderRadius: 2, border: '1px solid #FCD34D' }}>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#92400E', mb: 1, display: 'flex', alignItems: 'center', gap: 0.8 }}>
                           <SecurityIcon sx={{ fontSize: 18 }} />
-                          Verifikasi 2 Langkah (MFA TOTP)
+                          2-Step Verification (MFA TOTP)
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#78350F', display: 'block', mb: 1.5 }}>
-                          Buka aplikasi Google Authenticator di HP Anda dan masukkan 6-digit kode verifikasi:
+                          Open Google Authenticator on your phone and enter the 6-digit verification code:
                         </Typography>
                         <TextField
                           fullWidth
                           required
                           autoFocus
-                          placeholder="Contoh: 123456"
+                          placeholder="Example: 123456"
                           value={adminMfaCode}
                           onChange={(e) => setAdminMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                           slotProps={{
@@ -581,8 +581,8 @@ export default function LoginPage() {
                       ) : (
                         <span className="notranslate" translate="no">
                           {isMfaRequired
-                            ? (language === 'id' ? 'Verifikasi & Masuk' : 'Verify & Sign In')
-                            : (language === 'id' ? 'Login Admin HR / User' : 'Login HR Admin / User')}
+                            ? (language === 'id' ? 'Verify & Sign In' : 'Verify & Sign In')
+                            : (language === 'id' ? 'HR Admin / User Login' : 'Login HR Admin / User')}
                         </span>
                       )}
                     </Button>

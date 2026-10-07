@@ -493,7 +493,7 @@ export default function AdminQuestionsPage() {
           </Box>
           <Box sx={{ mt: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button variant="contained" disabled={savingExamCfg} onClick={handleSaveExamCfg} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {savingExamCfg ? 'Menyimpan...' : 'Simpan Jumlah Soal'}
+              {savingExamCfg ? 'Saving...' : 'Simpan Jumlah Soal'}
             </Button>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
               Contoh: PG 10 + Essay 5. Bila bank kurang, dipakai semua yang ada.
@@ -1232,7 +1232,7 @@ export default function AdminQuestionsPage() {
               disabled={submitting}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
             >
-              {submitting ? 'Menyimpan...' : 'Simpan Soal Ujian'}
+              {submitting ? 'Saving...' : 'Simpan Soal Ujian'}
             </Button>
           </DialogActions>
         </form>

@@ -29,7 +29,7 @@ interface MaintenanceNoticeProps {
 }
 
 export default function MaintenanceNotice({
-  title = 'Layanan Karir Sedang Dalam Pemeliharaan & Integrasi',
+  title = 'Services Karir Sedang Dalam Pemeliharaan & Integrasi',
   subtitle = 'Halaman atau lowongan yang Anda tuju sedang dalam proses pembaruan oleh Tim Recruitment & HR PT Indonesia Thai Summit Plastech untuk memastikan proses seleksi berjalan lancar dan akurat.',
   isNotFound = false,
 }: MaintenanceNoticeProps) {
@@ -251,7 +251,7 @@ export default function MaintenanceNotice({
                 '&:hover': { color: '#018730', bgcolor: 'rgba(1, 135, 48, 0.04)' },
               }}
             >
-              Website Perusahaan
+              Website Company
             </Button>
           </Stack>
 

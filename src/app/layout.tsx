@@ -4,10 +4,10 @@ import ThemeRegistry from '@/lib/ThemeRegistry';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Portal Karir & Rekrutmen — PT Indonesia Thai Summit Plastech',
-    template: '%s | Karir PT ITSP',
+    default: 'Career Portal & Recruitment — PT Indonesia Thai Summit Plastech',
+    template: '%s | PT ITSP Careers',
   },
-  description: 'Sistem Penerimaan Karyawan Resmi & Portal Karir Terpadu PT Indonesia Thai Summit Plastech (Thai Summit Group).',
+  description: 'Official Recruitment System & Integrated Career Portal PT Indonesia Thai Summit Plastech (Thai Summit Group).',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '16x16 32x32 48x48', type: 'image/x-icon' },
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className="notranslate" translate="no">
+    <html lang="en" className="notranslate" translate="no">
       <head>
         <meta name="google" content="notranslate" />
       </head>

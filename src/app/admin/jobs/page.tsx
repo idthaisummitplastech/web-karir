@@ -69,7 +69,7 @@ export default function AdminJobsPage() {
     <Box sx={{ maxWidth: 1200 }}>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Kelola Lowongan Pekerjaan</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Manage Job Vacancies Pekerjaan</Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>Buka / tutup manual dengan saklar, atau otomatis lewat tanggal pembukaan & penutupan.</Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate} sx={{ bgcolor: '#018730', fontWeight: 700, borderRadius: 2, '&:hover': { bgcolor: '#005c21' } }}>Buat Lowongan</Button>
@@ -165,7 +165,7 @@ export default function AdminJobsPage() {
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={()=>setDialogOpen(false)}>Batal</Button>
-          <Button variant="contained" type="submit" form="job-form" disabled={saving} sx={{ bgcolor: '#018730', fontWeight: 700 }}>{saving?'Menyimpan...':(editing?'Simpan':'Publikasikan')}</Button>
+          <Button variant="contained" type="submit" form="job-form" disabled={saving} sx={{ bgcolor: '#018730', fontWeight: 700 }}>{saving?'Saving...':(editing?'Simpan':'Publikasikan')}</Button>
         </DialogActions>
       </Dialog>
     </Box>

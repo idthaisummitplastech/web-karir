@@ -185,7 +185,7 @@ function MfaContent() {
                 <Box sx={{ mb: 2.5 }}>
                   <TextField
                     fullWidth
-                    placeholder="Contoh: 123456"
+                    placeholder="Example: 123456"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     slotProps={{

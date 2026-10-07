@@ -152,7 +152,7 @@ export default function AdminDepartmentsPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Kelola Departemen & Section</Typography>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A' }}>Kelola Departments & Sections</Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
             Tambah / ubah departemen dan sub-bagian (section) yang digunakan pada lowongan pekerjaan.
           </Typography>
@@ -349,7 +349,7 @@ export default function AdminDepartmentsPage() {
           <Button onClick={() => setMode(null)}>Batal</Button>
           <Button variant="contained" type="submit" form="dept-form" disabled={saving}
             sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-            {saving ? 'Menyimpan...' : (mode === 'dept-edit' ? 'Simpan Perubahan' : 'Tambah Departemen')}
+            {saving ? 'Saving...' : (mode === 'dept-edit' ? 'Save Changes' : 'Tambah Departemen')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -372,7 +372,7 @@ export default function AdminDepartmentsPage() {
           <Button onClick={() => setMode(null)}>Batal</Button>
           <Button variant="contained" type="submit" form="sec-form" disabled={saving}
             sx={{ bgcolor: '#1D4ED8', fontWeight: 700 }}>
-            {saving ? 'Menyimpan...' : (mode === 'section-edit' ? 'Simpan Perubahan' : 'Tambah Section')}
+            {saving ? 'Saving...' : (mode === 'section-edit' ? 'Save Changes' : 'Tambah Section')}
           </Button>
         </DialogActions>
       </Dialog>

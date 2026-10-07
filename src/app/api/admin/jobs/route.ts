@@ -38,7 +38,7 @@ export async function GET() {
     return NextResponse.json({ success: true, jobs: enriched });
   } catch (e: any) {
     console.error("Fetch admin jobs error:", e);
-    return NextResponse.json({ error: "Gagal memuat lowongan." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load vacancies." }, { status: 500 });
   }
 }
 
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: "Lowongan berhasil dipublikasikan.", job: job.data || job });
   } catch (e: any) {
     console.error("Create job error:", e);
-    return NextResponse.json({ error: e.message || "Gagal membuat lowongan." }, { status: 500 });
+    return NextResponse.json({ error: e.message || "Failed to create vacancy." }, { status: 500 });
   }
 }
 
@@ -108,7 +108,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: true, message: "Lowongan diperbarui.", job: { ...jobData, ...resolveJobStatus(jobData) } });
   } catch (e: any) {
     console.error("Update job error:", e);
-    return NextResponse.json({ error: e.message || "Gagal memperbarui lowongan." }, { status: 500 });
+    return NextResponse.json({ error: e.message || "Failed to update vacancy." }, { status: 500 });
   }
 }
 
@@ -126,6 +126,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true, message: "Lowongan dihapus." });
   } catch (e: any) {
     console.error("Delete job error:", e);
-    return NextResponse.json({ error: e.message || "Gagal menghapus lowongan." }, { status: 500 });
+    return NextResponse.json({ error: e.message || "Failed to delete vacancy." }, { status: 500 });
   }
 }

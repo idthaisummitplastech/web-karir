@@ -553,7 +553,7 @@ export default function AdminEmployeesPage() {
           notes: editNotes,
         } : null);
       } else {
-        alert(data.detail || data.error || 'Gagal memperbarui data karyawan.');
+        alert(data.detail || data.error || 'Failed to update employee data.');
       }
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan sistem.');
@@ -651,7 +651,7 @@ export default function AdminEmployeesPage() {
         setEmpToDelete(null);
         fetchEmployees();
       } else {
-        alert(data.detail || data.error || 'Gagal menghapus data karyawan.');
+        alert(data.detail || data.error || 'Failed to delete employee data.');
       }
     } catch (err: any) {
       alert(err.message || 'Terjadi kesalahan sistem.');
@@ -779,7 +779,7 @@ export default function AdminEmployeesPage() {
       if (res.ok && data.success) {
         setRetentionFeedback(`✓ ${data.message}`);
       } else {
-        setRetentionFeedback(data.detail || data.error || 'Gagal menyimpan pengaturan retensi.');
+        setRetentionFeedback(data.detail || data.error || 'Failed to save retention settings.');
       }
     } catch (err: any) {
       setRetentionFeedback(err.message || 'Terjadi kesalahan sistem.');
@@ -2046,7 +2046,7 @@ export default function AdminEmployeesPage() {
             disabled={savingSeq}
             sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
           >
-            {savingSeq ? 'Menyimpan...' : 'Simpan Penyesuaian'}
+            {savingSeq ? 'Saving...' : 'Simpan Penyesuaian'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2256,7 +2256,7 @@ export default function AdminEmployeesPage() {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
-                  label="Payroll ID / NIK Perusahaan"
+                  label="Payroll ID / NIK Company"
                   value={editPayrollId}
                   onChange={(e) => setEditPayrollId(e.target.value)}
                   placeholder="Contoh: 1530"
@@ -2585,7 +2585,7 @@ export default function AdminEmployeesPage() {
             disabled={updatingEmp}
             sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
           >
-            {updatingEmp ? 'Menyimpan...' : 'Simpan Seluruh Data Karyawan'}
+            {updatingEmp ? 'Saving...' : 'Simpan Seluruh Data Karyawan'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2686,7 +2686,7 @@ export default function AdminEmployeesPage() {
                     <Typography variant="body1" sx={{ fontWeight: 700, color: '#018730' }}>{selectedEmp.phone || '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Email Resmi</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Official Email</Typography>
                     <Typography variant="body1">{selectedEmp.email || '-'}</Typography>
                   </Grid>
 
@@ -2944,7 +2944,7 @@ export default function AdminEmployeesPage() {
                         {exps.map((e: any, idx: number) => (
                           <Paper key={idx} elevation={0} sx={{ p: 2, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {e.company || e.company_name || 'Perusahaan'}
+                              {e.company || e.company_name || 'Company'}
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#018730', fontWeight: 700, display: 'block' }}>
                               {e.position || e.job_title} ({e.duration || `${e.start_year || ''} - ${e.end_year || ''}`})
@@ -3791,7 +3791,7 @@ export default function AdminEmployeesPage() {
                 startIcon={creating ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <PersonAddIcon />}
                 sx={{ fontWeight: 800, bgcolor: '#0F172A', '&:hover': { bgcolor: '#1E293B' } }}
               >
-                {creating ? 'Menyimpan...' : 'Simpan Karyawan Baru'}
+                {creating ? 'Saving...' : 'Simpan Karyawan Baru'}
               </Button>
             </Box>
           </DialogActions>
@@ -3888,7 +3888,7 @@ export default function AdminEmployeesPage() {
               startIcon={savingRetention ? <CircularProgress size={16} sx={{ color: '#FFFFFF' }} /> : <SettingsIcon />}
               sx={{ fontWeight: 800, bgcolor: '#4C1D95', '&:hover': { bgcolor: '#3B0764' } }}
             >
-              {savingRetention ? 'Menyimpan...' : 'Simpan Pengaturan'}
+              {savingRetention ? 'Saving...' : 'Simpan Pengaturan'}
             </Button>
           </Box>
         </DialogActions>

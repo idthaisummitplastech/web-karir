@@ -7,6 +7,6 @@ export async function GET() {
     return NextResponse.json({ success: true, jobs });
   } catch (error: any) {
     console.error("Failed to fetch jobs from backend:", error.message);
-    return NextResponse.json({ error: "Gagal memuat lowongan." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load vacancies." }, { status: 500 });
   }
 }

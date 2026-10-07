@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     return NextResponse.json(data, { headers: ANTI_CACHE_HEADERS });
   } catch (error: any) {
     console.error("Get retention error:", error);
-    return NextResponse.json({ error: error.message || "Gagal memuat pengaturan retensi." }, { status: 500, headers: ANTI_CACHE_HEADERS });
+    return NextResponse.json({ error: error.message || "Failed to load retention settings." }, { status: 500, headers: ANTI_CACHE_HEADERS });
   }
 }
 
@@ -55,6 +55,6 @@ export async function POST(req: Request) {
     return NextResponse.json(result, { headers: ANTI_CACHE_HEADERS });
   } catch (error: any) {
     console.error("Set retention error:", error);
-    return NextResponse.json({ error: error.message || "Gagal menyimpan pengaturan retensi." }, { status: 400, headers: ANTI_CACHE_HEADERS });
+    return NextResponse.json({ error: error.message || "Failed to save retention settings." }, { status: 400, headers: ANTI_CACHE_HEADERS });
   }
 }

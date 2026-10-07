@@ -119,7 +119,7 @@ export default function AdminUsersPage() {
         setAvailableDepartments(data.departments);
       }
     } catch (e: any) {
-      setLoadError(e?.message || 'Gagal memuat daftar pengguna. Periksa koneksi backend atau sesi login.');
+      setLoadError(e?.message || 'Failed to load user list. Periksa koneksi backend atau sesi login.');
       // Keep existing users (if any) rather than blanking to avoid layout crash
     } finally {
       setLoading(false);
@@ -303,7 +303,7 @@ export default function AdminUsersPage() {
   const handleDeleteUser = async (userId: number, userName: string) => {
     if (
       !confirm(
-        `Apakah Anda yakin ingin menghapus akun ${userName}? Akun ini akan dihapus permanen dari sistem rekrutmen dan database pengguna.`
+        `Are you sure you want to delete the account ${userName}? This account will be permanently deleted from the recruitment system and user database.`
       )
     )
       return;
@@ -442,7 +442,7 @@ export default function AdminUsersPage() {
             '&:hover': { bgcolor: '#005c21' },
           }}
         >
-          Tambah Akun Baru
+          Add New Account
         </Button>
       </Box>
 
@@ -528,7 +528,7 @@ export default function AdminUsersPage() {
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
                       <Chip label={(u.isActive ?? u.is_active ?? true) ? 'Aktif' : 'Non-aktif'} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
-                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? 'Keduanya' : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Perusahaan' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
+                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? 'Keduanya' : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Company' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
                     </Box>
 
                     {/* Status MFA */}
@@ -590,7 +590,7 @@ export default function AdminUsersPage() {
                         size="small"
                         onClick={() => handleDeleteUser(u.id, u.name)}
                         sx={{ color: '#EF4444', border: '1px solid #FCA5A5', borderRadius: 1.5, p: 0.7 }}
-                        title="Hapus Akun Pengguna"
+                        title="Delete User Account"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -618,7 +618,7 @@ export default function AdminUsersPage() {
                     <TableCell sx={{ fontWeight: 800 }}>Role & Departemen</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>MFA</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>Aktif</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>Akses Portal</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Portal Access</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 800 }}>Aksi Manajemen</TableCell>
                   </TableRow>
                 </TableHead>
@@ -674,7 +674,7 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell>
                           <TextField select size="small" value={u.portalAccess ?? u.portal_access ?? 'both'} onChange={(e) => handlePortalChangeRow(u, e.target.value)} sx={{ minWidth: 130, '& .MuiInputBase-root': { fontSize: 12, fontWeight: 700 } }}>
-                            <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                            <MenuItem value="perusahaan">Company</MenuItem>
                             <MenuItem value="karir">Karir</MenuItem>
                             <MenuItem value="both">Keduanya</MenuItem>
                           </TextField>
@@ -727,7 +727,7 @@ export default function AdminUsersPage() {
                             )}
 
                             {/* Delete User Button */}
-                            <Tooltip title="Hapus Akun Pengguna">
+                            <Tooltip title="Delete User Account">
                               <IconButton
                                 size="small"
                                 onClick={() => handleDeleteUser(u.id, u.name)}
@@ -795,7 +795,7 @@ export default function AdminUsersPage() {
       {/* ADD USER MODAL */}
       <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleCreateUser}>
-          <DialogTitle sx={{ fontWeight: 800 }}>Tambah Akun HR / User Baru</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 800 }}>Add New HR / User Account</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
               <TextField
@@ -809,7 +809,7 @@ export default function AdminUsersPage() {
               <TextField
                 fullWidth
                 required
-                label="Nama Lengkap & Gelar"
+                label="Full Name & Title"
                 placeholder="misal: Siti Nurhaliza, S.Psi"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
@@ -818,7 +818,7 @@ export default function AdminUsersPage() {
                 fullWidth
                 required
                 type="email"
-                label="Email Resmi"
+                label="Official Email"
                 placeholder="nama@itsp.co.id"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
@@ -827,7 +827,7 @@ export default function AdminUsersPage() {
                 select
                 fullWidth
                 required
-                label="Role Akun"
+                label="Account Role"
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
               >
@@ -847,7 +847,7 @@ export default function AdminUsersPage() {
                     fullWidth
                     required
                     label="Departemen"
-                    placeholder="Pilih atau ketik departemen"
+                    placeholder="Select or type department"
                     helperText="Pilih dari daftar departemen data karyawan atau ketik baru"
                   />
                 )}
@@ -862,12 +862,12 @@ export default function AdminUsersPage() {
               <TextField
                 select
                 fullWidth
-                label="Akses Portal"
+                label="Portal Access"
                 value={newPortalAccess}
                 onChange={(e) => setNewPortalAccess(e.target.value)}
                 helperText="perusahaan / karir / keduanya"
               >
-                <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                <MenuItem value="perusahaan">Company</MenuItem>
                 <MenuItem value="karir">Karir</MenuItem>
                 <MenuItem value="both">Keduanya</MenuItem>
               </TextField>
@@ -880,7 +880,7 @@ export default function AdminUsersPage() {
                       sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
                     />
                   }
-                  label={<Typography variant="body2" fontWeight={800}>{newIsActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>}
+                  label={<Typography variant="body2" fontWeight={800}>{newIsActive ? 'Active Account' : 'Inactive Account'}</Typography>}
                 />
               </Box>
             </Box>
@@ -888,7 +888,7 @@ export default function AdminUsersPage() {
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
             <Button onClick={() => setAddModalOpen(false)}>Batal</Button>
             <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {processing ? 'Menyimpan...' : 'Buat Akun'}
+              {processing ? 'Saving...' : 'Buat Akun'}
             </Button>
           </DialogActions>
         </form>
@@ -913,7 +913,7 @@ export default function AdminUsersPage() {
               <TextField
                 fullWidth
                 required
-                label="Nama Lengkap & Gelar"
+                label="Full Name & Title"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
               />
@@ -921,7 +921,7 @@ export default function AdminUsersPage() {
                 fullWidth
                 required
                 type="email"
-                label="Email Resmi"
+                label="Official Email"
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
               />
@@ -929,7 +929,7 @@ export default function AdminUsersPage() {
                 select
                 fullWidth
                 required
-                label="Role Akun"
+                label="Account Role"
                 value={editRole}
                 onChange={(e) => setEditRole(e.target.value)}
               >
@@ -949,26 +949,26 @@ export default function AdminUsersPage() {
                     fullWidth
                     required
                     label="Departemen"
-                    placeholder="Pilih atau ketik departemen"
+                    placeholder="Select or type department"
                   />
                 )}
               />
               <TextField
                 fullWidth
-                label="Password Baru (Opsional)"
-                placeholder="Kosongkan jika tidak diubah"
+                label="New Password (Optional)"
+                placeholder="Leave blank if not changing"
                 value={editNewPassword}
                 onChange={(e) => setEditNewPassword(e.target.value)}
-                helperText="Biarkan kosong jika tetap menggunakan password saat ini."
+                helperText="Leave blank to keep the current password."
               />
               <TextField
                 select
                 fullWidth
-                label="Akses Portal"
+                label="Portal Access"
                 value={editPortalAccess}
                 onChange={(e) => setEditPortalAccess(e.target.value)}
               >
-                <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                <MenuItem value="perusahaan">Company</MenuItem>
                 <MenuItem value="karir">Karir</MenuItem>
                 <MenuItem value="both">Keduanya</MenuItem>
               </TextField>
@@ -981,7 +981,7 @@ export default function AdminUsersPage() {
                       sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
                     />
                   }
-                  label={<Typography variant="body2" fontWeight={800}>{editIsActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>}
+                  label={<Typography variant="body2" fontWeight={800}>{editIsActive ? 'Active Account' : 'Inactive Account'}</Typography>}
                 />
               </Box>
             </Box>
@@ -989,7 +989,7 @@ export default function AdminUsersPage() {
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
             <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
             <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
+              {processing ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogActions>
         </form>

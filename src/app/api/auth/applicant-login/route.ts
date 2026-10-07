@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email dan password wajib diisi." },
+        { error: "Email and password are required." },
         { status: 400 }
       );
     }

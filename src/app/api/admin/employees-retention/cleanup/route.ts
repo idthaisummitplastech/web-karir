@@ -33,6 +33,6 @@ export async function POST(req: Request) {
     return NextResponse.json(result, { headers: ANTI_CACHE_HEADERS });
   } catch (error: any) {
     console.error("Cleanup retention error:", error);
-    return NextResponse.json({ error: error.message || "Gagal membersihkan data retensi." }, { status: 400, headers: ANTI_CACHE_HEADERS });
+    return NextResponse.json({ error: error.message || "Failed to clean retention data." }, { status: 400, headers: ANTI_CACHE_HEADERS });
   }
 }

@@ -8,7 +8,7 @@ export async function GET() {
   try {
     const filePath = path.join(process.cwd(), "public", "templates", "Template_Master_Karyawan_ITSP.xlsx");
     if (!fs.existsSync(filePath)) {
-      return NextResponse.json({ error: "File template tidak ditemukan." }, { status: 404 });
+      return NextResponse.json({ error: "Template file not found." }, { status: 404 });
     }
 
     const fileBuffer = fs.readFileSync(filePath);
@@ -23,7 +23,7 @@ export async function GET() {
   } catch (error: any) {
     console.error("Download employee template error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal mengunduh file template Excel." },
+      { error: error.message || "Failed to download Excel template file." },
       { status: 500 }
     );
   }

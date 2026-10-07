@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("Fetch employee sequence error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memuat sequence ID karyawan." },
+      { error: error.message || "Failed to load employee sequence ID." },
       { status: 500, headers: ANTI_CACHE_HEADERS }
     );
   }
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Set employee sequence error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal menyesuaikan nomor urut sequence ID karyawan." },
+      { error: error.message || "Failed to adjust employee sequence number." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }

@@ -16,6 +16,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: result.message || "Email berhasil dikirim ulang." });
   } catch (error: any) {
     console.error("Resend email error:", error);
-    return NextResponse.json({ error: error.message || "Gagal mengirim ulang email." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to resend email." }, { status: 400 });
   }
 }

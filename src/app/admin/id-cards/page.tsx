@@ -100,14 +100,14 @@ const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
   labelAuthorizerSignature: "Authorizer's Signature ....................",
   hrmSignerTitle: 'HRM',
   hrmCompanyFooter: 'PT. Indonesia Thai Summit Plastech',
-  termsTitle: 'Ketentuan Penggunaan',
+  termsTitle: 'Terms Penggunaan',
   termsItem1: 'ID Card harus selalu digunakan pada saat bekerja.',
   termsItem2: 'Apabila tidak membawa ID card pada saat bekerja, maka akan diberikan sanksi sesuai dengan aturan yang berlaku.',
   termsItem3: 'Apabila ID Card hilang diluar perusahaan, maka yang bersangkutan harus menunjukkan surat keterangan dari kepolisian.',
   qualityTitleEn: 'QUALITY POLICY STATEMENT',
   qualityTextEn: 'The company is commited to providing quality products, on-time delivery, professional services and compliance with applicable regulations regarding products and customer requirements to meet customer satisfaction through continous improvement of quality management system.',
   qualityTitleId: 'KEBIJAKAN MUTU PERUSAHAAN',
-  qualityTextId: 'Perusahaan berkomitmen untuk menyediakan produk berkualitas, pengiriman tepat waktu, layanan profesional dan kepatuhan terhadap peraturan yang berlaku mengenai produk dan persyaratan pelanggan untuk memenuhi kepuasan pelanggan melalui perbaikan sistem manajemen mutu secara berkesinambungan.',
+  qualityTextId: 'Company berkomitmen untuk menyediakan produk berkualitas, pengiriman tepat waktu, layanan profesional dan kepatuhan terhadap peraturan yang berlaku mengenai produk dan persyaratan pelanggan untuk memenuhi kepuasan pelanggan melalui perbaikan sistem manajemen mutu secara berkesinambungan.',
   qualityPageEn: 'Page 1',
   qualityPageId: 'Page 3',
 };
@@ -2023,8 +2023,8 @@ export default function AdminIdCardsPage() {
                 sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}
               >
                 <Tab label="Identitas & Kartu Depan" sx={{ fontWeight: 700, fontSize: 12 }} />
-                <Tab label="Ketentuan Penggunaan" sx={{ fontWeight: 700, fontSize: 12 }} />
-                <Tab label="Kebijakan Mutu" sx={{ fontWeight: 700, fontSize: 12 }} />
+                <Tab label="Terms Penggunaan" sx={{ fontWeight: 700, fontSize: 12 }} />
+                <Tab label="Quality Policy" sx={{ fontWeight: 700, fontSize: 12 }} />
               </Tabs>
 
               {/* TAB 0: IDENTITAS & KARTU DEPAN */}
@@ -2033,7 +2033,7 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nama Perusahaan (Header)"
+                    label="Nama Company (Header)"
                     value={tempFormat.companyName}
                     onChange={(e) => setTempFormat({ ...tempFormat, companyName: e.target.value })}
                   />
@@ -2121,7 +2121,7 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Judul Ketentuan"
+                    label="Judul Terms"
                     value={tempFormat.termsTitle}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsTitle: e.target.value })}
                   />
@@ -2130,7 +2130,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Ketentuan Butir 1"
+                    label="Terms Butir 1"
                     value={tempFormat.termsItem1}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem1: e.target.value })}
                   />
@@ -2139,7 +2139,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Ketentuan Butir 2"
+                    label="Terms Butir 2"
                     value={tempFormat.termsItem2}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem2: e.target.value })}
                   />
@@ -2148,7 +2148,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Ketentuan Butir 3"
+                    label="Terms Butir 3"
                     value={tempFormat.termsItem3}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem3: e.target.value })}
                   />
@@ -2162,7 +2162,7 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nama Perusahaan Bawah (HRM PT. ITSP)"
+                    label="Nama Company Bawah (HRM PT. ITSP)"
                     value={tempFormat.hrmCompanyFooter}
                     onChange={(e) => setTempFormat({ ...tempFormat, hrmCompanyFooter: e.target.value })}
                   />
@@ -2173,7 +2173,7 @@ export default function AdminIdCardsPage() {
               {formatTab === 2 && (
                 <Stack spacing={2}>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#1E3A8A' }}>
-                    🇬🇧 Kebijakan Mutu (Versi Bahasa Inggris - Kiri Bawah):
+                    🇬🇧 Quality Policy (Versi Bahasa Inggris - Kiri Bawah):
                   </Typography>
                   <TextField
                     fullWidth
@@ -2187,7 +2187,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={3}
                     size="small"
-                    label="Teks Kebijakan Mutu English"
+                    label="Teks Quality Policy English"
                     value={tempFormat.qualityTextEn}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTextEn: e.target.value })}
                   />
@@ -2202,7 +2202,7 @@ export default function AdminIdCardsPage() {
                   <Divider sx={{ my: 1 }} />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#166534' }}>
-                    🇮🇩 Kebijakan Mutu (Versi Bahasa Indonesia - Kanan Bawah):
+                    🇮🇩 Quality Policy (Versi Bahasa Indonesia - Kanan Bawah):
                   </Typography>
                   <TextField
                     fullWidth
@@ -2216,7 +2216,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={3}
                     size="small"
-                    label="Teks Kebijakan Mutu Indonesia"
+                    label="Teks Quality Policy Indonesia"
                     value={tempFormat.qualityTextId}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTextId: e.target.value })}
                   />
@@ -2250,7 +2250,7 @@ export default function AdminIdCardsPage() {
                   id: 999,
                   employeeId: '1530.09.26',
                   namaLengkap: 'CONTOH NAMA KARYAWAN',
-                  jabatan: 'Staff IT & Sistem Perusahaan',
+                  jabatan: 'Staff IT & Sistem Company',
                   departemen: 'Teknologi Informasi',
                   photoProfile: null,
                 }, tempFormat)}

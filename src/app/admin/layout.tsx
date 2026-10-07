@@ -81,58 +81,58 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!dynamicNav) {
   if (currentUserRole === 'user_dept') {
     navItems = [
-      { label: 'Data Pelamar & Evaluasi Teknis', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Bank Soal Teknis Departemen', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Applicant Data & Technical Evaluation', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Department Technical Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
     ];
   } else if (currentUserRole === 'hr') {
     navItems = [
-      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
-      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
-      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
-      { label: 'Bank Soal Psikotes', href: '/admin/questions', icon: <QuizIcon /> },
-      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
-      { label: 'Pengaturan MCU & Template Pesan', href: '/admin/settings', icon: <SettingsIcon /> },
+      { label: 'Applicant Data (7 Stages)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Employee Data', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Manage Job Vacancies', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departments & Sections', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Psych Test Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Print Employee ID Cards', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'MCU Settings & Message Templates', href: '/admin/settings', icon: <SettingsIcon /> },
     ];
   } else {
     navItems = [
-      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
-      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
-      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
-      { label: 'Bank Soal Ujian Online', href: '/admin/questions', icon: <QuizIcon /> },
-      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
-      { label: 'Pengaturan MCU & Default', href: '/admin/settings', icon: <SettingsIcon /> },
-      { label: 'Kelola Akun & Reset Password (Admin)', href: '/admin/users', icon: <SecurityIcon /> },
+      { label: 'Applicant Data (7 Stages)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Employee Data', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Manage Job Vacancies', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departments & Sections', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Online Test Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Print Employee ID Cards', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'MCU Settings & Defaults', href: '/admin/settings', icon: <SettingsIcon /> },
+      { label: 'Manage Accounts & Reset Password (Admin)', href: '/admin/users', icon: <SecurityIcon /> },
     ];
   }
   }
   if (currentUserRole === 'user_dept') {
     navItems = [
-      { label: 'Data Pelamar & Evaluasi Teknis', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Bank Soal Teknis Departemen', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Applicant Data & Technical Evaluation', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Department Technical Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
     ];
   } else if (currentUserRole === 'hr') {
     navItems = [
-      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
-      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
-      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
-      { label: 'Bank Soal Psikotes', href: '/admin/questions', icon: <QuizIcon /> },
-      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
-      { label: 'Pengaturan MCU & Template Pesan', href: '/admin/settings', icon: <SettingsIcon /> },
+      { label: 'Applicant Data (7 Stages)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Employee Data', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Manage Job Vacancies', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departments & Sections', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Psych Test Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Print Employee ID Cards', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'MCU Settings & Message Templates', href: '/admin/settings', icon: <SettingsIcon /> },
     ];
   } else {
     // Super Admin: Full Access
     navItems = [
-      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
-      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
-      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
-      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
-      { label: 'Bank Soal Ujian Online', href: '/admin/questions', icon: <QuizIcon /> },
-      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
-      { label: 'Pengaturan MCU & Default', href: '/admin/settings', icon: <SettingsIcon /> },
-      { label: 'Kelola Akun & Reset Password (Admin)', href: '/admin/users', icon: <SecurityIcon /> },
+      { label: 'Applicant Data (7 Stages)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Employee Data', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Manage Job Vacancies', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departments & Sections', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Online Test Question Bank', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Print Employee ID Cards', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'MCU Settings & Defaults', href: '/admin/settings', icon: <SettingsIcon /> },
+      { label: 'Manage Accounts & Reset Password (Admin)', href: '/admin/users', icon: <SecurityIcon /> },
     ];
   }
 
@@ -302,7 +302,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {currentUserName || 'User Internal ATS'}
               </Typography>
               <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block' }}>
-                Akun Terverifikasi
+                Verified Account
               </Typography>
             </Box>
           </Box>
@@ -327,7 +327,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Navigation Links */}
         <Typography variant="overline" sx={{ color: '#64748B', fontWeight: 800, fontSize: 11, letterSpacing: '0.08em', px: 1, mb: 1 }}>
-          MENU MANAJEMEN ATS
+          ATS MANAGEMENT MENU
         </Typography>
 
         <List sx={{ flex: 1, p: 0, overflowY: 'auto' }}>
@@ -382,7 +382,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
           }}
         >
-          Keluar dari Sistem
+          Sign Out
         </Button>
       </Drawer>
 

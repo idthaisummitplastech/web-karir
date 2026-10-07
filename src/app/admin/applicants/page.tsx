@@ -1203,7 +1203,7 @@ export default function AdminApplicantsPage() {
   const handleConfirmHireContract = async () => {
     if (!hiringApplicant) return;
     if (!hireStartDate) {
-      alert('Mohon tentukan Tanggal Mulai Kontrak (Join Date).');
+      alert('Please specify the Contract Start Date (Join Date).');
       return;
     }
     if (!hireSequenceNumber || Number(hireSequenceNumber) < 1) {
@@ -1243,14 +1243,14 @@ export default function AdminApplicantsPage() {
       } else {
         setHireFeedback({
           type: 'error',
-          message: result.detail || result.error || 'Gagal menyimpan data karyawan. Silakan coba lagi.',
+          message: result.detail || result.error || 'Failed to save employee data. Please try again.',
         });
       }
     } catch (err: any) {
       console.error('Hire contract submit error:', err);
       setHireFeedback({
         type: 'error',
-        message: err.message || 'Terjadi kesalahan sistem saat memproses pengangkatan karyawan.',
+        message: err.message || 'A system error occurred while processing employee onboarding.',
       });
     } finally {
       setSubmittingHire(false);
@@ -1305,7 +1305,7 @@ export default function AdminApplicantsPage() {
         body: JSON.stringify({ applicantId: applicant.id }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengirim ulang email.');
+      if (!res.ok) throw new Error(data.error || 'Failed to resend email.');
       setFeedbackMessage(data.message);
       alert(data.message);
     } catch (err: any) {
@@ -1373,7 +1373,7 @@ export default function AdminApplicantsPage() {
   // Handle Schedule Interview
   const handleConfirmInterview = async () => {
     if (!selectedApplicant || !interviewDate) {
-      alert('Mohon pilih tanggal dan jam pelaksanaan interview.');
+      alert('Please select interview date and time.');
       return;
     }
 
@@ -2862,7 +2862,7 @@ export default function AdminApplicantsPage() {
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Alamat Email:</Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Email Address:</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#0284C7' }}>
                               <a href={`mailto:${selectedApplicant.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>
                                 {selectedApplicant.email}
@@ -3058,7 +3058,7 @@ export default function AdminApplicantsPage() {
                               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                                 <TableRow>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569', width: 50 }}>No</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Nama Perusahaan</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Nama Company</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Posisi / Jabatan</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569', textAlign: 'center' }}>Periode</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Deskripsi Tugas</TableCell>
@@ -5261,7 +5261,7 @@ export default function AdminApplicantsPage() {
               <Box sx={{ mb: 2.5, p: 2, bgcolor: '#FFFFFF', borderRadius: 2, border: '1px solid #E2E8F0' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    ⚖️ Ketentuan Pokok Hubungan Kerja / Klausul Perjanjian (Dapat Diedit):
+                    ⚖️ Terms Pokok Hubungan Kerja / Klausul Perjanjian (Dapat Diedit):
                   </Typography>
                   <Button
                     size="small"
@@ -5837,7 +5837,7 @@ export default function AdminApplicantsPage() {
               onClick={handleConfirmTestSession}
               sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
             >
-              {processing ? 'Menyimpan...' : 'Simpan Pengaturan Sesi'}
+              {processing ? 'Saving...' : 'Simpan Pengaturan Sesi'}
             </Button>
           </Box>
         </DialogActions>

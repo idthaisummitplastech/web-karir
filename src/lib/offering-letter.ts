@@ -7,7 +7,7 @@ export const DEFAULT_OFFERING_CLAUSES = `1. Hubungan kerja dituangkan dalam Perj
 2. Calon karyawan berhak atas jaminan sosial ketenagakerjaan dan kesehatan (BPJS Ketenagakerjaan & BPJS Kesehatan) terhitung sejak tanggal efektif bergabung.
 3. Fasilitas kerja meliputi fasilitas makan kantin pabrik, tunjangan shift kerja manufaktur, serta perlengkapan Alat Pelindung Diri (APD) dan seragam kerja standar PT ITSP.
 4. Masa orientasi dan evaluasi performa kerja (probationary review) berlaku selama 3 (tiga) bulan pertama masa penempatan.
-5. Calon karyawan wajib mematuhi seluruh Tata Tertib & Peraturan Perusahaan (PP) PT Indonesia Thai Summit Plastech serta menjaga kerahasiaan informasi korporat (Strictly Confidential).`;
+5. Calon karyawan wajib mematuhi seluruh Tata Tertib & Peraturan Company (PP) PT Indonesia Thai Summit Plastech serta menjaga kerahasiaan informasi korporat (Strictly Confidential).`;
 
 export interface OfferingLetterData {
   candidateName: string;
@@ -402,7 +402,7 @@ export const generateOfferingLetterHtml = (data: OfferingLetterData): string => 
 
   ${data.notes ? `<div class="notes-box"><strong>Catatan Khusus dari HR:</strong><br>${data.notes}</div>` : ''}
 
-  <div class="section-title">Ketentuan Pokok Hubungan Kerja:</div>
+  <div class="section-title">Terms Pokok Hubungan Kerja:</div>
   <ol class="clauses">
     ${clausesHtml}
   </ol>

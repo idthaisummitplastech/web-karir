@@ -732,7 +732,7 @@ export default function ApplicantDashboard() {
 
                 <Box sx={{ p: 2.5, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mb: 1 }}>
-                    Ketentuan & Sistem Keamanan Ujian:
+                    Terms & Sistem Keamanan Ujian:
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
                     • <strong>Waktu Mulai Ujian:</strong>{' '}
@@ -844,7 +844,7 @@ export default function ApplicantDashboard() {
 
                 <Box sx={{ p: 2.5, bgcolor: '#FFFBEB', borderRadius: 2, border: '1px solid #FDE68A', mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#92400E', mb: 1 }}>
-                    Ketentuan & Jadwal Pelaksanaan Ujian Teknis Kejuruan:
+                    Terms & Jadwal Pelaksanaan Ujian Teknis Kejuruan:
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#78350F', mb: 0.5 }}>
                     • <strong>Waktu Mulai Ujian:</strong>{' '}
@@ -1004,7 +1004,7 @@ export default function ApplicantDashboard() {
                           • Ruangan: {hrInterview.roomName || 'Ruang Meeting HCM Lt. 2'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#78350F', mb: 1.5 }}>
-                          • Ketentuan: Lapor pos security dengan membawa KTP asli, kemeja putih formal, dan sepatu tertutup.
+                          • Terms: Lapor pos security dengan membawa KTP asli, kemeja putih formal, dan sepatu tertutup.
                         </Typography>
                         {(() => {
                           const mapsUrl = hrInterview.mapsUrl || getPlantMapsUrl(hrInterview.locationAddress || data?.plantConfig?.karawang);
@@ -1085,7 +1085,7 @@ export default function ApplicantDashboard() {
                           </Typography>
                         )}
                         <Typography variant="body2" sx={{ color: '#78350F', mb: 1.5 }}>
-                          • Ketentuan: Lapor pos security dengan membawa KTP asli, berkas portofolio teknis, kemeja rapi formal, dan sepatu safety/tertutup.
+                          • Terms: Lapor pos security dengan membawa KTP asli, berkas portofolio teknis, kemeja rapi formal, dan sepatu safety/tertutup.
                         </Typography>
                         {(() => {
                           const mapsUrl = userInterview.mapsUrl || getPlantMapsUrl(userInterview.locationAddress || data?.plantConfig?.karawang);

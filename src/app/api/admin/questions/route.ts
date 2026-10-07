@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ questions: questions || [] });
   } catch (error: any) {
     console.error('Fetch questions error:', error);
-    return NextResponse.json({ error: 'Gagal memuat bank soal.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to load question bank.' }, { status: 500 });
   }
 }
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error('Create question error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal menambah soal.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to add question.' }, { status: 500 });
   }
 }
 
@@ -115,7 +115,7 @@ export async function PUT(req: Request) {
     });
   } catch (error: any) {
     console.error('Update question error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal memperbarui soal.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to update question.' }, { status: 500 });
   }
 }
 
@@ -142,7 +142,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true, message: 'Soal berhasil dihapus.' });
   } catch (error: any) {
     console.error('Delete question error:', error);
-    return NextResponse.json({ error: error.message || 'Gagal menghapus soal.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to delete question.' }, { status: 500 });
   }
 }
 

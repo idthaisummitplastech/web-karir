@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   } catch (error: any) {
     console.error("Terminate employee error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal menandai karyawan keluar." },
+      { error: error.message || "Failed to mark employee as exited." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }

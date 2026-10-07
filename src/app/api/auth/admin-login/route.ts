@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { error: "Username/Email dan password wajib diisi." },
+        { error: "Username/Email and password are required." },
         { status: 400 }
       );
     }
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       });
     } catch (err: any) {
       return NextResponse.json(
-        { error: err.message || "Login gagal." },
+        { error: err.message || "Login failed." },
         { status: 401 }
       );
     }

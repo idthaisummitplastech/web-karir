@@ -483,7 +483,7 @@ export function emailScreeningPassed(
     { label: 'Tempat / Lokasi:', value: location || 'Portal Karir Online PT ITSP', isHighlight: true },
     { label: 'Token Sesi Ujian:', value: examToken || 'PSIKO2026', isHighlight: true, isMono: true },
     {
-      label: 'Ketentuan Khusus:',
+      label: 'Terms Khusus:',
       value: 'Tombol tes akan aktif pada jadwal yang ditentukan. Masukkan Token Sesi Ujian di atas pada halaman ujian portal.',
     },
   ];
@@ -644,8 +644,8 @@ export function emailHrInterviewInvite(
   }
 
   const notice = isOnline
-    ? `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Ketentuan Virtual Interview:</strong> Mohon bergabung 10 menit sebelum jadwal dimulai, menggunakan koneksi internet stabil, kamera aktif (On-Camera), serta mengenakan kemeja formal rapi.</p>`
-    : `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Ketentuan Onsite:</strong> Mohon hadir 15 menit sebelum waktu interview, melapor ke pos security pabrik dengan menunjukkan KTP asli, mengenakan pakaian kemeja formal berkerah dan sepatu tertutup.</p>`;
+    ? `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Terms Virtual Interview:</strong> Mohon bergabung 10 menit sebelum jadwal dimulai, menggunakan koneksi internet stabil, kamera aktif (On-Camera), serta mengenakan kemeja formal rapi.</p>`
+    : `<p style="margin: 0 0 14px 0; font-size: 13.5px; line-height: 1.6; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"><strong>Terms Onsite:</strong> Mohon hadir 15 menit sebelum waktu interview, melapor ke pos security pabrik dengan menunjukkan KTP asli, mengenakan pakaian kemeja formal berkerah dan sepatu tertutup.</p>`;
 
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
