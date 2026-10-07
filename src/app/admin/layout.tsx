@@ -64,8 +64,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push('/login');
   };
 
-  // NAVIGASI MENU KHUSUS PER ROLE:
-  let navItems: { label: string; href: string; icon: React.ReactElement }[] = [];
+  const [dynamicNav, setDynamicNav] = useState<{ label: string; href: string; icon: React.ReactElement }[] | null>(null);
+  const iconMap: Record<string, React.ReactElement> = { PeopleIcon: <PeopleIcon />, EmployeeIcon: <EmployeeIcon />, WorkIcon: <WorkIcon />, DeptIcon: <DeptIcon />, QuizIcon: <QuizIcon />, BadgeIcon: <BadgeIcon />, SettingsIcon: <SettingsIcon />, SecurityIcon: <SecurityIcon />, AdminPanelSettingsIcon: <SecurityIcon /> };
+  React.useEffect(() => {
+    if (!currentUserRole) return;
+    fetch(`/api/admin/admin-menus?portal=karir&role=${encodeURIComponent(currentUserRole)}`, { cache: 'no-store' })
+      .then(r => r.json().catch(() => ({}))).then((j: any) => {
+        const arr = Array.isArray(j) ? j : (Array.isArray(j?.data) ? j.data : []);
+        if (Array.isArray(arr) && arr.length > 0) {
+          setDynamicNav(arr.sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)).map((m: any) => ({ label: m.title, href: m.url, icon: iconMap[m.icon as string] || <SettingsIcon /> })));
+        }
+      }).catch(() => {});
+  }, [currentUserRole]);
+  // NAVIGASI MENU KHUSUS PER ROLE (fallback jika backend belum ada admin_menus):
+  let navItems: { label: string; href: string; icon: React.ReactElement }[] = dynamicNav || [];
+  if (!dynamicNav) {
+  if (currentUserRole === 'user_dept') {
+    navItems = [
+      { label: 'Data Pelamar & Evaluasi Teknis', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Bank Soal Teknis Departemen', href: '/admin/questions', icon: <QuizIcon /> },
+    ];
+  } else if (currentUserRole === 'hr') {
+    navItems = [
+      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Bank Soal Psikotes', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'Pengaturan MCU & Template Pesan', href: '/admin/settings', icon: <SettingsIcon /> },
+    ];
+  } else {
+    navItems = [
+      { label: 'Data Pelamar (7 Tahap)', href: '/admin/applicants', icon: <PeopleIcon /> },
+      { label: 'Data Karyawan', href: '/admin/employees', icon: <EmployeeIcon /> },
+      { label: 'Kelola Lowongan', href: '/admin/jobs', icon: <WorkIcon /> },
+      { label: 'Departemen & Section', href: '/admin/departments', icon: <DeptIcon /> },
+      { label: 'Bank Soal Ujian Online', href: '/admin/questions', icon: <QuizIcon /> },
+      { label: 'Cetak ID Card Karyawan', href: '/admin/id-cards', icon: <BadgeIcon /> },
+      { label: 'Pengaturan MCU & Default', href: '/admin/settings', icon: <SettingsIcon /> },
+      { label: 'Kelola Akun & Reset Password (Admin)', href: '/admin/users', icon: <SecurityIcon /> },
+    ];
+  }
+  }
   if (currentUserRole === 'user_dept') {
     navItems = [
       { label: 'Data Pelamar & Evaluasi Teknis', href: '/admin/applicants', icon: <PeopleIcon /> },

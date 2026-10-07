@@ -64,6 +64,8 @@ export default function AdminUsersPage() {
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
   const [newUserPassword, setNewUserPassword] = useState(`Itsp@${new Date().getFullYear()}`);
+  const [newPortalAccess, setNewPortalAccess] = useState('both');
+  const [newIsActive, setNewIsActive] = useState(true);
 
   // Edit User Modal
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -74,6 +76,8 @@ export default function AdminUsersPage() {
   const [editRole, setEditRole] = useState('hr');
   const [editDepartment, setEditDepartment] = useState('Human Capital');
   const [editNewPassword, setEditNewPassword] = useState('');
+  const [editPortalAccess, setEditPortalAccess] = useState('both');
+  const [editIsActive, setEditIsActive] = useState(true);
 
   // Daftar Departemen Resmi dari Data Karyawan
   const [availableDepartments, setAvailableDepartments] = useState<string[]>([
@@ -99,6 +103,7 @@ export default function AdminUsersPage() {
     'Warehouse & Delivery',
   ]);
 
+  const normalize = (u: any) => ({ ...u, isActive: u.isActive ?? u.is_active ?? true, portalAccess: u.portalAccess ?? u.portal_access ?? 'both' });
   const fetchUsers = async () => {
     setLoading(true);
     setLoadError(null);
@@ -106,7 +111,7 @@ export default function AdminUsersPage() {
       const res = await fetch('/api/admin/users', { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || `Gagal memuat pengguna (HTTP ${res.status})`);
-      const list = Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : [];
+      const list = (Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : []).map(normalize);
       setUsers(list);
       if (data.departments && Array.isArray(data.departments) && data.departments.length > 0) {
         setAvailableDepartments(data.departments);
@@ -209,6 +214,8 @@ export default function AdminUsersPage() {
           role: newRole,
           department: newDepartment,
           password: newUserPassword,
+          portal_access: newPortalAccess,
+          is_active: newIsActive,
         }),
       });
 
@@ -236,7 +243,24 @@ export default function AdminUsersPage() {
     setEditRole(user.role);
     setEditDepartment(user.department || '');
     setEditNewPassword('');
+    setEditPortalAccess(user.portalAccess || user.portal_access || 'both');
+    setEditIsActive(user.isActive ?? user.is_active ?? true);
     setEditModalOpen(true);
+  };
+  const handleToggleActiveRow = async (user: any) => {
+    try {
+      const next = !(user.isActive ?? user.is_active ?? true);
+      const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, is_active: next }) });
+      const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Gagal toggle');
+      setUsers(prev => prev.map(x => x.id === user.id ? { ...x, isActive: next, is_active: next } : x));
+    } catch (e: any) { alert(e.message); }
+  };
+  const handlePortalChangeRow = async (user: any, val: string) => {
+    try {
+      const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, portal_access: val }) });
+      const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Gagal ubah portal');
+      setUsers(prev => prev.map(x => x.id === user.id ? { ...x, portalAccess: val, portal_access: val } : x));
+    } catch (e: any) { alert(e.message); }
   };
 
   const handleConfirmEdit = async (e: React.FormEvent) => {
@@ -256,6 +280,8 @@ export default function AdminUsersPage() {
           role: editRole,
           department: editDepartment,
           newPassword: editNewPassword || undefined,
+          portal_access: editPortalAccess,
+          is_active: editIsActive,
         }),
       });
 
@@ -493,10 +519,14 @@ export default function AdminUsersPage() {
                       />
                     </Box>
 
-                    {/* Email & Dept */}
+                    {/* Email & Dept + Aktif & Portal */}
                     <Box sx={{ fontSize: 13, color: '#475569', mb: 1.5 }}>
                       <div>✉️ {u.email}</div>
                       <div>🏢 Departemen: <strong>{u.department}</strong></div>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
+                      <Chip label={(u.isActive ?? u.is_active ?? true) ? 'Aktif' : 'Non-aktif'} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
+                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? 'Keduanya' : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Perusahaan' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
                     </Box>
 
                     {/* Status MFA */}
@@ -579,19 +609,21 @@ export default function AdminUsersPage() {
                 mb: 2,
               }}
             >
-              <Table sx={{ minWidth: 750 }}>
+              <Table sx={{ minWidth: 980 }}>
                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 800 }}>Nama Pengguna</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>Role & Departemen</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>Status Keamanan MFA</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>MFA</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Aktif</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>Akses Portal</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 800 }}>Aksi Manajemen</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 6, color: '#64748B' }}>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
                         {searchQuery ? 'Tidak ada akun pengguna yang sesuai kriteria pencarian.' : 'Belum ada data akun pengguna.'}
                       </TableCell>
                     </TableRow>
@@ -627,14 +659,23 @@ export default function AdminUsersPage() {
                         <TableCell>
                           <Chip
                             icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SecurityIcon sx={{ fontSize: 16 }} />}
-                            label={u.isMfaEnabled ? 'MFA Aktif (Google Authenticator)' : 'MFA Belum Aktif'}
+                            label={u.isMfaEnabled ? 'MFA Aktif' : 'MFA Belum Aktif'}
                             size="small"
-                            sx={{
-                              bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2',
-                              color: u.isMfaEnabled ? '#15803D' : '#991B1B',
-                              fontWeight: 700,
-                            }}
+                            sx={{ bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2', color: u.isMfaEnabled ? '#15803D' : '#991B1B', fontWeight: 700 }}
                           />
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Switch size="small" checked={u.isActive ?? u.is_active ?? true} onChange={() => handleToggleActiveRow(u)} sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }} />
+                            <Chip label={(u.isActive ?? u.is_active ?? true) ? 'Aktif' : 'Off'} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <TextField select size="small" value={u.portalAccess ?? u.portal_access ?? 'both'} onChange={(e) => handlePortalChangeRow(u, e.target.value)} sx={{ minWidth: 130, '& .MuiInputBase-root': { fontSize: 12, fontWeight: 700 } }}>
+                            <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                            <MenuItem value="karir">Karir</MenuItem>
+                            <MenuItem value="both">Keduanya</MenuItem>
+                          </TextField>
                         </TableCell>
 
                         <TableCell align="right">

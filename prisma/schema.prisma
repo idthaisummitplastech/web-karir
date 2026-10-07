@@ -168,7 +168,7 @@ model KaryawanSementara {
   @@map("karyawan_sementara")
 }
 
-// 7. Pengguna Admin HR & User Internal (Dengan MFA TOTP)
+// 7. Pengguna Admin HR & User Internal (Dengan MFA TOTP) + Toggle Portal
 model RecruitmentAdmin {
   id           Int      @id @default(autoincrement())
   username     String   @unique
@@ -179,9 +179,31 @@ model RecruitmentAdmin {
   department   String?
   mfaSecret    String?  @map("mfa_secret")
   isMfaEnabled Boolean  @default(false) @map("is_mfa_enabled")
+  isActive     Boolean  @default(true) @map("is_active")
+  portalAccess String   @default("both") @map("portal_access") // perusahaan | karir | both
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("recruitment_admins")
+}
+
+model AdminMenu {
+  id           Int      @id @default(autoincrement())
+  title        String
+  url          String
+  portal       String   @default("karir")
+  location     String   @default("admin_top")
+  icon         String?
+  section      String?
+  sortOrder    Int      @default(0) @map("sort_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  allowedRoles String?  @map("allowed_roles")
+  parentId     Int?     @map("parent_id")
+  parent       AdminMenu? @relation("AdminMenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     AdminMenu[] @relation("AdminMenuHierarchy")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_menus")
 }
 
 // 8. Pengaturan Master Default (Klinik MCU, Biaya, Alamat Pabrik)
