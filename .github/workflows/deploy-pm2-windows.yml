@@ -1,7 +1,7 @@
-name: Deploy web-karir to D PM2 — ZERO DOWNTIME
+name: Deploy web-karir to D PM2 - ZERO DOWNTIME
 
 # Web TETAP ON selama git fetch + npm ci + next build berjalan.
-# Downtime hanya ~1-2 detik saat swap .next + pm2 reload di akhir.
+# Downtime hanya 1-2 detik saat swap .next + pm2 reload di akhir.
 # Syarat 1x di server: runner Administrator + pm2 global.
 # .env di D:\itsp-karir AMAN (di-ignore git, tidak tertimpa reset).
 
@@ -52,7 +52,7 @@ jobs:
           try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
           git fetch origin main
           if ($LASTEXITCODE -ne 0) { try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}; Start-Sleep -Seconds 2; git fetch origin main }
-          if ($LASTEXITCODE -ne 0) { throw "git fetch gagal terus — cek permission/network" }
+          if ($LASTEXITCODE -ne 0) { throw "git fetch gagal - cek permission/network" }
           $newCommit = (git rev-parse origin/main).Trim(); $liveCommit = (git rev-parse HEAD).Trim()
           Write-Host "live=$liveCommit new=$newCommit"
           Write-Host "--- ISOLATED BUILD (web TETAP MELAYANI TRAFFIC) ---"
@@ -66,11 +66,11 @@ jobs:
           Write-Host "npm ci di buildDir..."; npm.cmd ci --legacy-peer-deps; if ($LASTEXITCODE -ne 0) { throw "npm ci gagal" }
           Write-Host "next build di buildDir (live web masih ON)..."; npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw "npm run build gagal" }
           if (!(Test-Path "$buildDir\.next\BUILD_ID")) { throw ".next/BUILD_ID tidak ditemukan setelah build" }
-          Write-Host "Build sukses — siap swap."
+          Write-Host "Build sukses - siap swap."
           Write-Host "--- ATOMIC SWAP + RELOAD (downtime 1-2 detik) ---"
           Set-Location $liveDir
           try { & $pm2Cmd stop itsp-karir 2>&1 | Out-String | Write-Host } catch {}; Start-Sleep -Seconds 2
-          git reset --hard $newCommit; if ($LASTEXITCODE -ne 0) { throw "git reset gagal — file terkunci" }
+          git reset --hard $newCommit; if ($LASTEXITCODE -ne 0) { throw "git reset gagal - file terkunci" }
           if (Test-Path ".next") { Remove-Item -Recurse -Force ".next" -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
           Copy-Item "$buildDir\.next" ".\.next" -Recurse -Force
           Copy-Item "$buildDir\package.json" ".\package.json" -Force -ErrorAction SilentlyContinue
@@ -78,10 +78,10 @@ jobs:
           $liveLock = Get-FileHash ".\package-lock.json" -Algorithm SHA256 -ErrorAction SilentlyContinue
           $buildLock = Get-FileHash "$buildDir\package-lock.json" -Algorithm SHA256 -ErrorAction SilentlyContinue
           if ($liveLock.Hash -ne $buildLock.Hash) {
-            Write-Host "package-lock berbeda — sync node_modules..."
+            Write-Host "package-lock berbeda - sync node_modules..."
             if (Test-Path "node_modules") { Remove-Item -Recurse -Force "node_modules" -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
             Copy-Item "$buildDir\node_modules" ".\node_modules" -Recurse -Force
-          } else { Write-Host "package-lock sama — skip copy node_modules." }
+          } else { Write-Host "package-lock sama - skip copy node_modules." }
           & $pm2Cmd restart itsp-karir; if ($LASTEXITCODE -ne 0) { & $pm2Cmd start npm --name "itsp-karir" -- start }
           & $pm2Cmd save; & $pm2Cmd list
           try { Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue } catch {}
