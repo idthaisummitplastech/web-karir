@@ -40,9 +40,11 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,7 +184,7 @@ export default function AdminUsersPage() {
   };
 
   const handleResetMfa = async (userId: number, userName: string) => {
-    if (!confirm(`Reset pengaturan MFA Google Authenticator untuk akun ${userName}? Akun ini akan diwajibkan melakukan setup MFA ulang pada login berikutnya.`)) return;
+    if (!confirm(`${t('admin_users_confirmResetMfa')} ${userName}? ${t('admin_users_confirmResetMfaSuffix')}`)) return;
 
     try {
       const res = await fetch('/api/admin/users', {
@@ -253,14 +255,14 @@ export default function AdminUsersPage() {
     try {
       const next = !(user.isActive ?? user.is_active ?? true);
       const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, is_active: next }) });
-      const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Gagal toggle');
+      const data = await res.json(); if (!res.ok) throw new Error(data.error || t('admin_users_alertToggleFailed'));
       setUsers(prev => prev.map(x => x.id === user.id ? { ...x, isActive: next, is_active: next } : x));
     } catch (e: any) { alert(e.message); }
   };
   const handlePortalChangeRow = async (user: any, val: string) => {
     try {
       const res = await fetch('/api/admin/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, portal_access: val }) });
-      const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Gagal ubah portal');
+      const data = await res.json(); if (!res.ok) throw new Error(data.error || t('admin_users_alertPortalFailed'));
       setUsers(prev => prev.map(x => x.id === user.id ? { ...x, portalAccess: val, portal_access: val } : x));
     } catch (e: any) { alert(e.message); }
   };
@@ -303,7 +305,7 @@ export default function AdminUsersPage() {
   const handleDeleteUser = async (userId: number, userName: string) => {
     if (
       !confirm(
-        `Are you sure you want to delete the account ${userName}? This account will be permanently deleted from the recruitment system and user database.`
+        `${t('admin_users_confirmDeleteDetail')} ${userName}? ${t('admin_users_confirmDeleteSuffix')}`
       )
     )
       return;
@@ -381,17 +383,17 @@ export default function AdminUsersPage() {
             <SecurityIcon sx={{ fontSize: 38 }} />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: '#991B1B', mb: 1 }}>
-            Akses Ditolak — Khusus Super Administrator
+            {t('admin_users_accessDeniedTitle')}
           </Typography>
           <Typography variant="body1" sx={{ color: '#475569', mb: 3, lineHeight: 1.6 }}>
-            Menu <strong>Kelola Akun, Reset Password Staf, dan Reset MFA</strong> dibatasi secara ketat hanya untuk <strong>Super Administrator</strong> PT ITSP. Akun Anda (Role: <code>{currentUserRole || 'Non-Admin'}</code>) tidak memiliki wewenang administratif ini demi menjaga keamanan data perusahaan.
+            {t('admin_users_accessDeniedDesc')} <code>{currentUserRole || 'Non-Admin'}</code>
           </Typography>
           <Button
             variant="contained"
             onClick={() => router.push('/admin/applicants')}
             sx={{ bgcolor: '#018730', color: '#FFFFFF', fontWeight: 700, px: 3.5, py: 1.2, borderRadius: 2, '&:hover': { bgcolor: '#005c21' } }}
           >
-            Kembali ke Data Pelamar
+            {t('admin_users_backToApplicants')}
           </Button>
         </Card>
       </Box>
@@ -420,10 +422,10 @@ export default function AdminUsersPage() {
               fontSize: { xs: '1.4rem', sm: '1.75rem', md: '2.1rem' },
             }}
           >
-            Kelola Akun HR & User Departemen
+            {t('admin_users_title')}
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
-            Manajemen kredensial tim internal rekrutmen, reset password akun, dan reset MFA jika perangkat Authenticator hilang.
+            {t('admin_users_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -442,7 +444,7 @@ export default function AdminUsersPage() {
             '&:hover': { bgcolor: '#005c21' },
           }}
         >
-          Add New Account
+          {t('admin_users_btnAddUser')}
         </Button>
       </Box>
 
@@ -476,7 +478,7 @@ export default function AdminUsersPage() {
                   setSearchQuery(val);
                   setPage(0);
                 }}
-                placeholder="Cari nama, username, email, role, atau dept..."
+                placeholder={t('admin_users_searchPlaceholder')}
                 totalCount={users.length}
                 filteredCount={filteredUsers.length}
               />
@@ -486,7 +488,7 @@ export default function AdminUsersPage() {
             <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2, mb: 3 }}>
               {filteredUsers.length === 0 ? (
                 <Paper sx={{ p: 4, textAlign: 'center', color: '#64748B', borderRadius: 2 }}>
-                  {searchQuery ? 'Tidak ada akun pengguna yang sesuai kriteria pencarian.' : 'Belum ada data akun pengguna.'}
+                  {searchQuery ? t('admin_users_mobileEmptyFiltered') : t('admin_users_mobileEmptyAll')}
                 </Paper>
               ) : (
                 paginatedUsers.map((u) => (
@@ -524,18 +526,19 @@ export default function AdminUsersPage() {
                     {/* Email & Dept + Aktif & Portal */}
                     <Box sx={{ fontSize: 13, color: '#475569', mb: 1.5 }}>
                       <div>✉️ {u.email}</div>
-                      <div>🏢 Departemen: <strong>{u.department}</strong></div>
+                      <div>🏢 {t('admin_users_deptPrefix')} <strong>{u.department}</strong></div>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1.5 }}>
-                      <Chip label={(u.isActive ?? u.is_active ?? true) ? 'Aktif' : 'Non-aktif'} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
-                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? 'Keduanya' : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Company' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
+                      <Chip label={(u.isActive ?? u.is_active ?? true) ? t('admin_users_chipActive') : t('admin_users_chipInactive')} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
+                      <Chip label={(u.portalAccess ?? u.portal_access ?? 'both') === 'both' ? t('admin_users_portalBoth') : (u.portalAccess ?? u.portal_access) === 'perusahaan' ? 'Company' : 'Karir'} size="small" sx={{ bgcolor: '#E0F2FE', color: '#0369A1', fontWeight: 700, fontSize: 11 }} />
                     </Box>
 
+                   
                     {/* Status MFA */}
                     <Box sx={{ mb: 2 }}>
                       <Chip
                         icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 15 }} /> : <SecurityIcon sx={{ fontSize: 15 }} />}
-                        label={u.isMfaEnabled ? 'MFA Aktif (Authenticator)' : 'MFA Belum Aktif'}
+                        label={u.isMfaEnabled ? t('admin_users_mfaActiveLong') : t('admin_users_mfaInactiveLong')}
                         size="small"
                         sx={{
                           bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2',
@@ -571,7 +574,7 @@ export default function AdminUsersPage() {
                         }}
                         sx={{ borderColor: '#CBD5E1', color: '#334155', fontWeight: 700, flex: 1, minWidth: 140 }}
                       >
-                        Reset Password
+                        {t('admin_users_btnResetPassword')}
                       </Button>
 
                       {u.isMfaEnabled && (
@@ -614,19 +617,19 @@ export default function AdminUsersPage() {
               <Table sx={{ minWidth: 980 }}>
                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 800 }}>Nama Pengguna</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>Role & Departemen</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>MFA</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>Aktif</TableCell>
-                    <TableCell sx={{ fontWeight: 800 }}>Portal Access</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 800 }}>Aksi Manajemen</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableUsername')}</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableRoleDept')}</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableMfa')}</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableActive')}</TableCell>
+                    <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tablePortalAccess')}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 800 }}>{t('admin_users_tableAction')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
-                        {searchQuery ? 'Tidak ada akun pengguna yang sesuai kriteria pencarian.' : 'Belum ada data akun pengguna.'}
+                        {searchQuery ? t('admin_users_mobileEmptyFiltered') : t('admin_users_mobileEmptyAll')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -643,7 +646,7 @@ export default function AdminUsersPage() {
 
                         <TableCell>
                           <Chip
-                            label={u.role === 'hr' ? 'HR Recruitment' : u.role === 'user_dept' ? 'User Departemen' : 'Super Admin'}
+                            label={u.role === 'hr' ? t('admin_users_roleHr') : u.role === 'user_dept' ? t('admin_users_roleDept') : t('admin_users_roleAdmin')}
                             size="small"
                             sx={{
                               bgcolor: u.role === 'hr' ? '#DCFCE7' : u.role === 'user_dept' ? '#FEF3C7' : '#E0F2FE',
@@ -661,7 +664,7 @@ export default function AdminUsersPage() {
                         <TableCell>
                           <Chip
                             icon={u.isMfaEnabled ? <CheckCircleIcon sx={{ fontSize: 16 }} /> : <SecurityIcon sx={{ fontSize: 16 }} />}
-                            label={u.isMfaEnabled ? 'MFA Aktif' : 'MFA Belum Aktif'}
+                            label={u.isMfaEnabled ? t('admin_users_mfaActive') : t('admin_users_mfaInactive')}
                             size="small"
                             sx={{ bgcolor: u.isMfaEnabled ? '#DCFCE7' : '#FEE2E2', color: u.isMfaEnabled ? '#15803D' : '#991B1B', fontWeight: 700 }}
                           />
@@ -669,21 +672,21 @@ export default function AdminUsersPage() {
                         <TableCell>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Switch size="small" checked={u.isActive ?? u.is_active ?? true} onChange={() => handleToggleActiveRow(u)} sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }} />
-                            <Chip label={(u.isActive ?? u.is_active ?? true) ? 'Aktif' : 'Off'} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
+                            <Chip label={(u.isActive ?? u.is_active ?? true) ? t('admin_users_chipActive') : t('admin_users_chipOff')} size="small" sx={{ bgcolor: (u.isActive ?? u.is_active ?? true) ? '#DCFCE7' : '#F1F5F9', color: (u.isActive ?? u.is_active ?? true) ? '#15803D' : '#64748B', fontWeight: 700, fontSize: 11 }} />
                           </Box>
                         </TableCell>
                         <TableCell>
                           <TextField select size="small" value={u.portalAccess ?? u.portal_access ?? 'both'} onChange={(e) => handlePortalChangeRow(u, e.target.value)} sx={{ minWidth: 130, '& .MuiInputBase-root': { fontSize: 12, fontWeight: 700 } }}>
                             <MenuItem value="perusahaan">Company</MenuItem>
                             <MenuItem value="karir">Karir</MenuItem>
-                            <MenuItem value="both">Keduanya</MenuItem>
+                            <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
                           </TextField>
                         </TableCell>
 
                         <TableCell align="right">
                           <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
                             {/* Edit User Button */}
-                            <Tooltip title="Edit Data, Role & Departemen Akun">
+                            <Tooltip title={t('admin_users_tooltipEdit')}>
                               <IconButton
                                 size="small"
                                 onClick={() => handleOpenEdit(u)}
@@ -693,8 +696,8 @@ export default function AdminUsersPage() {
                               </IconButton>
                             </Tooltip>
 
-                            {/* Reset Password Button */}
-                            <Tooltip title="Reset Password Akun Ini">
+                            {/* {t('admin_users_btnResetPassword')} Button */}
+                            <Tooltip title={t('admin_users_tooltipEdit')}>
                               <Button
                                 size="small"
                                 variant="outlined"
@@ -707,13 +710,13 @@ export default function AdminUsersPage() {
                                 }}
                                 sx={{ borderColor: '#CBD5E1', color: '#334155', fontWeight: 700 }}
                               >
-                                Reset Password
+                                {t('admin_users_btnResetPassword')}
                               </Button>
                             </Tooltip>
 
                             {/* Reset MFA Button */}
                             {u.isMfaEnabled && (
-                              <Tooltip title="Reset MFA jika ponsel hilang / ganti perangkat">
+                              <Tooltip title={t('admin_users_tooltipResetMfa')}>
                                 <Button
                                   size="small"
                                   variant="outlined"
@@ -727,7 +730,7 @@ export default function AdminUsersPage() {
                             )}
 
                             {/* Delete User Button */}
-                            <Tooltip title="Delete User Account">
+                            <Tooltip title={t('admin_users_tooltipDelete')}>
                               <IconButton
                                 size="small"
                                 onClick={() => handleDeleteUser(u.id, u.name)}
@@ -764,30 +767,30 @@ export default function AdminUsersPage() {
 
       {/* RESET PASSWORD MODAL */}
       <Dialog open={resetModalOpen} onClose={() => setResetModalOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Reset Password Akun</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('admin_users_dialogResetTitle')}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
-            Pengguna: <strong>{selectedUser?.name}</strong> (<code>{selectedUser?.username}</code>)
+            {t('admin_users_dialogResetUserLabel')} <strong>{selectedUser?.name}</strong> (<code>{selectedUser?.username}</code>)
           </Typography>
 
           <TextField
             fullWidth
-            label="Password Baru (Kosongkan untuk acak otomatis)"
-            placeholder="Misal: itsp2026! atau kosongkan"
+            label={t('admin_users_dialogNewPasswordLabel')}
+            placeholder={t('admin_users_dialogNewPasswordPlaceholder')}
             value={newPasswordInput}
             onChange={(e) => setNewPasswordInput(e.target.value)}
-            helperText="Jika dikosongkan, sistem akan mengenerate password acak aman."
+            helperText={t('admin_users_dialogNewPasswordHelper')}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>
-          <Button onClick={() => setResetModalOpen(false)}>Batal</Button>
+          <Button onClick={() => setResetModalOpen(false)}>{t('admin_users_btnCancel')}</Button>
           <Button
             variant="contained"
             disabled={processing}
             onClick={handleConfirmResetPassword}
             sx={{ bgcolor: '#018730', fontWeight: 700 }}
           >
-            {processing ? 'Mereset...' : 'Simpan Password Baru'}
+            {processing ? t('admin_users_btnResetting') : t('admin_users_btnSaveNewPassword')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -795,22 +798,22 @@ export default function AdminUsersPage() {
       {/* ADD USER MODAL */}
       <Dialog open={addModalOpen} onClose={() => setAddModalOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleCreateUser}>
-          <DialogTitle sx={{ fontWeight: 800 }}>Add New HR / User Account</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 800 }}>{t('admin_users_dialogAddTitle')}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
               <TextField
                 fullWidth
                 required
-                label="Username Login"
-                placeholder="misal: hr.staff"
+                label={t('admin_users_fieldUsername')}
+                placeholder="e.g. hr.staff"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
               />
               <TextField
                 fullWidth
                 required
-                label="Full Name & Title"
-                placeholder="misal: Siti Nurhaliza, S.Psi"
+                label={t('admin_users_fieldFullName')}
+                placeholder="e.g. John Doe, M.Psi"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
               />
@@ -818,8 +821,8 @@ export default function AdminUsersPage() {
                 fullWidth
                 required
                 type="email"
-                label="Official Email"
-                placeholder="nama@itsp.co.id"
+                label={t('admin_users_fieldEmail')}
+                placeholder="name@itsp.co.id"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
               />
@@ -827,13 +830,13 @@ export default function AdminUsersPage() {
                 select
                 fullWidth
                 required
-                label="Account Role"
+                label={t('admin_users_fieldRole')}
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
               >
                 <MenuItem value="hr">HR Recruitment</MenuItem>
-                <MenuItem value="user_dept">User Departemen</MenuItem>
-                <MenuItem value="admin">Administrator</MenuItem>
+                <MenuItem value="user_dept">{t('admin_users_roleDept')}</MenuItem>
+                <MenuItem value="admin">{t('admin_users_roleAdmin')}</MenuItem>
               </TextField>
               <Autocomplete
                 freeSolo
@@ -846,30 +849,30 @@ export default function AdminUsersPage() {
                     {...params}
                     fullWidth
                     required
-                    label="Departemen"
-                    placeholder="Select or type department"
-                    helperText="Pilih dari daftar departemen data karyawan atau ketik baru"
+                    label={t('admin_users_fieldDept')}
+                    placeholder={t('admin_users_fieldDeptPlaceholder')}
+                    helperText={t('admin_users_fieldDeptPlaceholder')}
                   />
                 )}
               />
               <TextField
                 fullWidth
                 required
-                label="Password Awal"
+                label={t('admin_users_fieldPassword')}
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
               />
               <TextField
                 select
                 fullWidth
-                label="Portal Access"
+                label={t('admin_users_fieldPortalAccess')}
                 value={newPortalAccess}
                 onChange={(e) => setNewPortalAccess(e.target.value)}
-                helperText="perusahaan / karir / keduanya"
+                helperText={`${t('admin_users_portalCompany')} / ${t('admin_users_portalKarir')} / ${t('admin_users_portalBoth')}`}
               >
                 <MenuItem value="perusahaan">Company</MenuItem>
                 <MenuItem value="karir">Karir</MenuItem>
-                <MenuItem value="both">Keduanya</MenuItem>
+                <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
               </TextField>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <FormControlLabel
@@ -880,15 +883,15 @@ export default function AdminUsersPage() {
                       sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
                     />
                   }
-                  label={<Typography variant="body2" fontWeight={800}>{newIsActive ? 'Active Account' : 'Inactive Account'}</Typography>}
+                  label={<Typography variant="body2" fontWeight={800}>{newIsActive ? t('admin_users_switchActive') : t('admin_users_switchInactive')}</Typography>}
                 />
               </Box>
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
-            <Button onClick={() => setAddModalOpen(false)}>Batal</Button>
+            <Button onClick={() => setAddModalOpen(false)}>{t('admin_users_btnCancel')}</Button>
             <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {processing ? 'Saving...' : 'Buat Akun'}
+              {processing ? t('admin_users_btnSaving') : t('admin_users_btnCreate')}
             </Button>
           </DialogActions>
         </form>
@@ -897,23 +900,23 @@ export default function AdminUsersPage() {
       {/* EDIT USER MODAL */}
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
         <form onSubmit={handleConfirmEdit}>
-          <DialogTitle sx={{ fontWeight: 800 }}>Edit Data Akun Pengguna</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 800 }}>{t('admin_users_dialogEditTitle')}</DialogTitle>
           <DialogContent>
             <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
-              Ubah rincian profil, role wewenang, departemen, atau password akun: <strong>{selectedEditUser?.name}</strong>
+              {t('admin_users_dialogEditDescPrefix')} <strong>{selectedEditUser?.name}</strong>
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
               <TextField
                 fullWidth
                 required
-                label="Username Login"
+                label={t('admin_users_fieldUsername')}
                 value={editUsername}
                 onChange={(e) => setEditUsername(e.target.value)}
               />
               <TextField
                 fullWidth
                 required
-                label="Full Name & Title"
+                label={t('admin_users_fieldFullName')}
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
               />
@@ -921,7 +924,7 @@ export default function AdminUsersPage() {
                 fullWidth
                 required
                 type="email"
-                label="Official Email"
+                label={t('admin_users_fieldEmail')}
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
               />
@@ -929,13 +932,13 @@ export default function AdminUsersPage() {
                 select
                 fullWidth
                 required
-                label="Account Role"
+                label={t('admin_users_fieldRole')}
                 value={editRole}
                 onChange={(e) => setEditRole(e.target.value)}
               >
                 <MenuItem value="hr">HR Recruitment</MenuItem>
-                <MenuItem value="user_dept">User Departemen</MenuItem>
-                <MenuItem value="admin">Administrator</MenuItem>
+                <MenuItem value="user_dept">{t('admin_users_roleDept')}</MenuItem>
+                <MenuItem value="admin">{t('admin_users_roleAdmin')}</MenuItem>
               </TextField>
               <Autocomplete
                 freeSolo
@@ -948,29 +951,29 @@ export default function AdminUsersPage() {
                     {...params}
                     fullWidth
                     required
-                    label="Departemen"
-                    placeholder="Select or type department"
+                    label={t('admin_users_fieldDept')}
+                    placeholder={t('admin_users_fieldDeptPlaceholder')}
                   />
                 )}
               />
               <TextField
                 fullWidth
-                label="New Password (Optional)"
-                placeholder="Leave blank if not changing"
+                label={t('admin_users_fieldNewPasswordOpt')}
+                placeholder={t('admin_users_fieldNewPasswordPlaceholder')}
                 value={editNewPassword}
                 onChange={(e) => setEditNewPassword(e.target.value)}
-                helperText="Leave blank to keep the current password."
+                helperText={t('admin_users_fieldNewPasswordHelper')}
               />
               <TextField
                 select
                 fullWidth
-                label="Portal Access"
+                label={t('admin_users_fieldPortalAccess')}
                 value={editPortalAccess}
                 onChange={(e) => setEditPortalAccess(e.target.value)}
               >
                 <MenuItem value="perusahaan">Company</MenuItem>
                 <MenuItem value="karir">Karir</MenuItem>
-                <MenuItem value="both">Keduanya</MenuItem>
+                <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
               </TextField>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <FormControlLabel
@@ -981,15 +984,15 @@ export default function AdminUsersPage() {
                       sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }}
                     />
                   }
-                  label={<Typography variant="body2" fontWeight={800}>{editIsActive ? 'Active Account' : 'Inactive Account'}</Typography>}
+                  label={<Typography variant="body2" fontWeight={800}>{editIsActive ? t('admin_users_switchActive') : t('admin_users_switchInactive')}</Typography>}
                 />
               </Box>
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2.5, pt: 0 }}>
-            <Button onClick={() => setEditModalOpen(false)}>Batal</Button>
+            <Button onClick={() => setEditModalOpen(false)}>{t('admin_users_btnCancel')}</Button>
             <Button type="submit" variant="contained" disabled={processing} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {processing ? 'Saving...' : 'Save Changes'}
+              {processing ? t('admin_users_btnSaving') : t('admin_users_btnSaveChanges')}
             </Button>
           </DialogActions>
         </form>

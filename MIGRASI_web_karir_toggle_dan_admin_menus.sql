@@ -37,12 +37,23 @@ CREATE INDEX IF NOT EXISTS ix_admin_menus_is_active ON public.admin_menus(is_act
 
 -- Seed awal (idempotent: hapus duplikat berdasarkan url+portal+location sebelum insert jika perlu)
 INSERT INTO public.admin_menus (title,url,portal,location,icon,sort_order,is_active,allowed_roles) VALUES
- ('Data Pelamar (7 Tahap)','/admin/applicants','karir','admin_top','PeopleIcon',0,true,'admin,hr,user_dept'),
- ('Data Karyawan','/admin/employees','karir','admin_top','EmployeeIcon',10,true,'admin,hr'),
- ('Kelola Lowongan','/admin/jobs','karir','admin_top','WorkIcon',20,true,'admin,hr'),
- ('Departemen & Section','/admin/departments','karir','admin_top','DeptIcon',30,true,'admin,hr'),
- ('Bank Soal Ujian Online','/admin/questions','karir','admin_top','QuizIcon',40,true,'admin,hr,user_dept'),
- ('Cetak ID Card Karyawan','/admin/id-cards','karir','admin_top','BadgeIcon',50,true,'admin,hr'),
- ('Pengaturan MCU & Default','/admin/settings','karir','admin_top','SettingsIcon',60,true,'admin,hr'),
- ('Kelola Akun & Reset Password','/admin/users','karir','admin_top','AdminPanelSettingsIcon',70,true,'admin')
+ ('Applicant Data (7 Stages)','/admin/applicants','karir','admin_top','PeopleIcon',0,true,'admin,hr,user_dept'),
+ ('Employee Data','/admin/employees','karir','admin_top','EmployeeIcon',10,true,'admin,hr'),
+ ('Manage Job Vacancies','/admin/jobs','karir','admin_top','WorkIcon',20,true,'admin,hr'),
+ ('Departments & Sections','/admin/departments','karir','admin_top','DeptIcon',30,true,'admin,hr'),
+ ('Online Test Question Bank','/admin/questions','karir','admin_top','QuizIcon',40,true,'admin,hr,user_dept'),
+ ('Print Employee ID Cards','/admin/id-cards','karir','admin_top','BadgeIcon',50,true,'admin,hr'),
+ ('MCU Settings & Defaults','/admin/settings','karir','admin_top','SettingsIcon',60,true,'admin,hr'),
+ ('Manage Accounts & Reset Password (Admin)','/admin/users','karir','admin_top','AdminPanelSettingsIcon',70,true,'admin')
 ON CONFLICT DO NOTHING;
+
+
+-- 3) Migrasi judul admin_menus ke default EN (bilingual via app translate map, but DB default EN)
+UPDATE public.admin_menus SET title='Applicant Data (7 Stages)' WHERE title='Data Pelamar (7 Tahap)' AND portal='karir';
+UPDATE public.admin_menus SET title='Employee Data' WHERE title='Data Karyawan' AND portal='karir';
+UPDATE public.admin_menus SET title='Manage Job Vacancies' WHERE title='Kelola Lowongan' AND portal='karir';
+UPDATE public.admin_menus SET title='Departments & Sections' WHERE title='Departemen & Section' AND portal='karir';
+UPDATE public.admin_menus SET title='Online Test Question Bank' WHERE title='Bank Soal Ujian Online' AND portal='karir';
+UPDATE public.admin_menus SET title='Print Employee ID Cards' WHERE title='Cetak ID Card Karyawan' AND portal='karir';
+UPDATE public.admin_menus SET title='MCU Settings & Defaults' WHERE title='Pengaturan MCU & Default' AND portal='karir';
+UPDATE public.admin_menus SET title='Manage Accounts & Reset Password (Admin)' WHERE title='Kelola Akun & Reset Password' AND portal='karir';

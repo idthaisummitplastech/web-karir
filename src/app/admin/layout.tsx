@@ -39,10 +39,12 @@ import {
 } from '@mui/icons-material';
 import BrandLogo from '@/components/BrandLogo';
 import LanguageToggle from '@/components/LanguageToggle';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string>('');
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -65,6 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const [dynamicNav, setDynamicNav] = useState<{ label: string; href: string; icon: React.ReactElement }[] | null>(null);
+  const titleEnMap: Record<string,string> = {'Data Pelamar (7 Tahap)':'Applicant Data (7 Stages)','Data Karyawan':'Employee Data','Kelola Lowongan':'Manage Job Vacancies','Departemen & Section':'Departments & Sections','Bank Soal Ujian Online':'Online Test Question Bank','Cetak ID Card Karyawan':'Print Employee ID Cards','Pengaturan MCU & Default':'MCU Settings & Defaults','Kelola Akun & Reset Password':'Manage Accounts & Reset Password (Admin)'};
   const iconMap: Record<string, React.ReactElement> = { PeopleIcon: <PeopleIcon />, EmployeeIcon: <EmployeeIcon />, WorkIcon: <WorkIcon />, DeptIcon: <DeptIcon />, QuizIcon: <QuizIcon />, BadgeIcon: <BadgeIcon />, SettingsIcon: <SettingsIcon />, SecurityIcon: <SecurityIcon />, AdminPanelSettingsIcon: <SecurityIcon /> };
   React.useEffect(() => {
     if (!currentUserRole) return;
@@ -72,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then(r => r.json().catch(() => ({}))).then((j: any) => {
         const arr = Array.isArray(j) ? j : (Array.isArray(j?.data) ? j.data : []);
         if (Array.isArray(arr) && arr.length > 0) {
-          setDynamicNav(arr.sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)).map((m: any) => ({ label: m.title, href: m.url, icon: iconMap[m.icon as string] || <SettingsIcon /> })));
+          setDynamicNav(arr.sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)).map((m: any) => ({ label: (titleEnMap[m.title as string] || m.title), href: m.url, icon: iconMap[m.icon as string] || <SettingsIcon /> })));
         }
       }).catch(() => {});
   }, [currentUserRole]);
@@ -198,7 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 startIcon={<LogoutIcon />}
                 sx={{ color: '#EF4444', borderColor: '#EF4444', fontWeight: 700 }}
               >
-                Keluar
+                {t('admin_layout_signOut')}
               </Button>
             </Box>
 
@@ -214,7 +217,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   p: 0.8,
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.16)' },
                 }}
-                aria-label="Buka menu navigasi"
+                aria-label={t('admin_layout_ariaOpenMenu')}
               >
                 <MenuIcon sx={{ fontSize: 24 }} />
               </IconButton>
@@ -327,7 +330,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Navigation Links */}
         <Typography variant="overline" sx={{ color: '#64748B', fontWeight: 800, fontSize: 11, letterSpacing: '0.08em', px: 1, mb: 1 }}>
-          ATS MANAGEMENT MENU
+          {t('admin_layout_menuTitle')}
         </Typography>
 
         <List sx={{ flex: 1, p: 0, overflowY: 'auto' }}>
@@ -382,7 +385,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
           }}
         >
-          Sign Out
+          {t('admin_layout_signOut')}
         </Button>
       </Drawer>
 
