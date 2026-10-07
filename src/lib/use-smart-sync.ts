@@ -35,7 +35,7 @@ export interface SmartSyncOptions {
 }
 
 /**
- * Hook Sinkronisasi Cerdas & Realtime (Anti-Cache, Zero-Leak, Adaptive Interval).
+ * Smart & Realtime Sync Hook (Anti-Cache, Zero-Leak, Adaptive Interval).
  * Mengatur interval polling yang adaptif antara foreground dan background,
  * mencegah penumpukan memori RAM, dan mengeksekusi instant-refresh saat tab kembali aktif.
  */

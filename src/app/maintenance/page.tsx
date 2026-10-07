@@ -4,14 +4,14 @@ import MaintenanceNotice from '@/components/MaintenanceNotice';
 
 export const metadata: Metadata = {
   title: 'System Maintenance — PT ITSP Career Portal',
-  description: 'Sistem rekrutmen online PT Indonesia Thai Summit Plastech sedang dalam pemeliharaan berkala.',
+  description: 'PT Indonesia Thai Summit Plastech online recruitment system is under scheduled maintenance.',
 };
 
 export default function KarirMaintenancePage() {
   return (
     <MaintenanceNotice
       title="Recruitment System Under Maintenance"
-      subtitle="Portal Karir PT Indonesia Thai Summit Plastech sedang melakukan pemeliharaan server berkala. Data dan progres lamaran yang sudah masuk tetap aman. Silakan kunjungi kembali beberapa saat lagi."
+      subtitle="PT Indonesia Thai Summit Plastech Career Portal is undergoing scheduled server maintenance. Submitted data and application progress remain safe. Please visit again shortly."
       isNotFound={false}
     />
   );

@@ -22,6 +22,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: result.message || "Tes berhasil direset." });
   } catch (error: any) {
     console.error("Reset test error:", error);
-    return NextResponse.json({ error: error.message || "Gagal mereset tes." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to reset test." }, { status: 400 });
   }
 }

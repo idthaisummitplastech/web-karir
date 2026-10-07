@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ success: true, section: data?.data || data });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal membuat section." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to create section." }, { status: 500 });
   }
 }
 
@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest) {
     });
     return NextResponse.json({ success: true, section: data?.data || data });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal memperbarui section." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to update section." }, { status: 500 });
   }
 }
 
@@ -49,6 +49,6 @@ export async function DELETE(req: NextRequest) {
     const data = await fetchFromBackend(`/departments/${department_id}/sections/${id}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: data.message });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal menghapus section." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to delete section." }, { status: 500 });
   }
 }

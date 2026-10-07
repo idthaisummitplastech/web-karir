@@ -16,6 +16,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: result.message || "Password berhasil direset." });
   } catch (error: any) {
     console.error("Reset password error:", error);
-    return NextResponse.json({ error: error.message || "Gagal mereset password." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to reset password." }, { status: 400 });
   }
 }

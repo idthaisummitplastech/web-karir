@@ -79,7 +79,7 @@ export async function GET() {
     console.error("Applicant status fetch error:", error);
     const isNotFound = error?.message?.includes("404") || error?.status === 404;
     return NextResponse.json(
-      { error: error?.message || "Gagal memuat status pelamar." },
+      { error: error?.message || "Failed to load applicant status." },
       { 
         status: isNotFound ? 404 : (error?.status || 500),
         headers: {

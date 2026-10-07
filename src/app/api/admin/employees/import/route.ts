@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const data = await res.json();
     if (!res.ok) {
       return NextResponse.json(
-        { error: data.detail || data.error || "Gagal mengimpor data Excel." },
+        { error: data.detail || data.error || "Failed to import Excel data." },
         { status: res.status }
       );
     }

@@ -295,7 +295,7 @@ export default function PsikotesExamPage() {
               Ujian Psikotes Selesai Dikirimkan!
             </Typography>
             <Typography variant="body1" sx={{ color: '#475569', maxWidth: 580, mx: 'auto', mb: 4, lineHeight: 1.6 }}>
-              Jawaban Anda telah berhasil tersimpan dan sedang diverifikasi oleh Tim Human Capital PT ITSP. Status kelolosan resmi akan segera diperbarui di portal Anda.
+              Your answers have been saved and are being verified by the PT ITSP Human Capital Team. Your official pass status will be updated in your portal shortly.
             </Typography>
 
             <Button

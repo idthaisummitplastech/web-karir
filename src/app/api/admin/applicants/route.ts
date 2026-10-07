@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     const session = await getAdminSession();
     if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Silakan login sebagai HR/User." },
+        { error: "Unauthorized. Please log in as HR/User." },
         { status: 401, headers: ANTI_CACHE_HEADERS }
       );
     }
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error("Fetch applicants error:", error);
-    return NextResponse.json({ error: "Gagal memuat daftar pelamar." }, { 
+    return NextResponse.json({ error: "Failed to load applicant list." }, { 
       status: 500,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("MFA verify error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal memverifikasi MFA." },
+      { error: error?.message || "Failed to verify MFA." },
       { status: error?.status || 500 }
     );
   }

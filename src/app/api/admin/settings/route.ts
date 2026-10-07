@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json({ success: true, isSuperAdmin, settings: settings || {} });
   } catch (error: any) {
     console.error("Fetch settings error:", error);
-    return NextResponse.json({ error: "Gagal memuat pengaturan." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load settings." }, { status: 500 });
   }
 }
 
@@ -44,6 +44,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: "Pengaturan berhasil disimpan." });
   } catch (error: any) {
     console.error("Save settings error:", error);
-    return NextResponse.json({ error: error.message || "Gagal menyimpan pengaturan." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to save settings." }, { status: 500 });
   }
 }

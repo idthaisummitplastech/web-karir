@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Token verification error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal memverifikasi token ujian." },
+      { error: error?.message || "Failed to verify exam token." },
       { status: error?.status || 500 }
     );
   }

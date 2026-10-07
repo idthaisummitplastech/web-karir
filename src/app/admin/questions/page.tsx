@@ -127,7 +127,7 @@ export default function AdminQuestionsPage() {
   const [formOptionC, setFormOptionC] = useState('');
   const [formOptionD, setFormOptionD] = useState('');
   const [formCorrectKey, setFormCorrectKey] = useState('A');
-  const [formPoints, setFormPoints] = useState(10);
+  const [formPointsts, setFormPointsts] = useState(10);
   const [formSortOrder, setFormSortOrder] = useState(1);
   const [submitting, setSubmitting] = useState(false);
 
@@ -208,7 +208,7 @@ export default function AdminQuestionsPage() {
       })
       .catch((err) => {
         console.error(err);
-        setFeedback({ type: 'error', text: 'Gagal memuat bank soal dari server.' });
+        setFeedback({ type: 'error', text: 'Failed to load question bank from server.' });
       })
       .finally(() => setLoading(false));
   };
@@ -277,7 +277,7 @@ export default function AdminQuestionsPage() {
   // Open Create Dialog
   const handleOpenCreate = () => {
     if (adminSession?.role === 'user_dept' && activeTab === 0) {
-      alert('Soal Psikotes Online & Profiling Karakteristik Diri merupakan wewenang Tim HR Recruitment. User Departemen hanya berwenang menambah soal teknis kejuruan di Tab 2.');
+      alert('Soal Psikotes Online & Profiling Karakteristik Diri merupakan wewenang Tim HR Recruitment. User Department hanya berwenang menambah soal teknis kejuruan di Tab 2.');
       return;
     }
     setEditingId(null);
@@ -303,7 +303,7 @@ export default function AdminQuestionsPage() {
     setFormOptionC('');
     setFormOptionD('');
     setFormCorrectKey('A');
-    setFormPoints(10);
+    setFormPointsts(10);
     setFormSortOrder(questions.length + 1);
     setIsCustomDept(false);
     setCustomDeptInput('');
@@ -313,7 +313,7 @@ export default function AdminQuestionsPage() {
   // Open Edit Dialog
   const handleOpenEdit = (q: QuestionItem) => {
     if (!canEditQuestion(q)) {
-      alert(`Akses Ditolak: Soal ini milik Departemen '${q.department || 'lain'}'. Anda hanya memiliki wewenang Melihat (View Only) dan tidak berwenang mengedit soal departemen lain.`);
+      alert(`Akses Ditolak: Soal ini milik Department '${q.department || 'lain'}'. Anda hanya memiliki wewenang Melihat (View Only) dan tidak berwenang mengedit soal departemen lain.`);
       return;
     }
     let parsedOpts: string[] = ['', '', '', ''];
@@ -334,7 +334,7 @@ export default function AdminQuestionsPage() {
     setFormOptionC(parsedOpts[2] || '');
     setFormOptionD(parsedOpts[3] || '');
     setFormCorrectKey(q.correctKey || 'A');
-    setFormPoints(q.points);
+    setFormPointsts(q.points);
     setFormSortOrder(q.sortOrder);
     setIsCustomDept(false);
     setCustomDeptInput('');
@@ -371,7 +371,7 @@ export default function AdminQuestionsPage() {
       imageUrl: formImageUrl,
       options: optionsArray,
       correctKey: formQuestionType === 'single_choice' ? formCorrectKey : null,
-      points: Number(formPoints),
+      points: Number(formPointsts),
       sortOrder: Number(formSortOrder),
     };
 
@@ -385,7 +385,7 @@ export default function AdminQuestionsPage() {
       const data = await res.json();
       if (!res.ok) {
         const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
-        throw new Error(errorMsg || 'Gagal menyimpan soal ujian.');
+        throw new Error(errorMsg || 'Failed to save exam question.');
       }
 
       setFeedback({ type: 'success', text: data.message || 'Soal ujian berhasil disimpan ke bank soal.' });
@@ -443,14 +443,14 @@ export default function AdminQuestionsPage() {
             Question Bank & Online Exam Settings
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
-            Kelola soal ujian psikotes & tes teknis departemen. Mendukung pertanyaan bergambar (diagram mesin, skema mold, pola logika) dan opsi jawaban berganda.
+            Manage psychometric and department technical exam questions. Supports image-based questions (machine diagrams, mold schematics, logic patterns) and randomized answer options.
           </Typography>
         </Box>
 
         <Tooltip
           title={
             adminSession?.role === 'user_dept' && activeTab === 0
-              ? 'Wewenang HR: Soal Psikotes dikelola oleh Tim HR. User Departemen hanya berwenang menambah soal teknis di Tab 2.'
+              ? 'Wewenang HR: Soal Psikotes dikelola oleh Tim HR. User Department hanya berwenang menambah soal teknis di Tab 2.'
               : 'Add New Exam Question'
           }
         >
@@ -471,7 +471,7 @@ export default function AdminQuestionsPage() {
                 '&.Mui-disabled': { bgcolor: '#E2E8F0', color: '#94A3B8' },
               }}
             >
-              Tambah Soal Baru
+              Add New Question
             </Button>
           </span>
         </Tooltip>
@@ -480,23 +480,23 @@ export default function AdminQuestionsPage() {
       <Card sx={{ mb: 3, borderRadius: 2.5, border: '1.5px solid #BBF7D0', bgcolor: '#F0FDF4' }}>
         <CardContent sx={{ p: 2.5 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#166534' }}>
-            Jumlah Soal yang Diujikan (berlaku acak unik per peserta, essay selalu paling akhir)
+            Questions Per Exam (unique random set per candidate, essay always last)
           </Typography>
           <Typography variant="body2" sx={{ color: '#15803D', mb: 2 }}>
-            Bank soal boleh banyak. Sistem mengambil PG secara acak + mengacak opsi A/B/C/D tiap peserta sehingga tidak ada paket yang sama.
+            Question bank may be large. The system draws MCQs at random and shuffles A/B/C/D options per participant so no two sets are identical.
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 2 }}>
-            <TextField fullWidth type="number" label="Psikotes: PG" value={examPsikotesPg} onChange={(e)=>setExamPsikotesPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
-            <TextField fullWidth type="number" label="Psikotes: Essay" value={examPsikotesEssay} onChange={(e)=>setExamPsikotesEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
-            <TextField fullWidth type="number" label="Tes Teknis: PG" value={examUserPg} onChange={(e)=>setExamUserPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
-            <TextField fullWidth type="number" label="Tes Teknis: Essay" value={examUserEssay} onChange={(e)=>setExamUserEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
+            <TextField fullWidth type="number" label="Psychometric: MCQ" value={examPsikotesPg} onChange={(e)=>setExamPsikotesPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
+            <TextField fullWidth type="number" label="Psychometric: Essay" value={examPsikotesEssay} onChange={(e)=>setExamPsikotesEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
+            <TextField fullWidth type="number" label="Technical: MCQ" value={examUserPg} onChange={(e)=>setExamUserPg(Number(e.target.value))} slotProps={{ htmlInput: { min: 1 } }} />
+            <TextField fullWidth type="number" label="Technical: Essay" value={examUserEssay} onChange={(e)=>setExamUserEssay(Number(e.target.value))} slotProps={{ htmlInput: { min: 0 } }} />
           </Box>
           <Box sx={{ mt: 2, display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <Button variant="contained" disabled={savingExamCfg} onClick={handleSaveExamCfg} sx={{ bgcolor: '#018730', fontWeight: 700 }}>
-              {savingExamCfg ? 'Saving...' : 'Save Jumlah Soal'}
+              {savingExamCfg ? 'Saving...' : 'Save Question Count'}
             </Button>
             <Typography variant="caption" sx={{ color: '#64748B' }}>
-              Contoh: PG 10 + Essay 5. Bila bank kurang, dipakai semua yang ada.
+              Example: 10 MCQs + 5 Essays. If the bank is smaller, all available questions will be used.
             </Typography>
           </Box>
         </CardContent>
@@ -567,10 +567,10 @@ export default function AdminQuestionsPage() {
                   }}
                 >
                   {adminSession.role === 'admin'
-                    ? '👑 Super Administrator: Akses Seluruh Bank Soal'
+                    ? '👑 Super Administrator: Full Question Bank Access'
                     : adminSession.role === 'hr'
-                    ? '👤 Bank Soal HR Recruitment: Psikotes & Profiling Karakteristik Diri'
-                    : `🔧 Bank Soal User Departemen: Tes Teknis & Studi Kasus (${adminSession.department || 'Teknis'})`}
+                    ? '👤 HR Recruitment Question Bank: Psychometric & Personality Profiling'
+                    : `🔧 Department User Question Bank: Technical Tests & Case Studies (${adminSession.department || 'Teknis'})`}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -586,12 +586,12 @@ export default function AdminQuestionsPage() {
                   }}
                 >
                   {adminSession.role === 'admin' ? (
-                    'Anda dapat membuat, menyunting, atau menghapus seluruh jenis soal untuk Psikotes Umum maupun Tes Teknis seluruh departemen pabrik.'
+                    'You can create, edit, or delete any question type for General Psychometric and all department Technical tests.'
                   ) : adminSession.role === 'hr' ? (
-                    'HR berwenang membuat dan mengelola soal Psikotes Online serta Profiling Karakteristik Diri. Anda juga dapat meninjau soal teknis departemen lain dalam mode Hanya Lihat (View Only).'
+                    'HR is authorized to create and manage Online Psychometric & Personality Profiling questions. You can also review other departments\' technical questions in View-Only mode.'
                   ) : (
                     <span>
-                      Anda dapat melihat seluruh bank soal dari departemen lain (Mode Hanya Lihat / View Only). Wewenang Tambah, Edit, dan Hapus (CRUD) hanya berlaku untuk soal teknis departemen Anda (<strong>{adminSession.department}</strong>).
+                      You can view all other departments\' question banks (View-Only). Add, Edit and Delete permissions apply only to your own department\'s technical questions (<strong>{adminSession.department}</strong>).
                     </span>
                   )}
                 </Typography>
@@ -633,14 +633,14 @@ export default function AdminQuestionsPage() {
             iconPosition="start"
             label={
               adminSession?.role === 'user_dept'
-                ? '1. Soal Tes Psikotes Online (Mode Hanya Lihat / View Only)'
-                : '1. Soal Tes Psikotes Online & Profiling Diri (Tahap 2)'
+                ? '1. Online Psychometric Questions (View-Only)'
+                : '1. Online Psychometric & Personality Profiling (Stage 2)'
             }
           />
           <Tab
             icon={<EngineeringIcon />}
             iconPosition="start"
-            label="2. Soal Tes Teknis Departemen (Tahap 3 - Pilihan Ganda & Essay)"
+            label="2. Department Technical Questions (Stage 3 — Multiple Choice & Essay)"
           />
         </Tabs>
 
@@ -648,7 +648,7 @@ export default function AdminQuestionsPage() {
         <Box sx={{ p: 2.5, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
-              Departemen:
+              Department:
             </Typography>
             <TextField
               select
@@ -666,7 +666,7 @@ export default function AdminQuestionsPage() {
           </Box>
 
           <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
-            Total {questions.length} soal aktif di bank soal
+            Total {questions.length} active questions in the bank
           </Typography>
         </Box>
       </Card>
@@ -680,13 +680,13 @@ export default function AdminQuestionsPage() {
         <Card sx={{ p: 6, textAlign: 'center', borderRadius: 2.5, border: '1px dashed #CBD5E1', bgcolor: '#F8FAFC' }}>
           <QuizIcon sx={{ fontSize: 48, color: '#94A3B8', mb: 1.5 }} />
           <Typography variant="h6" sx={{ color: '#475569', fontWeight: 700 }}>
-            Belum ada soal pada kategori ini.
+            No questions in this category yet.
           </Typography>
           <Typography variant="body2" sx={{ color: '#94A3B8', mb: 2 }}>
-            Klik tombol &quot;Tambah Soal Baru&quot; di atas untuk membuat pertanyaan pertama.
+            Klik tombol &quot;Add New Question&quot; di atas untuk membuat pertanyaan pertama.
           </Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate} sx={{ bgcolor: '#018730' }}>
-            Tambah Soal Sekarang
+            Add Question Sekarang
           </Button>
         </Card>
       ) : (
@@ -744,7 +744,7 @@ export default function AdminQuestionsPage() {
                             ? '📝 Essay / Uraian'
                             : q.questionType === 'multi_choice'
                             ? '👤 Profiling (Pilih 2)'
-                            : '🔘 Pilihan Ganda'
+                            : '🔘 Multiple Choice'
                         }
                         size="small"
                         sx={{
@@ -764,7 +764,7 @@ export default function AdminQuestionsPage() {
                         }}
                       />
                       <Chip
-                        label={`${q.points} Poin`}
+                        label={`${q.points} Points`}
                         size="small"
                         sx={{ bgcolor: '#DCFCE7', color: '#166534', fontWeight: 700 }}
                       />
@@ -783,19 +783,19 @@ export default function AdminQuestionsPage() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {canEditQuestion(q) ? (
                         <>
-                          <Tooltip title="Edit Soal">
+                          <Tooltip title="Edit Question">
                             <IconButton size="small" onClick={() => handleOpenEdit(q)} sx={{ color: '#0F172A' }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Hapus Soal">
+                          <Tooltip title="Delete Question">
                             <IconButton size="small" onClick={() => handleDeleteQuestion(q.id)} sx={{ color: '#EF4444' }}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </>
                       ) : (
-                        <Tooltip title={`Soal ini milik Departemen '${q.department || 'lain'}'. Anda hanya memiliki akses Melihat (View Only).`}>
+                        <Tooltip title={`Soal ini milik Department '${q.department || 'lain'}'. Anda hanya memiliki akses Melihat (View Only).`}>
                           <Chip
                             size="small"
                             icon={<ViewIcon sx={{ fontSize: '15px !important' }} />}
@@ -985,10 +985,10 @@ export default function AdminQuestionsPage() {
                 onChange={(e) => setFormQuestionType(e.target.value as any)}
                 helperText={
                   formQuestionType === 'single_choice'
-                    ? 'Pilihan Ganda standar: 4 opsi (A, B, C, D) dengan 1 kunci jawaban pasti.'
+                    ? 'Standard Multiple Choice: 4 options (A, B, C, D) with one correct answer.'
                     : formQuestionType === 'multi_choice'
-                    ? 'Pilihan Karakter Diri (Review HR): Pelamar memilih maksimal 2 karakter.'
-                    : 'Soal Essay / Studi Kasus (Review User): Pelamar mengisi uraian teknis.'
+                    ? 'Personality Traits (HR Review): Applicants select up to 2 traits.'
+                    : 'Essay / Case Study (User Review): Applicants provide a written technical response.'
                 }
               >
                 <MenuItem value="single_choice">Multiple Choice (1 Correct Answer - Auto Scored)</MenuItem>
@@ -1005,7 +1005,7 @@ export default function AdminQuestionsPage() {
                   select
                   fullWidth
                   required
-                  label="Departemen Terkait"
+                  label="Department Terkait"
                   value={uniqueDepts.includes(formDepartment) ? formDepartment : (formDepartment || 'General')}
                   disabled={Boolean(adminSession?.role === 'user_dept' && adminSession.department)}
                   onChange={(e) => {
@@ -1029,7 +1029,7 @@ export default function AdminQuestionsPage() {
                   ))}
                   {adminSession?.role !== 'user_dept' && (
                     <MenuItem value="__NEW__" sx={{ color: '#018730', fontWeight: 800, borderTop: '1px dashed #CBD5E1' }}>
-                      + Tambah / Ketik Departemen Baru...
+                      + Tambah / Ketik Department Baru...
                     </MenuItem>
                   )}
                 </TextField>
@@ -1131,10 +1131,10 @@ export default function AdminQuestionsPage() {
             {formQuestionType === 'essay' ? (
               <Box sx={{ p: 2.5, bgcolor: '#EFF6FF', borderRadius: 2.5, border: '1.5px solid #BFDBFE', mb: 2.5 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E40AF', mb: 0.5 }}>
-                  📝 Format Soal Essay / Studi Kasus Terbuka
+                  📝 Format Soal Essay / Case Study Terbuka
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#1E3A8A', lineHeight: 1.6 }}>
-                  Soal ini tidak memerlukan opsi pilihan ganda maupun kunci jawaban benar/salah otomatis. Pelamar akan diberikan kolom teks luas (textarea) untuk mengetikkan analisa atau penjelasan solusi teknis. Hasil uraian tertulis akan dievaluasi secara manual oleh tim User Departemen.
+                  Soal ini tidak memerlukan opsi pilihan ganda maupun kunci jawaban benar/salah otomatis. Pelamar akan diberikan kolom teks luas (textarea) untuk mengetikkan analisa atau penjelasan solusi teknis. Hasil uraian tertulis akan dievaluasi secara manual oleh tim User Department.
                 </Typography>
               </Box>
             ) : (
@@ -1185,7 +1185,7 @@ export default function AdminQuestionsPage() {
               </>
             )}
 
-            {/* Answer Key, Points & Sort Order */}
+            {/* Answer Key, Pointsts & Sort Order */}
             <Box sx={{ display: 'grid', gridTemplateColumns: formQuestionType === 'single_choice' ? { xs: '1fr', sm: '1fr 1fr 1fr' } : { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
               {formQuestionType === 'single_choice' && (
                 <TextField
@@ -1207,9 +1207,9 @@ export default function AdminQuestionsPage() {
                 fullWidth
                 required
                 type="number"
-                label="Bobot Poin"
-                value={formPoints}
-                onChange={(e) => setFormPoints(Number(e.target.value))}
+                label="Bobot Points"
+                value={formPointsts}
+                onChange={(e) => setFormPointsts(Number(e.target.value))}
               />
 
               <TextField

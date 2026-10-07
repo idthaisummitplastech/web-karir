@@ -87,13 +87,13 @@ export default function AdminDepartmentsPage() {
       }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      showFeedback('success', data.message || 'Berhasil disimpan.');
+      showFeedback('success', data.message || 'Saved successfully.');
       setMode(null); fetch_depts();
     } catch (err: any) { alert(err.message); }
     finally { setSaving(false); }
   };
   const deleteDept = async (d: Department) => {
-    if (!confirm(`Hapus departemen "${d.name}"? Semua section di dalamnya juga akan dihapus.`)) return;
+    if (!confirm(`Delete department "${d.name}"? All sections inside it will also be deleted.`)) return;
     try {
       const res = await fetch(`/api/admin/departments?id=${d.id}`, { method: 'DELETE' });
       const data = await res.json();
@@ -208,7 +208,7 @@ export default function AdminDepartmentsPage() {
                       <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>{dept.name}</Typography>
                       {dept.code && <Chip label={dept.code} size="small" sx={{ bgcolor: '#F1F5F9', fontWeight: 700, fontSize: 11 }} />}
                       <Chip
-                        label={dept.is_active ? 'Aktif' : 'Nonaktif'}
+                        label={dept.is_active ? 'Active' : 'Inactive'}
                         size="small"
                         sx={{ bgcolor: dept.is_active ? '#DCFCE7' : '#FEE2E2', color: dept.is_active ? '#15803D' : '#B91C1C', fontWeight: 800 }}
                       />
@@ -272,7 +272,7 @@ export default function AdminDepartmentsPage() {
                           {/* Action Group: Badge Status + Tombol Edit + Tombol Hapus (tidak bertumpuk) */}
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
                             <Chip
-                              label={sec.is_active ? 'Aktif' : 'Nonaktif'}
+                              label={sec.is_active ? 'Active' : 'Inactive'}
                               size="small"
                               sx={{
                                 bgcolor: sec.is_active ? '#DCFCE7' : '#FEE2E2',
@@ -330,14 +330,14 @@ export default function AdminDepartmentsPage() {
       {/* ── Dialog: Department ─────────────────────────────────────────────── */}
       <Dialog open={isDeptDialog} onClose={() => setMode(null)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800 }}>
-          {mode === 'dept-edit' ? 'Edit Department' : 'Add Department Baru'}
+          {mode === 'dept-edit' ? 'Edit Department' : 'Add New Department'}
         </DialogTitle>
         <DialogContent>
           <Box component="form" id="dept-form" onSubmit={saveDept} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField fullWidth required label="Department Name" value={fName} onChange={(e) => setFName(e.target.value)}
-              placeholder="contoh: SYD & IT" />
+              placeholder="e.g., SYD & IT" />
             <TextField fullWidth label="Code (Optional)" value={fCode} onChange={(e) => setFCode(e.target.value)}
-              placeholder="contoh: SYD_IT" helperText="Short code for identification" />
+              placeholder="e.g., SYD_IT" helperText="Short code for identification" />
             <TextField fullWidth multiline rows={2} label="Description (Optional)" value={fDesc} onChange={(e) => setFDesc(e.target.value)} />
             <TextField fullWidth type="number" label="Display Order" value={fOrder} onChange={(e) => setFOrder(Number(e.target.value))}
               helperText="Lower numbers appear higher" />
@@ -362,10 +362,10 @@ export default function AdminDepartmentsPage() {
         <DialogContent>
           <Box component="form" id="sec-form" onSubmit={saveSection} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
             <TextField fullWidth required label="Section Name" value={fsName} onChange={(e) => setFsName(e.target.value)}
-              placeholder="contoh: System Development" />
+              placeholder="e.g., System Development" />
             <TextField fullWidth multiline rows={2} label="Description (Optional)" value={fsDesc} onChange={(e) => setFsDesc(e.target.value)} />
             <FormControlLabel control={<Switch checked={fsActive} onChange={(e) => setFsActive(e.target.checked)} color="success" />}
-              label={fsActive ? 'Aktif' : 'Nonaktif'} />
+              label={fsActive ? 'Active' : 'Inactive'} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>

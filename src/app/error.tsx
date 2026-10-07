@@ -39,10 +39,10 @@ export default function GlobalError({
           <ErrorOutlineIcon sx={{ fontSize: 40 }} />
         </Box>
         <Typography variant="h5" sx={{ fontWeight: 800, color: '#991B1B', mb: 1 }}>
-          Halaman gagal dimuat
+          Page failed to load
         </Typography>
         <Typography variant="body2" sx={{ color: '#64748B', mb: 1, lineHeight: 1.6 }}>
-          Terjadi kesalahan runtime saat merender halaman ini. Silakan muat ulang. Jika berlanjut, hubungi tim IT.
+          A runtime error occurred while rendering this page. Please reload. If it persists, contact IT support.
         </Typography>
         {error?.message && (
           <Typography
@@ -64,10 +64,10 @@ export default function GlobalError({
         )}
         <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', mt: 3, flexWrap: 'wrap' }}>
           <Button variant="contained" onClick={() => reset()} sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}>
-            Muat Ulang Halaman
+            Reload Page
           </Button>
           <Button variant="outlined" onClick={() => (window.location.href = '/admin/applicants')} sx={{ fontWeight: 700, borderColor: '#CBD5E1', color: '#334155' }}>
-            Ke Dashboard
+            Go to Dashboard
           </Button>
         </Box>
       </Card>

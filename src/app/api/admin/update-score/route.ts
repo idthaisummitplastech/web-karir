@@ -16,6 +16,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: result.message || "Skor berhasil diperbarui." });
   } catch (error: any) {
     console.error("Update score error:", error);
-    return NextResponse.json({ error: error.message || "Gagal memperbarui skor." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to update score." }, { status: 400 });
   }
 }

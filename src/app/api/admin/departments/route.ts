@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     const data = await fetchFromBackend("/departments", { method: "POST", body: JSON.stringify(body) });
     return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal membuat departemen." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to create department." }, { status: 500 });
   }
 }
 
@@ -44,7 +44,7 @@ export async function PUT(req: NextRequest) {
     const data = await fetchFromBackend(`/departments/${id}`, { method: "PUT", body: JSON.stringify(body) });
     return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal memperbarui departemen." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to update department." }, { status: 500 });
   }
 }
 
@@ -59,7 +59,7 @@ export async function DELETE(req: NextRequest) {
     const data = await fetchFromBackend(`/departments/${id}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: data.message });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Gagal menghapus departemen." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to delete department." }, { status: 500 });
   }
 }
 

@@ -32,7 +32,7 @@ export async function pushEmailLogToGrafana(log: EmailLogPayload): Promise<void>
 
     const bodyText = log.status === 'SUCCESS'
       ? `[EMAIL SUCCESS] Terkirim ke ${log.recipient} | Subjek: "${log.subject}" | Kanal: ${log.channel} (${log.senderName})`
-      : `[EMAIL FAILED] Gagal ke ${log.recipient} | Subjek: "${log.subject}" | Error: ${log.errorMessage || 'Unknown Error'}`;
+      : `[EMAIL FAILED] Failed to ${log.recipient} | Subjek: "${log.subject}" | Error: ${log.errorMessage || 'Unknown Error'}`;
 
     const otlpPayload = {
       resourceLogs: [

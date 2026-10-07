@@ -4,14 +4,14 @@ import MaintenanceNotice from '@/components/MaintenanceNotice';
 
 export const metadata: Metadata = {
   title: 'Page Under Maintenance — PT ITSP Career Portal',
-  description: 'Halaman atau lowongan yang Anda tuju sedang dalam pemeliharaan atau proses pembaruan sistem.',
+  description: 'The page or vacancy you are looking for is under maintenance or system update.',
 };
 
 export default function KarirNotFound() {
   return (
     <MaintenanceNotice
       title="Page / Vacancy Under Update"
-      subtitle="Tautan yang Anda tuju saat ini sedang dipersiapkan oleh tim Rekrutmen PT Indonesia Thai Summit Plastech. Silakan kembali ke Career Home atau cek status lamaran Anda di Applicant Portal."
+      subtitle="The link you are trying to access is being prepared by the PT Indonesia Thai Summit Plastech Recruitment team. Please return to Career Home or check your application status in the Applicant Portal."
       isNotFound={true}
     />
   );

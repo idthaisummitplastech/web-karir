@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("Test questions fetch error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal memuat soal ujian." },
+      { error: error?.message || "Failed to load exam questions." },
       { status: error?.status || 500 }
     );
   }

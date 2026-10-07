@@ -286,10 +286,10 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // Uji Coba Server SMTP Langsung
+  // Test Server SMTP Langsung
   const handleTestSmtpConnection = async () => {
     if (!testSmtpTarget) {
-      alert('Silakan masukkan alamat email tujuan uji coba.');
+      alert('Please enter a test destination email address.');
       return;
     }
 
@@ -369,7 +369,7 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setSuccessMsg('Pengaturan default MCU rekanan dan lokasi pabrik berhasil disimpan secara permanen!');
+      setSuccessMsg('Default MCU partner and plant location settings saved permanently!');
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
@@ -398,7 +398,7 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setSuccessMsg('Seluruh Master Template Email Seleksi berhasil disimpan ke database!');
+      setSuccessMsg('Seluruh Selection Email Master Templates berhasil disimpan ke database!');
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
@@ -408,7 +408,7 @@ export default function AdminSettingsPage() {
 
   const handleSendTestEmail = async () => {
     if (!testEmailTarget) {
-      alert('Silakan masukkan alamat email tujuan uji coba.');
+      alert('Please enter a test destination email address.');
       return;
     }
 
@@ -452,7 +452,7 @@ export default function AdminSettingsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setSuccessMsg(`Email uji coba template berhasil dikirimkan ke: ${testEmailTarget}! Silakan cek inbox/spam Anda.`);
+      setSuccessMsg(`Test template email sent to: ${testEmailTarget}! Please check your inbox/spam.`);
     } catch (err: any) {
       setErrorMsg(err.message);
     } finally {
@@ -483,7 +483,7 @@ export default function AdminSettingsPage() {
             System Settings, Email Server & Observability
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
-            Konfigurasi master template seleksi, server SMTP multi-kanal resmi PT ITSP, dan monitoring log Grafana Cloud.
+            Configure selection master templates, PT ITSP official multi-channel SMTP server, and Grafana Cloud log monitoring.
           </Typography>
         </Box>
         {isSuperAdmin && (
@@ -525,20 +525,20 @@ export default function AdminSettingsPage() {
           <Tab
             icon={<EmailIcon />}
             iconPosition="start"
-            label="Master Template Email Seleksi"
+            label="Selection Email Master Templates"
             sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
           />
           <Tab
             icon={<McuIcon />}
             iconPosition="start"
-            label="Klinik Rekanan MCU & Alamat Pabrik"
+            label="MCU Partner Clinics & Plant Addresses"
             sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
           />
           {isSuperAdmin && (
             <Tab
               icon={<ServerIcon />}
               iconPosition="start"
-              label="Server Email & Multi-Kanal (Super Admin)"
+              label="Email Server & Multi-Channel (Super Admin)"
               sx={{ textTransform: 'none', py: 2, px: 3, fontWeight: 600, fontSize: 14 }}
             />
           )}
@@ -561,7 +561,7 @@ export default function AdminSettingsPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EmailIcon sx={{ color: '#018730' }} />
                 <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 17 }}>
-                  Pilih Tahapan Seleksi yang Ingin Diatur Templat-nya
+                  Select Selection Stage to Configure Its Template
                 </Typography>
               </Box>
               <Chip label={currentTemplateDef.stage} color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
@@ -571,10 +571,10 @@ export default function AdminSettingsPage() {
                 <TextField
                   select
                   fullWidth
-                  label="Pilih Template Berdasarkan Tahapan Seleksi"
+                  label="Select Template by Stage"
                   value={selectedTemplateKey}
                   onChange={(e) => setSelectedTemplateKey(e.target.value)}
-                  helperText="Pilih tahapan seleksi yang ingin Anda sesuaikan narasi subjek dan isi pesannya."
+                  helperText="Choose the selection stage whose subject line and body you want to customize."
                 >
                   {Object.entries(DEFAULT_EMAIL_TEMPLATES).map(([key, item]) => (
                     <MenuItem key={key} value={key}>
@@ -589,7 +589,7 @@ export default function AdminSettingsPage() {
 
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <VariableIcon sx={{ fontSize: 18, color: '#018730' }} /> Variabel Dinamis yang Tersedia untuk Tahapan Ini:
+                  <VariableIcon sx={{ fontSize: 18, color: '#018730' }} /> Dynamic Variables Available for This Stage:
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   {currentTemplateDef.variables.map((v) => (
@@ -605,7 +605,7 @@ export default function AdminSettingsPage() {
 
               <TextField
                 fullWidth
-                label="Subjek Official Email"
+                label="Official Email Subject"
                 value={currentTemplateVal.subject}
                 onChange={(e) => {
                   setEmailTemplates({
@@ -623,7 +623,7 @@ export default function AdminSettingsPage() {
                 fullWidth
                 multiline
                 rows={10}
-                label="Badan Pesan Email (Body Message)"
+                label="Email Body"
                 value={currentTemplateVal.body}
                 onChange={(e) => {
                   setEmailTemplates({
@@ -664,14 +664,14 @@ export default function AdminSettingsPage() {
             <Box sx={{ p: 2.5, borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 1 }}>
               <SendIcon sx={{ color: '#018730' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 16 }}>
-                Uji Coba Pengiriman Template ke Email Pribadi
+                Test Pengiriman Template ke Email Pribadi
               </Typography>
             </Box>
             <CardContent sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField
                   size="small"
-                  label="Email Address Tujuan Uji Coba"
+                  label="Email Address Tujuan Test"
                   value={testEmailTarget}
                   onChange={(e) => setTestEmailTarget(e.target.value)}
                   sx={{ minWidth: 320, flexGrow: 1, bgcolor: '#FFFFFF' }}
@@ -683,7 +683,7 @@ export default function AdminSettingsPage() {
                   startIcon={testingEmail ? <CircularProgress size={16} /> : <SendIcon />}
                   sx={{ fontWeight: 700, borderColor: '#018730', color: '#018730', px: 3, py: 1 }}
                 >
-                  {testingEmail ? 'Mengirim...' : 'Kirim Email Uji Coba'}
+                  {testingEmail ? 'Mengirim...' : 'Send Test Email'}
                 </Button>
               </Box>
             </CardContent>
@@ -706,7 +706,7 @@ export default function AdminSettingsPage() {
                 <TextField
                   fullWidth
                   required
-                  label="Nama Rumah Sakit / Klinik Rekanan MCU"
+                  label="MCU Partner Hospital / Clinic Name"
                   value={mcuPartnerName}
                   onChange={(e) => setMcuPartnerName(e.target.value)}
                 />
@@ -862,7 +862,7 @@ export default function AdminSettingsPage() {
                 <TextField
                   fullWidth
                   required
-                  label="Host Server SMTP"
+                  label="SMTP Host"
                   placeholder="mail.perusahaan.co.id atau smtp.example.com"
                   value={smtpServer.host}
                   onChange={(e) => setSmtpServer({ ...smtpServer, host: e.target.value })}
@@ -871,7 +871,7 @@ export default function AdminSettingsPage() {
                   fullWidth
                   required
                   type="number"
-                  label="Port SMTP"
+                  label="SMTP Port"
                   placeholder="587 / 465 / 25"
                   value={smtpServer.port}
                   onChange={(e) => setSmtpServer({ ...smtpServer, port: Number(e.target.value) })}
@@ -882,7 +882,7 @@ export default function AdminSettingsPage() {
                 <TextField
                   fullWidth
                   required
-                  label="Username Akun / Email Otentikasi"
+                  label="Account Username / Auth Email"
                   placeholder="info.itsp@thaisummit.co.id"
                   value={smtpServer.username}
                   onChange={(e) => setSmtpServer({ ...smtpServer, username: e.target.value })}
@@ -891,7 +891,7 @@ export default function AdminSettingsPage() {
                   fullWidth
                   required
                   type={showSmtpPassword ? 'text' : 'password'}
-                  label="Password / App Password Akun"
+                  label="Account Password / App Password"
                   value={smtpServer.password}
                   onChange={(e) => setSmtpServer({ ...smtpServer, password: e.target.value })}
                   slotProps={{
@@ -912,7 +912,7 @@ export default function AdminSettingsPage() {
                 <TextField
                   select
                   size="small"
-                  label="Protokol Enkripsi"
+                  label="Encryption Protocol"
                   value={smtpServer.encryption || 'tls'}
                   onChange={(e) => {
                     const enc = e.target.value;
@@ -1248,7 +1248,7 @@ export default function AdminSettingsPage() {
                   URL Dashboard Grafana Cloud Belum Dikonfigurasi
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#94A3B8', maxWidth: 520, mb: 3, lineHeight: 1.6 }}>
-                  Pratinjau dashboard saat ini belum dapat ditampilkan karena URL Dashboard Grafana masih kosong. Silakan lengkapi <strong>URL Instance / Dashboard Grafana</strong> pada formulir konfigurasi di bawah ini, lalu klik <strong>Save Pengaturan</strong>.
+                  Dashboard preview is currently unavailable because the Grafana Dashboard URL is empty. Please complete the <strong>Grafana Instance / Dashboard URL</strong> in the configuration form below, then click <strong>Save Settings</strong>.
                 </Typography>
                 <Button
                   variant="outlined"

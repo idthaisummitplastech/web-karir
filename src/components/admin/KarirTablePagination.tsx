@@ -24,7 +24,7 @@ interface KarirTableToolbarProps {
 export function KarirTableToolbar({
   searchQuery,
   onSearchChange,
-  placeholder = 'Cari data...',
+  placeholder = 'Search...',
   totalCount,
   filteredCount,
   extraAction,
@@ -97,7 +97,7 @@ export function KarirTableToolbar({
               pl: { xs: 0.5, sm: 0 },
             }}
           >
-            {searchQuery ? `${filteredCount} dari ${totalCount} entri` : `Total: ${totalCount} entri`}
+            {searchQuery ? `${filteredCount} of ${totalCount} entries` : `Total: ${totalCount} entrieses`}
           </Typography>
         )}
       </Box>
@@ -143,7 +143,7 @@ export function KarirTablePagination({
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
         rowsPerPageOptions={rowsPerPageOptions}
-        labelRowsPerPage="Baris:"
+        labelRowsPerPage="Rows:"
         labelDisplayedRows={({ from, to, count: total }) =>
           `${from}–${to} / ${total !== -1 ? total : `>${to}`}`
         }

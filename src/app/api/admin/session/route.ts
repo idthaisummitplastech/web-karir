@@ -46,6 +46,6 @@ export async function GET() {
       isSuperAdmin,
     });
   } catch (error: any) {
-    return NextResponse.json({ error: "Gagal memuat sesi." }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load session." }, { status: 500 });
   }
 }

@@ -904,7 +904,7 @@ export default function ApplyPage() {
               setOcrStatusMsg('Your e-KTP image has been saved. Please complete or review your personal details in the form.');
             }
           } catch (ocrErr) {
-            console.warn('Gagal membaca OCR KTP:', ocrErr);
+            console.warn('Failed to read KTP OCR:', ocrErr);
             setOcrStatusSeverity('info');
             setOcrStatusMsg('Your e-KTP document has been saved. Please complete your identification details in the form.');
           } finally {

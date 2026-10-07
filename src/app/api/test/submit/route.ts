@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Exam submission error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal mengirimkan ujian." },
+      { error: error?.message || "Failed to submit exam." },
       { status: error?.status || 500 }
     );
   }

@@ -11,5 +11,5 @@ export async function GET(req: Request) {
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
     const data = await fetchFromBackend(`/cms/admin-menus${suffix}`, { headers: { 'X-Internal-Secret': getInternalSecret() } });
     return NextResponse.json(data);
-  } catch (e: any) { return NextResponse.json({ error: e.message || 'Gagal memuat admin menus' }, { status: 500 }); }
+  } catch (e: any) { return NextResponse.json({ error: e.message || 'Failed to load admin menus' }, { status: 500 }); }
 }

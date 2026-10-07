@@ -5,15 +5,15 @@ import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
 function resolveJobStatus(job: { isOpen: boolean; openingDate: string | null; closingDate: string | null }) {
   const now = new Date();
   if (job.openingDate && new Date(job.openingDate).getTime() > now.getTime()) {
-    return { effectiveOpen: false, statusLabel: "Terjadwal" };
+    return { effectiveOpen: false, statusLabel: "Scheduled" };
   }
   if (job.closingDate && new Date(job.closingDate).getTime() < now.getTime()) {
-    return { effectiveOpen: false, statusLabel: "Kedaluwarsa" };
+    return { effectiveOpen: false, statusLabel: "Expired" };
   }
   if (!job.isOpen) {
-    return { effectiveOpen: false, statusLabel: "Ditutup Manual" };
+    return { effectiveOpen: false, statusLabel: "Manually Closed" };
   }
-  return { effectiveOpen: true, statusLabel: "Dibuka" };
+  return { effectiveOpen: true, statusLabel: "Open" };
 }
 
 function requireHr(session: any) {
@@ -26,7 +26,7 @@ export async function GET() {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     if (!requireHr(session)) {
-      return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
+      return NextResponse.json({ error: "HR & Super Admin only." }, { status: 403 });
     }
     const jobs = await fetchFromBackend("/jobs/all");
     const enriched = (jobs || []).map((j: any) => ({
@@ -47,11 +47,11 @@ export async function POST(req: Request) {
   try {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (!requireHr(session)) return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
+    if (!requireHr(session)) return NextResponse.json({ error: "HR & Super Admin only." }, { status: 403 });
     const body = await req.json();
     const { title, department, section, location, type, experience, requirements, description, isOpen, openingDate, closingDate } = body;
     if (!title?.trim() || !department?.trim() || !requirements?.trim() || !description?.trim()) {
-      return NextResponse.json({ error: "Judul, departemen, kualifikasi & deskripsi wajib diisi." }, { status: 400 });
+      return NextResponse.json({ error: "Title, department, qualifications & description are required." }, { status: 400 });
     }
 
     const job = await fetchRawFromBackend("/jobs", {
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
         closing_date: closingDate || null,
       }),
     });
-    return NextResponse.json({ success: true, message: "Lowongan berhasil dipublikasikan.", job: job.data || job });
+    return NextResponse.json({ success: true, message: "Vacancy published successfully.", job: job.data || job });
   } catch (e: any) {
     console.error("Create job error:", e);
     return NextResponse.json({ error: e.message || "Failed to create vacancy." }, { status: 500 });
@@ -82,10 +82,10 @@ export async function PUT(req: Request) {
   try {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (!requireHr(session)) return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
+    if (!requireHr(session)) return NextResponse.json({ error: "HR & Super Admin only." }, { status: 403 });
     const body = await req.json();
     const { id, ...updateData } = body;
-    if (!id) return NextResponse.json({ error: "ID lowongan wajib disertakan." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "Vacancy ID is required." }, { status: 400 });
 
     const payload: any = {};
     if (updateData.title !== undefined) payload.title = updateData.title.trim();
@@ -105,7 +105,7 @@ export async function PUT(req: Request) {
       body: JSON.stringify(payload),
     });
     const jobData = job.data || job;
-    return NextResponse.json({ success: true, message: "Lowongan diperbarui.", job: { ...jobData, ...resolveJobStatus(jobData) } });
+    return NextResponse.json({ success: true, message: "Vacancy updated.", job: { ...jobData, ...resolveJobStatus(jobData) } });
   } catch (e: any) {
     console.error("Update job error:", e);
     return NextResponse.json({ error: e.message || "Failed to update vacancy." }, { status: 500 });
@@ -117,13 +117,13 @@ export async function DELETE(req: Request) {
   try {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-    if (!requireHr(session)) return NextResponse.json({ error: "Hanya HR & Super Admin." }, { status: 403 });
+    if (!requireHr(session)) return NextResponse.json({ error: "HR & Super Admin only." }, { status: 403 });
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "ID wajib disertakan." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
     await fetchRawFromBackend(`/jobs/${Number(id)}`, { method: "DELETE" });
-    return NextResponse.json({ success: true, message: "Lowongan dihapus." });
+    return NextResponse.json({ success: true, message: "Vacancy deleted." });
   } catch (e: any) {
     console.error("Delete job error:", e);
     return NextResponse.json({ error: e.message || "Failed to delete vacancy." }, { status: 500 });

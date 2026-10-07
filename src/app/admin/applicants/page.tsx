@@ -145,7 +145,7 @@ const DigitalSignatureCanvas: React.FC<{
 
   const processImageFile = (file: Blob | File) => {
     if (!file.type.startsWith('image/')) {
-      alert('File atau konten clipboard yang ditempelkan harus berupa gambar (PNG/JPG).');
+      alert('The pasted file or clipboard content must be an image (PNG/JPG).');
       return;
     }
     const reader = new FileReader();
@@ -184,7 +184,7 @@ const DigitalSignatureCanvas: React.FC<{
   const handlePasteFromClipboard = async () => {
     try {
       if (!navigator.clipboard?.read) {
-        alert('Browser Anda memerlukan pintasan keyboard: Silakan tekan Ctrl + V pada keyboard untuk menempelkan gambar tanda tangan.');
+        alert('Your browser requires a keyboard shortcut: Please press Ctrl + V to paste the signature image.');
         return;
       }
       const items = await navigator.clipboard.read();
@@ -196,10 +196,10 @@ const DigitalSignatureCanvas: React.FC<{
           return;
         }
       }
-      alert('Tidak ada gambar tanda tangan di clipboard. Silakan salin (Copy / Screenshot) gambar tanda tangan terlebih dahulu, lalu tekan tombol ini atau Ctrl + V.');
+      alert('No signature image in clipboard. Please copy (Copy / Screenshot) the signature image first, then press this button or Ctrl + V.');
     } catch (err: any) {
       console.warn('Clipboard read error:', err);
-      alert('Akses clipboard otomatis dibatasi oleh browser. Silakan langsung tekan pintasan keyboard: Ctrl + V untuk menempelkan gambar.');
+      alert('Automatic clipboard access is limited by the browser. Please press the keyboard shortcut: Ctrl + V to paste the image.');
     }
   };
 
@@ -313,7 +313,7 @@ const DigitalSignatureCanvas: React.FC<{
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="caption" sx={{ fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          ✍️ Area Kanvas Tanda Tangan (Gores atau Tempel/Paste Gambar):
+          ✍️ Signature Canvas Area (Draw or Paste Image):
         </Typography>
         <Stack direction="row" spacing={0.8} sx={{ alignItems: 'center' }}>
           <Button
@@ -358,7 +358,7 @@ const DigitalSignatureCanvas: React.FC<{
             onClick={handleClear}
             sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none' }}
           >
-            Hapus / Ulangi
+            Remove / Retry
           </Button>
         </Stack>
       </Box>
@@ -490,7 +490,7 @@ export default function AdminApplicantsPage() {
   const [advanceCustomAddress, setAdvanceCustomAddress] = useState('');
   const [advanceRoom, setAdvanceRoom] = useState('');
 
-  // Super Admin Stage Override Modal (Maju / Mundurkan Tahap Seleksi Manual)
+  // Super Admin Stage Override Modal (Advance / Revert Selection Stage Manually)
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
   const [overrideTargetStage, setOverrideTargetStage] = useState<number>(1);
   const [overrideStageStatus, setOverrideStageStatus] = useState<'in_progress' | 'passed' | 'failed'>('in_progress');
@@ -640,7 +640,7 @@ export default function AdminApplicantsPage() {
 
           if (hasLengthChanged || hasItemChanged) {
             setApplicants(data.applicants);
-            // Perbarui data pelamar realtime jika modal detail sedang dilihat
+            // Perbarui data applicants realtime jika modal detail sedang dilihat
             if (selectedApplicantRef.current) {
               const updated = data.applicants.find((a: any) => a.id === selectedApplicantRef.current.id);
               if (updated) setSelectedApplicant(updated);
@@ -666,7 +666,7 @@ export default function AdminApplicantsPage() {
     fetchApplicants(false);
   }, [fetchApplicants]);
 
-  // Hook Sinkronisasi Realtime Adaptif ATS Admin (10s foreground / 60s background, zero-leak)
+  // Adaptive Realtime Sync Hook for ATS Admin (10s foreground / 60s background, zero-leak)
   const { isTabActive } = useSmartSync(() => fetchApplicants(true), {
     activeIntervalMs: 10000,
     idleIntervalMs: 60000,
@@ -717,9 +717,9 @@ export default function AdminApplicantsPage() {
     return a.includes(b) || b.includes(a);
   }
 
-  // Permission Logic per Role & Departemen:
-  // - Super Admin & HR: Berwenang penuh meloloskan, menolak, dan mengelola pelamar di SEMUA tahap seleksi (termasuk Stage 3 & 5)
-  // - User Dept: Berwenang di Stage 3 (Tes Teknis) & 5 (Interview User) untuk pelamar yang melamar pada departemennya
+  // Permission Logic per Role & Department:
+  // - Super Admin & HR: Berwenang penuh meloloskan, menolak, dan mengelola applicants di SEMUA tahap seleksi (termasuk Stage 3 & 5)
+  // - User Dept: Berwenang di Stage 3 (Tes Teknis) & 5 (Interview User) untuk applicants yang melamar pada departemennya
   const canManageApplicant = (applicant: any) => {
     if (!adminSession) return true;
     if (adminSession.role === 'admin' || adminSession.role === 'hr') return true;
@@ -740,16 +740,16 @@ export default function AdminApplicantsPage() {
     const jobDept = applicant.jobPosting?.department || 'User Dept';
 
     if ([1, 2, 4, 6, 7].includes(stageNum)) {
-      return { owner: 'hr', label: 'Wewenang HR Recruitment', color: '#0369A1', bg: '#E0F2FE' };
+      return { owner: 'hr', label: 'HR Recruitment Authority', color: '#0369A1', bg: '#E0F2FE' };
     }
-    return { owner: 'user_dept', label: `Wewenang User Dept (${jobDept})`, color: '#B45309', bg: '#FEF3C7' };
+    return { owner: 'user_dept', label: `Department User Authority (${jobDept})`, color: '#B45309', bg: '#FEF3C7' };
   };
 
   // Dynamic Stage Action & Button Configuration (Labels, Colors, Icons, Tooltips)
   const getStageActionConfig = (currentStage: number, isAdminTakeover: boolean = false) => {
     const nextStage = currentStage + 1;
     const nextStageInfo = RECRUITMENT_STAGES.find((s) => s.number === nextStage);
-    const nextShort = nextStageInfo?.shortName || `Tahap ${nextStage}`;
+    const nextShort = nextStageInfo?.shortName || `Stage ${nextStage}`;
 
     if (isAdminTakeover) {
       return {
@@ -812,7 +812,7 @@ export default function AdminApplicantsPage() {
         };
       default:
         return {
-          label: `Loloskan to Stage ${nextStage} ➔`,
+          label: `Advance to Stage ${nextStage} ➔`,
           color: '#018730',
           hoverColor: '#005c21',
           icon: <ApproveIcon sx={{ fontSize: 16 }} />,
@@ -851,7 +851,7 @@ export default function AdminApplicantsPage() {
       case 5:
         return `Congratulations, ${name}, you have PASSED the HR Recruitment Interview session for the position ${pos}. The next selection stage is Stage 5: Department User Technical Interview with the supervisory/managerial team of the ${dept}.`;
       case 6:
-        return `Congratulations, ${name}, you have PASSED the Department User Interview session of ${dept} untuk posisi ${pos}. You are eligible to proceed to Stage 6: Medical Check-Up (MCU) at the official partner clinic/hospital of PT Indonesia Thai Summit Plastech.`;
+        return `Congratulations, ${name}, you have PASSED the Department User Interview session of ${dept} for the position of ${pos}. You are eligible to proceed to Stage 6: Medical Check-Up (MCU) at the official partner clinic/hospital of PT Indonesia Thai Summit Plastech.`;
       case 7:
         return `Congratulations, ${name}, your Medical Check-Up (MCU) result is FIT TO WORK (Medically Cleared). PT Indonesia Thai Summit Plastech is pleased to issue the Official Employment Offer Letter for the position ${pos}. Please review the compensation package details and confirm your acceptance on the career portal.`;
       case 8:
@@ -866,7 +866,7 @@ export default function AdminApplicantsPage() {
     const name = applicant.fullName;
     const pos = applicant.jobPosting?.title || 'Posisi Terkait';
     const stageObj = RECRUITMENT_STAGES.find((s) => s.number === currentStage);
-    const stageName = stageObj ? stageObj.name : `Tahap ${currentStage}`;
+    const stageName = stageObj ? stageObj.name : `Stage ${currentStage}`;
 
     return `Thank you, ${name} for your participation and enthusiasm in our employee selection process for the position ${pos} di PT Indonesia Thai Summit Plastech. After a comprehensive evaluation process at ${stageName}, we are currently unable to advance your selection to the next stage as your qualifications do not yet align with the specific needs of this position. We sincerely appreciate your time and dedication, and wish you every success in your professional career.`;
   };
@@ -945,7 +945,7 @@ export default function AdminApplicantsPage() {
         });
         profilingTraits.push({
           qId,
-          question: q?.question || `Pertanyaan Profiling #${qId}`,
+          question: q?.question || `Profiling Question #${qId}`,
           selectedTraits,
           rawChoices: userChoices,
         });
@@ -1101,16 +1101,16 @@ export default function AdminApplicantsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      const currentShort = RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant.currentStage)?.shortName || `Tahap ${selectedApplicant.currentStage}`;
-      const nextShort = RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant.currentStage + 1)?.shortName || `Tahap ${selectedApplicant.currentStage + 1}`;
+      const currentShort = RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant.currentStage)?.shortName || `Stage ${selectedApplicant.currentStage}`;
+      const nextShort = RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant.currentStage + 1)?.shortName || `Stage ${selectedApplicant.currentStage + 1}`;
 
       setFeedbackMessage(
         isEditingOfferingOnly
-          ? `✓ Berhasil! Official letter format and Offering Letter Digital Signature for ${selectedApplicant.fullName} has been saved and is ready for download.`
+          ? `✓ Success! Official letter format and Offering Letter Digital Signature for ${selectedApplicant.fullName} has been saved and is ready for download.`
           : advanceAction === 'approve'
           ? (data.emailSent === false
-              ? `✓ Berhasil! ${selectedApplicant.fullName} has passed Stage ${selectedApplicant.currentStage} (${currentShort}) dan resmi masuk to Stage ${selectedApplicant.currentStage + 1} (${nextShort}). (Note: Email delivery delayed: ${data.emailError || 'SMTP error'}. Use the envelope icon in the table to resend).`
-              : `✓ Berhasil! ${selectedApplicant.fullName} has been officially advanced from Stage ${selectedApplicant.currentStage} (${currentShort}) to Stage ${selectedApplicant.currentStage + 1} (${nextShort}). The official notification email has been automatically sent to the candidate.`)
+              ? `✓ Success! ${selectedApplicant.fullName} has passed Stage ${selectedApplicant.currentStage} (${currentShort}) and officially advanced to Stage ${selectedApplicant.currentStage + 1} (${nextShort}). (Note: Email delivery delayed: ${data.emailError || 'SMTP error'}. Use the envelope icon in the table to resend).`
+              : `✓ Success! ${selectedApplicant.fullName} has been officially advanced from Stage ${selectedApplicant.currentStage} (${currentShort}) to Stage ${selectedApplicant.currentStage + 1} (${nextShort}). The official notification email has been automatically sent to the candidate.`)
           : `${data.message} (The rejection notification email has been sent to the candidate email).`
       );
       setAdvanceModalOpen(false);
@@ -1171,7 +1171,7 @@ export default function AdminApplicantsPage() {
     setHireJobTitle(applicant.jobPosting?.title || '');
     setHireWorkLocation(applicant.jobPosting?.location || 'Plant 1 KIIC Karawang');
     setHireSalary(applicant.offeringSalary || '');
-    setHireNotes(`Pengangkatan resmi via Portal Karir ATS tanggal ${new Date().toLocaleDateString('id-ID')}`);
+    setHireNotes(`Official appointment via Career ATS Portal on ${new Date().toLocaleDateString('id-ID')}`);
 
     // Fetch next sequence from API
     try {
@@ -1199,7 +1199,7 @@ export default function AdminApplicantsPage() {
     setHirePreviewId(computeEmployeeId(newSeq, newDate));
   };
 
-  // Submit Konfirmasi Pengangkatan Karyawan Resmi
+  // Submit Official Employee Appointment Confirmation
   const handleConfirmHireContract = async () => {
     if (!hiringApplicant) return;
     if (!hireStartDate) {
@@ -1207,7 +1207,7 @@ export default function AdminApplicantsPage() {
       return;
     }
     if (!hireSequenceNumber || Number(hireSequenceNumber) < 1) {
-      alert('Nomor urut ID karyawan harus berupa angka positif.');
+      alert('Employee ID sequence must be a positive number.');
       return;
     }
 
@@ -1234,9 +1234,9 @@ export default function AdminApplicantsPage() {
       const result = await res.json();
       if (res.ok && result.success) {
         setFeedbackMessage(
-          `✓ Selamat! ${hiringApplicant.fullName} resmi diangkat menjadi Karyawan PT ITSP dengan Nomor ID: ${
+          `✓ Selamat! ${hiringApplicant.fullName} officially appointed as PT ITSP Employee with ID: ${
             result.employee_id || hirePreviewId
-          }. Seluruh 68 kolom data diri, berkas dan riwayat pelamar telah otomatis masuk ke Data Karyawan.`
+          }. All 68 profile columns, documents and applicant history have been automatically inserted into Employee Master Data.`
         );
         setHireContractModalOpen(false);
         fetchApplicants(false);
@@ -1257,7 +1257,7 @@ export default function AdminApplicantsPage() {
     }
   };
 
-  // Handle Super Admin Manual Stage Override (Maju / Mundurkan Tahap Manual)
+  // Handle Super Admin Manual Stage Override (Advance / Revert Stage Manually)
   const handleConfirmOverrideStage = async () => {
     if (!selectedApplicant) return;
     setProcessing(true);
@@ -1295,7 +1295,7 @@ export default function AdminApplicantsPage() {
 
   // Handle Resend Stage Email (recovery bila email kelolosan tidak diterima kandidat)
   const handleResendEmail = async (applicant: any) => {
-    const stageLabel = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.shortName || `Tahap ${applicant.currentStage}`;
+    const stageLabel = RECRUITMENT_STAGES.find((s) => s.number === applicant.currentStage)?.shortName || `Stage ${applicant.currentStage}`;
     if (!confirm(`Kirim ulang email notifikasi ${stageLabel} ke ${applicant.email}?`)) return;
     setProcessing(true);
     try {
@@ -1351,7 +1351,7 @@ export default function AdminApplicantsPage() {
 
   // Handle Reset Test Session (Bug Recovery)
   const handleResetTest = async (applicantId: number, testType: 'psikotes' | 'user_test') => {
-    if (!confirm(`Reset sesi ujian ${testType.toUpperCase()} untuk pelamar ini agar dapat melanjutkan ujian?`)) return;
+    if (!confirm(`Reset sesi ujian ${testType.toUpperCase()} untuk applicants ini agar dapat melanjutkan ujian?`)) return;
 
     try {
       const res = await fetch('/api/admin/reset-test', {
@@ -1493,7 +1493,7 @@ export default function AdminApplicantsPage() {
         body: JSON.stringify({ mode: cleanupMode }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memproses pembersihan');
+      if (!res.ok) throw new Error(data.error || 'Failed to process cleanup');
       setCleanupFeedback(data.message);
       fetchApplicants();
     } catch (err: any) {
@@ -1516,7 +1516,7 @@ export default function AdminApplicantsPage() {
             Applicant Management & 7 Selection Stages Flow
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
-            Evaluasi berkas CV, tinjau hasil psikotes & essay teknis, dan lakukan 1-Klik Kelolosan dengan pesan resmi otomatis.
+            Review CVs, check psychometric & technical essay results, and execute 1-Click Pass with automated official messaging.
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
@@ -1542,7 +1542,7 @@ export default function AdminApplicantsPage() {
               }}
             />
             <Typography variant="caption" sx={{ fontWeight: 700, color: isTabActive ? '#15803D' : '#64748B' }}>
-              {isTabActive ? 'Sinkron Realtime (Live)' : 'Siaga'}
+              {isTabActive ? 'Live Sync (Live)' : 'Standby'}
             </Typography>
           </Box>
 
@@ -1552,7 +1552,7 @@ export default function AdminApplicantsPage() {
             startIcon={<RefreshIcon />}
             sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2, borderColor: '#CBD5E1', color: '#334155' }}
           >
-            Segarkan
+            Refresh
           </Button>
 
           {(adminSession?.role === 'admin' || adminSession?.role === 'hr') && (
@@ -1566,7 +1566,7 @@ export default function AdminApplicantsPage() {
               }}
               sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
             >
-              Bersihkan Kedaluwarsa (&gt; 30 Hari)
+              Clean Expired (&gt; 30 Hari)
             </Button>
           )}
         </Box>
@@ -1636,10 +1636,10 @@ export default function AdminApplicantsPage() {
                     }}
                   >
                     {adminSession.role === 'admin'
-                      ? '👑 Mode Pengawasan: Super Administrator'
+                      ? '👑 Supervision Mode: Super Administrator'
                       : adminSession.role === 'hr'
                       ? '👤 Mode Kerja: Tim HR Recruitment'
-                      : `🔧 Mode Kerja: User Departemen (${adminSession.department || 'Teknis'})`}
+                      : `🔧 Work Mode: Department User (${adminSession.department || 'Teknis'})`}
                   </Typography>
                   <Chip
                     size="small"
@@ -1667,14 +1667,14 @@ export default function AdminApplicantsPage() {
                   }}
                 >
                   {adminSession.role === 'admin' ? (
-                    'Anda memiliki wewenang penuh pengawasan di seluruh 7 tahapan seleksi, kelola akun staf internal, reset MFA, dan penerbitan offering letter.'
+                    'You have full supervisory authority across all 7 selection stages, manage internal staff accounts, reset MFA, and issue offering letters.'
                   ) : adminSession.role === 'hr' ? (
                     <span>
-                      <strong>Wewenang HR:</strong> Screening Berkas (Tahap 1), Review Psikotes & Personality Profiling (Tahap 2), Interview HR (Tahap 4), Rujukan MCU (Tahap 6), dan Offering Letter & Kontrak (Stage 7). Tahap Tes Teknis Kejuruan & Interview User dievaluasi dan diloloskan oleh User Departemen.
+                      <strong>HR Authority:</strong> Screening Berkas (Stage 1), Review Psikotes & Personality Profiling (Stage 2), Interview HR (Stage 4), Rujukan MCU (Stage 6), dan Offering Letter & Kontrak (Stage 7). Stage Tes Teknis Kejuruan & Interview User dievaluasi dan diloloskan oleh User Departemen.
                     </span>
                   ) : (
                     <span>
-                      <strong>Wewenang User Departemen:</strong> Anda berwenang mereview hasil Tes Teknis Kejuruan & Jawaban Essay (Stage 3) dan Interview User (Tahap 5). Hanya User Departemen yang berhak meloloskan peserta pada tahapan teknis tersebut. Tahap lainnya dikelola oleh Tim HR.
+                      <strong>Department User Authority:</strong> Anda berwenang mereview hasil Tes Teknis Kejuruan & Jawaban Essay (Stage 3) dan Interview User (Stage 5). Hanya User Departemen yang berhak meloloskan peserta pada tahapan teknis tersebut. Stage lainnya dikelola oleh Tim HR.
                     </span>
                   )}
                 </Typography>
@@ -1705,7 +1705,7 @@ export default function AdminApplicantsPage() {
                 fullWidth
                 size="small"
                 label="Search Applicants"
-                placeholder="Ketik nama lengkap, email, jurusan, atau sekolah..."
+                placeholder="Type full name, email, major, or school..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchApplicants()}
@@ -1721,14 +1721,14 @@ export default function AdminApplicantsPage() {
                 select
                 fullWidth
                 size="small"
-                label="Filter Tahap Seleksi"
+                label="Filter by Stage"
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
               >
-                <MenuItem value="">Semua Tahapan (1 s/d 7)</MenuItem>
+                <MenuItem value="">All Stages (1 s/d 7)</MenuItem>
                 {RECRUITMENT_STAGES.map((s) => (
                   <MenuItem key={s.number} value={s.number.toString()}>
-                    Tahap {s.number}: {s.shortName}
+                    Stage {s.number}: {s.shortName}
                   </MenuItem>
                 ))}
               </TextField>
@@ -1738,13 +1738,13 @@ export default function AdminApplicantsPage() {
                 select
                 fullWidth
                 size="small"
-                label="Status Kelolosan"
+                label="Pass / Fail Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <MenuItem value="">Semua Status</MenuItem>
-                <MenuItem value="in_progress">Sedang Berjalan</MenuItem>
-                <MenuItem value="passed">Lolos Tahap Ini</MenuItem>
+                <MenuItem value="">All Statuses</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="passed">Lolos Stage Ini</MenuItem>
                 <MenuItem value="failed">Tidak Lolos</MenuItem>
               </TextField>
             </Box>
@@ -1754,7 +1754,7 @@ export default function AdminApplicantsPage() {
                 onClick={fetchApplicants}
                 sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#005c21' } }}
               >
-                Terapkan
+                Apply
               </Button>
               {(search || stageFilter || statusFilter) && (
                 <Button
@@ -1786,12 +1786,12 @@ export default function AdminApplicantsPage() {
             <Table sx={{ minWidth: 850 }}>
             <TableHead sx={{ bgcolor: '#F8FAFC' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Kandidat & Posisi</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Pendidikan</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Tahap Saat Ini</TableCell>
-                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Status & Evaluasi Ujian</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Candidate & Position</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Education</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Current Stage</TableCell>
+                <TableCell sx={{ fontWeight: 800, color: '#334155' }}>Status & Exam Evaluation</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 800, color: '#334155', minWidth: 200 }}>
-                  Aksi Kelolosan & Wewenang
+                  Actions & Authority
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -1799,7 +1799,7 @@ export default function AdminApplicantsPage() {
               {applicants.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 6, color: '#64748B' }}>
-                    Tidak ada pelamar yang sesuai dengan kriteria filter.
+                    No applicants match the filter criteria.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -1839,7 +1839,7 @@ export default function AdminApplicantsPage() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 0.8 }}>
                           <Chip
                             icon={getStageIcon(a.currentStage)}
-                            label={`Tahap ${a.currentStage}: ${stage?.shortName || ''}`}
+                            label={`Stage ${a.currentStage}: ${stage?.shortName || ''}`}
                             size="small"
                             sx={{
                               bgcolor: isFailed ? '#FEE2E2' : a.currentStage === 7 ? '#FEF3C7' : '#DCFCE7',
@@ -1862,7 +1862,7 @@ export default function AdminApplicantsPage() {
                               return (
                                 <Tooltip
                                   key={s.number}
-                                  title={`Tahap ${s.number}: ${s.shortName} (${isCompleted ? '✓ Selesai' : isCurrent ? (isFailed ? 'Gagal' : 'Sedang Berjalan') : 'Belum Mulai'})`}
+                                  title={`Stage ${s.number}: ${s.shortName} (${isCompleted ? '✓ Completed' : isCurrent ? (isFailed ? 'Failed' : 'In Progress') : 'Not Started'})`}
                                   arrow
                                 >
                                   <Box
@@ -1887,7 +1887,7 @@ export default function AdminApplicantsPage() {
                           </Box>
                           <Typography variant="caption" sx={{ display: 'block', color: '#64748B', fontSize: 10.5, fontWeight: 600 }}>
                             {isFailed ? (
-                              <span style={{ color: '#DC2626' }}>Terhenti di Tahap {a.currentStage} dari 7</span>
+                              <span style={{ color: '#DC2626' }}>Terhenti di Stage {a.currentStage} dari 7</span>
                             ) : (
                               <span>Langkah <strong>{a.currentStage}</strong> dari 7 ({Math.round((a.currentStage / 7) * 100)}%)</span>
                             )}
@@ -2007,7 +2007,7 @@ export default function AdminApplicantsPage() {
                               {(psikotesSub.isLocked || psikotesSub.is_locked) && ' (TERKUNCI)'}
                             </Typography>
                             {(canManage || adminSession?.role === 'admin' || adminSession?.role === 'hr') && (
-                              <Tooltip title="Reset Ujian Psikotes (Buka Kunci / Izinkan Ujian Ulang bila terjadi kendala teknis)">
+                              <Tooltip title="Reset Psychometric Exam (Buka Kunci / Izinkan Ujian Ulang bila terjadi kendala teknis)">
                                 <IconButton
                                   size="small"
                                   onClick={() => handleResetTest(a.id, 'psikotes')}
@@ -2026,7 +2026,7 @@ export default function AdminApplicantsPage() {
                               {(userTestSub.isLocked || userTestSub.is_locked) && ' (TERKUNCI)'}
                             </Typography>
                             {(canManage || adminSession?.role === 'admin' || adminSession?.role === 'hr') && (
-                              <Tooltip title="Reset Ujian Teknis Departemen (Buka Kunci / Izinkan Ujian Ulang bila terjadi kendala teknis)">
+                              <Tooltip title="Reset Technical Exam Departemen (Buka Kunci / Izinkan Ujian Ulang bila terjadi kendala teknis)">
                                 <IconButton
                                   size="small"
                                   onClick={() => handleResetTest(a.id, 'user_test')}
@@ -2384,12 +2384,12 @@ export default function AdminApplicantsPage() {
                             }
 
                             return (
-                              <Tooltip title={`Kelolosan tahap ini adalah wewenang penuh ${stageOwner.label}. Mode Super Admin dapat mengambil alih jika diperlukan.`}>
+                              <Tooltip title={`Passing this stage is the full authority of ${stageOwner.label}. Super Admin mode may override if needed.`}>
                                 <Chip
                                   size="small"
                                   className="notranslate"
                                   translate="no"
-                                  label={stageOwner.owner === 'hr' ? 'Wewenang HR' : 'Wewenang User Dept'}
+                                  label={stageOwner.owner === 'hr' ? 'HR Authority' : 'Department User Authority'}
                                   sx={{
                                     bgcolor: stageOwner.bg,
                                     color: stageOwner.color,
@@ -2448,7 +2448,7 @@ export default function AdminApplicantsPage() {
 
                           {/* Stage 7: Tombol SUDAH TANDA TANGAN KONTRAK (Pengangkatan Karyawan Resmi) */}
                           {!isFailed && a.currentStage === 7 && canManage && (
-                            <Tooltip title="Calon karyawan telah hadir ke PT & menandatangani kontrak kerja fisik. Klik untuk input masa kontrak, sesuaikan nomor ID karyawan, dan masukkan otomatis ke Data Karyawan." arrow>
+                            <Tooltip title="Candidate has arrived on-site and signed the physical employment contract. Click to input contract period, adjust employee ID, and auto-insert into Employee Master Data." arrow>
                               <Button
                                 size="small"
                                 variant="contained"
@@ -2471,14 +2471,14 @@ export default function AdminApplicantsPage() {
                                   },
                                 }}
                               >
-                                Sudah Tanda Tangan Kontrak
+                                Contract Signed
                               </Button>
                             </Tooltip>
                           )}
 
-                          {/* Schedule Interview: Tahap 4 (HR Interview) & Tahap 5 (User Interview) */}
+                          {/* Schedule Interview: Stage 4 (HR Interview) & Stage 5 (User Interview) */}
                           {a.currentStage === 4 && canManage && (
-                            <Tooltip title="Jadwalkan Interview HR (Teams / Onsite di Pabrik)">
+                            <Tooltip title="Schedule Interview HR (Teams / Onsite di Pabrik)">
                               <IconButton
                                 size="small"
                                 onClick={() => {
@@ -2498,7 +2498,7 @@ export default function AdminApplicantsPage() {
                           )}
 
                           {a.currentStage === 5 && canManage && (
-                            <Tooltip title="Jadwalkan Interview User Departemen (Teams / Onsite di Pabrik)">
+                            <Tooltip title="Schedule Interview User Departemen (Teams / Onsite di Pabrik)">
                               <IconButton
                                 size="small"
                                 onClick={() => {
@@ -2538,7 +2538,7 @@ export default function AdminApplicantsPage() {
 
                           {/* Reset Test Session: Stage 2 (HR Psikotes) & Stage 3 (User Dept Teknis) */}
                           {(a.currentStage === 2 || a.currentStage === 3) && (canManage || adminSession?.role === 'admin') && (
-                            <Tooltip title={`Reset Sesi Ujian ${a.currentStage === 2 ? 'Psikotes (HR)' : 'Teknis (User Dept)'} (Buka Kunci / Izinkan Ujian Ulang jika koneksi terputus, laptop mati, atau kendala teknis)`}>
+                            <Tooltip title={`Reset Sesi Ujian ${a.currentStage === 2 ? 'Psychometric (HR)' : 'Teknis (User Dept)'} (Buka Kunci / Izinkan Ujian Ulang jika koneksi terputus, laptop mati, atau kendala teknis)`}>
                               <IconButton
                                 size="small"
                                 onClick={() => handleResetTest(a.id, a.currentStage === 2 ? 'psikotes' : 'user_test')}
@@ -2551,7 +2551,7 @@ export default function AdminApplicantsPage() {
 
                           {/* Resend Stage Email (recovery bila kandidat tidak menerima email) */}
                           {!isFailed && canManage && (
-                            <Tooltip title="Kirim Ulang Email Notifikasi Tahap Ini">
+                            <Tooltip title="Kirim Ulang Email Notifikasi Stage Ini">
                               <IconButton
                                 size="small"
                                 onClick={() => handleResendEmail(a)}
@@ -2598,9 +2598,9 @@ export default function AdminApplicantsPage() {
                             </Tooltip>
                           )}
 
-                          {/* Menu Super Admin: Majukan / Mundurkan Tahap Seleksi Secara Bebas */}
+                          {/* Super Admin Menu: Advance / Revert Selection Stage Freely */}
                           {(adminSession?.isAdmin || adminSession?.role === 'admin') && (
-                            <Tooltip title="Menu Super Admin: Majukan / Mundurkan Tahap Seleksi (Override Status)">
+                            <Tooltip title="Super Admin Menu: Advance / Revert Selection Stage (Override Status)">
                               <IconButton
                                 size="small"
                                 onClick={() => {
@@ -2704,7 +2704,7 @@ export default function AdminApplicantsPage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.8, flexWrap: 'wrap' }}>
                   <Chip
                     size="small"
-                    label={`Tahap ${selectedApplicant?.currentStage}: ${
+                    label={`Stage ${selectedApplicant?.currentStage}: ${
                       RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant?.currentStage)?.shortName || ''
                     }`}
                     sx={{ bgcolor: '#EFF6FF', color: '#1D4ED8', fontWeight: 700, fontSize: 11 }}
@@ -2787,7 +2787,7 @@ export default function AdminApplicantsPage() {
             }}
           >
             <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Identitas & Domisili" />
-            <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Pendidikan & Pengalaman" />
+            <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Education & Pengalaman" />
             <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Latar Belakang Keluarga" />
             <Tab icon={<DocIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Berkas Dokumen (11 Berkas)" />
             <Tab icon={<PsychologyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Evaluasi & Hasil Tes" />
@@ -2973,11 +2973,11 @@ export default function AdminApplicantsPage() {
               {/* TAB 1: PENDIDIKAN & PENGALAMAN KERJA */}
               {detailTab === 1 && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {/* Riwayat Pendidikan Formal */}
+                  {/* Riwayat Education Formal */}
                   <Card variant="outlined" sx={{ borderRadius: 2, borderColor: '#E2E8F0' }}>
                     <CardContent sx={{ p: 2.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                        <SchoolIcon sx={{ color: '#018730', fontSize: 20 }} /> Riwayat Pendidikan Formal
+                        <SchoolIcon sx={{ color: '#018730', fontSize: 20 }} /> Riwayat Education Formal
                       </Typography>
                       {(() => {
                         const rawEdu = parseJsonSafe(selectedApplicant.educationHistory || selectedApplicant.education_history, []);
@@ -3152,7 +3152,7 @@ export default function AdminApplicantsPage() {
                                   </Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Pendidikan Terakhir:</Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Education Terakhir:</Typography>
                                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {parents.fatherEducation || parents.father_education || '-'}
                                   </Typography>
@@ -3195,7 +3195,7 @@ export default function AdminApplicantsPage() {
                                   </Typography>
                                 </Box>
                                 <Box>
-                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Pendidikan Terakhir:</Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Education Terakhir:</Typography>
                                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                     {parents.motherEducation || parents.mother_education || '-'}
                                   </Typography>
@@ -3243,7 +3243,7 @@ export default function AdminApplicantsPage() {
                                   <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Hubungan</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Nama Lengkap</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569', textAlign: 'center' }}>Tahun Lahir / Usia</TableCell>
-                                  <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Pendidikan</TableCell>
+                                  <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Education</TableCell>
                                   <TableCell sx={{ fontWeight: 700, color: '#475569' }}>Pekerjaan / Aktivitas</TableCell>
                                 </TableRow>
                               </TableHead>
@@ -3553,7 +3553,7 @@ export default function AdminApplicantsPage() {
                             Hasil Evaluasi Ujian Psikotes & Potensi Akademik Online
                           </Typography>
                           <Typography variant="caption" sx={{ color: '#15803D', fontWeight: 600 }}>
-                            Wewenang Review: Tim Human Capital / HR Recruitment PT ITSP
+                            Review Authority: PT ITSP Human Capital / HR Recruitment Team
                           </Typography>
                         </Box>
                       </Box>
@@ -3593,7 +3593,7 @@ export default function AdminApplicantsPage() {
                                 }}
                                 sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 1.5, bgcolor: '#FFFFFF', fontSize: 12 }}
                               >
-                                Reset Ujian Psikotes
+                                Reset Psychometric Exam
                               </Button>
                             )}
                           </>
@@ -3617,7 +3617,7 @@ export default function AdminApplicantsPage() {
                                 }}
                                 sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 1.5, bgcolor: '#FFFFFF', fontSize: 12 }}
                               >
-                                Buka Kunci / Reset Ujian
+                                Unlock / Reset Exam
                               </Button>
                             )}
                           </>
@@ -3786,7 +3786,7 @@ export default function AdminApplicantsPage() {
                             Applicant Has Not Yet Taken the Online Psychometric Test
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748B', maxWidth: 480, mx: 'auto' }}>
-                            Ujian belum diselesaikan atau dikirimkan oleh kandidat. Pantau status pelamar pada Tahap 2 di tabel utama rekrutmen.
+                            Ujian belum diselesaikan atau dikirimkan oleh kandidat. Pantau status applicants pada Stage 2 di tabel utama rekrutmen.
                           </Typography>
                         </Box>
                       )}
@@ -3843,7 +3843,7 @@ export default function AdminApplicantsPage() {
                                 }}
                                 sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 1.5, bgcolor: '#FFFFFF', fontSize: 12 }}
                               >
-                                Reset Ujian Teknis
+                                Reset Technical Exam
                               </Button>
                             )}
                           </>
@@ -3867,7 +3867,7 @@ export default function AdminApplicantsPage() {
                                 }}
                                 sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 1.5, bgcolor: '#FFFFFF', fontSize: 12 }}
                               >
-                                Buka Kunci / Reset Ujian
+                                Unlock / Reset Exam
                               </Button>
                             )}
                           </>
@@ -4019,7 +4019,7 @@ export default function AdminApplicantsPage() {
                             Applicant Has Not Yet Taken the Technical / Case Study Test
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748B', maxWidth: 480, mx: 'auto' }}>
-                            Ujian teknis departemen belum diselesaikan oleh kandidat. Pantau status pelamar pada Stage 3 di tabel utama rekrutmen.
+                            Ujian teknis departemen belum diselesaikan oleh kandidat. Pantau status applicants pada Stage 3 di tabel utama rekrutmen.
                           </Typography>
                         </Box>
                       )}
@@ -4112,7 +4112,7 @@ export default function AdminApplicantsPage() {
           {isEditingOfferingOnly
             ? `📄 Edit Format Dokumen Surat Resmi & Tanda Tangan Digital Offering Letter`
             : advanceAction === 'approve'
-            ? `✓ Konfirmasi Loloskan to Stage ${selectedApplicant?.currentStage + 1}: ${
+            ? `✓ Konfirmasi Advance to Stage ${selectedApplicant?.currentStage + 1}: ${
                 RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant?.currentStage + 1)?.name || ''
               }`
             : `✕ Confirm Reject Applicant at Stage ${selectedApplicant?.currentStage}: ${
@@ -4208,7 +4208,7 @@ export default function AdminApplicantsPage() {
                     </Typography>
                   )}
                   <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#B45309', fontSize: 11.5 }}>
-                    ✓ User Departemen berhak memvalidasi analisa teknis pelamar di atas sebelum meloloskan ke Interview HR/User.
+                    ✓ User Departemen berhak memvalidasi analisa teknis applicants di atas sebelum meloloskan ke Interview HR/User.
                   </Typography>
                 </Box>
               )}
@@ -4216,7 +4216,7 @@ export default function AdminApplicantsPage() {
           )}
 
           <Alert severity={advanceAction === 'approve' ? 'info' : 'warning'} sx={{ mb: 2, borderRadius: 2 }}>
-            Sistem secara otomatis akan memperbarui status pelamar dan <strong>mengirimkan notifikasi email resmi korporat</strong> kepada kandidat.
+            Sistem secara otomatis akan memperbarui status applicants dan <strong>mengirimkan notifikasi email resmi korporat</strong> kepada kandidat.
           </Alert>
 
           {advanceAction === 'approve' && selectedApplicant?.currentStage === 1 && (
@@ -4266,13 +4266,13 @@ export default function AdminApplicantsPage() {
                 <Grid size={{ xs: 12 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', mb: 1 }}>
                     <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700 }}>
-                      Pilihan Durasi Cepat:
+                      Quick Duration Options:
                     </Typography>
                     {[
                       { label: '60 Menit (1 Jam)', min: 60 },
                       { label: '90 Menit', min: 90 },
                       { label: '120 Menit (2 Jam)', min: 120 },
-                      { label: '1 Hari (24 Jam)', min: 1440 },
+                      { label: '1 Day (24 Hours)', min: 1440 },
                     ].map((d) => (
                       <Chip
                         key={d.min}
@@ -4386,10 +4386,10 @@ export default function AdminApplicantsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Tempat / Lokasi Pelaksanaan Ujian"
+                    label="Exam Venue / Location"
                     value={advanceLocation}
                     onChange={(e) => setAdvanceLocation(e.target.value)}
-                    placeholder="Contoh: Portal Karir Online PT ITSP atau Lab Komputer Plant 1"
+                    placeholder="Example: PT ITSP Online Career Portal or Plant 1 Computer Lab"
                     sx={{ mb: 1, bgcolor: '#FFFFFF' }}
                   />
 
@@ -4400,7 +4400,7 @@ export default function AdminApplicantsPage() {
                     value={advanceMapsInput}
                     onChange={(e) => setAdvanceMapsInput(e.target.value)}
                     placeholder="Kosongkan untuk memakai peta resmi PT ITSP, atau paste link/tag iframe kustom"
-                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal pelamar bila ujian dilakukan di pabrik."
+                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal applicants bila ujian dilakukan di pabrik."
                     sx={{ mb: 1, bgcolor: '#FFFFFF' }}
                   />
 
@@ -4470,13 +4470,13 @@ export default function AdminApplicantsPage() {
                 <Grid size={{ xs: 12 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', mb: 1 }}>
                     <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700 }}>
-                      Pilihan Durasi Cepat:
+                      Quick Duration Options:
                     </Typography>
                     {[
                       { label: '60 Menit (1 Jam)', min: 60 },
                       { label: '90 Menit', min: 90 },
                       { label: '120 Menit (2 Jam)', min: 120 },
-                      { label: '1 Hari (24 Jam)', min: 1440 },
+                      { label: '1 Day (24 Hours)', min: 1440 },
                     ].map((d) => (
                       <Chip
                         key={d.min}
@@ -4590,7 +4590,7 @@ export default function AdminApplicantsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Tempat / Lokasi Pelaksanaan Ujian Teknis"
+                    label="Technical Exam Venue / Location"
                     value={advanceLocation}
                     onChange={(e) => setAdvanceLocation(e.target.value)}
                     placeholder="Contoh: Portal Karir Online PT ITSP atau Workshop Mold & Die Plant 1"
@@ -4604,7 +4604,7 @@ export default function AdminApplicantsPage() {
                     value={advanceMapsInput}
                     onChange={(e) => setAdvanceMapsInput(e.target.value)}
                     placeholder="Kosongkan untuk memakai peta resmi PT ITSP, atau paste link/tag iframe kustom"
-                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal pelamar bila ujian dilakukan di pabrik."
+                    helperText="Peta rute maps ini akan disematkan ke email undangan & dashboard portal applicants bila ujian dilakukan di pabrik."
                     sx={{ mb: 1, bgcolor: '#FFFFFF' }}
                   />
 
@@ -4632,7 +4632,7 @@ export default function AdminApplicantsPage() {
             <Box sx={{ mb: 2.5, p: 2, bgcolor: '#F0FDF4', borderRadius: 2, border: '1.5px solid #86EFAC' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <InterviewIcon fontSize="small" /> Atur Jadwal Interview HR Recruitment (Tahap 4)
+                  <InterviewIcon fontSize="small" /> Atur Jadwal Interview HR Recruitment (Stage 4)
                 </Typography>
                 <Chip size="small" label="Undangan Otomatis Email" sx={{ bgcolor: '#DCFCE7', color: '#15803D', fontWeight: 700 }} />
               </Box>
@@ -4663,7 +4663,7 @@ export default function AdminApplicantsPage() {
 
                 <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, display: 'block', mb: 0.8 }}>
-                    Mode Pelaksanaan Interview HR:
+                    Execution Mode Interview HR:
                   </Typography>
                   <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                     <Button
@@ -4810,7 +4810,7 @@ export default function AdminApplicantsPage() {
             <Box sx={{ mb: 2.5, p: 2, bgcolor: '#FFFBEB', borderRadius: 2, border: '1.5px solid #FCD34D' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#92400E', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <InterviewIcon fontSize="small" /> Atur Jadwal Interview Teknis User Departemen (Tahap 5)
+                  <InterviewIcon fontSize="small" /> Atur Jadwal Interview Teknis User Departemen (Stage 5)
                 </Typography>
                 <Chip size="small" label="Undangan Otomatis Email" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700 }} />
               </Box>
@@ -4841,7 +4841,7 @@ export default function AdminApplicantsPage() {
 
                 <Grid size={{ xs: 12 }}>
                   <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, display: 'block', mb: 0.8 }}>
-                    Mode Pelaksanaan Interview User:
+                    Execution Mode Interview User:
                   </Typography>
                   <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                     <Button
@@ -4987,7 +4987,7 @@ export default function AdminApplicantsPage() {
             <Box sx={{ mb: 2.5, p: 2.5, bgcolor: '#F0FDFA', borderRadius: 2, border: '1.5px solid #5EEAD4' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F766E', display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <VerifiedIcon fontSize="small" /> Surat Rujukan Medical Check-Up (Tahap 6: MCU)
+                  <VerifiedIcon fontSize="small" /> Surat Rujukan Medical Check-Up (Stage 6: MCU)
                 </Typography>
                 <Button
                   size="small"
@@ -5214,7 +5214,7 @@ export default function AdminApplicantsPage() {
               {/* CHIP TUNJANGAN CEPAT */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap', mb: 2 }}>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
-                  Pilihan Cepat:
+                  Quick Options:
                 </Typography>
                 {[
                   '+ Tunjangan Shift & Transport',
@@ -5541,13 +5541,13 @@ export default function AdminApplicantsPage() {
           >
             <span className="notranslate" translate="no">
               {processing
-                ? 'Memproses...'
+                ? 'Processing...'
                 : isEditingOfferingOnly
                 ? '💾 Save Format & Tanda Tangan Dokumen Offering'
                 : advanceAction === 'approve'
                 ? selectedApplicant?.currentStage === 6
                   ? '✓ Loloskan & Terbitkan Offering Letter Resmi'
-                  : `✓ Loloskan to Stage ${selectedApplicant?.currentStage + 1} & Kirim Notifikasi Email`
+                  : `✓ Advance to Stage ${selectedApplicant?.currentStage + 1} & Kirim Notifikasi Email`
                 : '✕ Confirm Reject Applicant'}
             </span>
           </Button>
@@ -5557,7 +5557,7 @@ export default function AdminApplicantsPage() {
       {/* 2c. SUPER ADMIN STAGE OVERRIDE MODAL (MAJU / MUNDURKAN TAHAP MANUAL) */}
       <Dialog open={overrideModalOpen} onClose={() => setOverrideModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800, color: '#7C3AED', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <TuneIcon /> Menu Super Admin: Maju / Mundurkan Tahap Seleksi
+          <TuneIcon /> Super Admin Menu: Advance / Revert Selection Stage
         </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mb: 2, p: 2, bgcolor: '#F5F3FF', borderRadius: 2, border: '1px solid #DDD6FE' }}>
@@ -5569,11 +5569,11 @@ export default function AdminApplicantsPage() {
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center">
               <Typography variant="caption" sx={{ color: '#4C1D95', fontWeight: 600 }}>
-                Tahap Saat Ini:
+                Current Stage:
               </Typography>
               <Chip
                 size="small"
-                label={`Tahap ${selectedApplicant?.currentStage}: ${
+                label={`Stage ${selectedApplicant?.currentStage}: ${
                   RECRUITMENT_STAGES.find((s) => s.number === selectedApplicant?.currentStage)?.shortName || ''
                 } (${selectedApplicant?.stageStatus || 'in_progress'})`}
                 sx={{ bgcolor: '#7C3AED', color: '#FFFFFF', fontWeight: 700, fontSize: 11 }}
@@ -5582,7 +5582,7 @@ export default function AdminApplicantsPage() {
           </Box>
 
           <Alert severity="warning" sx={{ mb: 2.5, borderRadius: 2, fontSize: 12.5 }}>
-            <strong>Perhatian Super Admin:</strong> Menu ini mengizinkan Anda memindahkan status pelamar secara bebas ke tahap mana pun (Tahap 1 s/d 7), baik memajukan maupun memundurkan tahapan. Nilai tes dan riwayat pengerjaan kandidat sebelumnya tetap aman tersimpan.
+            <strong>Perhatian Super Admin:</strong> Menu ini mengizinkan Anda memindahkan status applicants secara bebas ke tahap mana pun (Stage 1 s/d 7), baik memajukan maupun memundurkan tahapan. Nilai tes dan riwayat pengerjaan kandidat sebelumnya tetap aman tersimpan.
           </Alert>
 
           <Grid container spacing={2}>
@@ -5590,14 +5590,14 @@ export default function AdminApplicantsPage() {
               <TextField
                 select
                 fullWidth
-                label="Pindah ke Target Tahap"
+                label="Move to Target Stage"
                 value={overrideTargetStage}
                 onChange={(e) => setOverrideTargetStage(Number(e.target.value))}
-                helperText="Pilih tahap baru untuk pelamar ini"
+                helperText="Select new stage for this applicant"
               >
                 {RECRUITMENT_STAGES.map((s) => (
                   <MenuItem key={s.number} value={s.number}>
-                    Tahap {s.number}: {s.name}
+                    Stage {s.number}: {s.name}
                   </MenuItem>
                 ))}
               </TextField>
@@ -5610,11 +5610,11 @@ export default function AdminApplicantsPage() {
                 label="Stage Status"
                 value={overrideStageStatus}
                 onChange={(e: any) => setOverrideStageStatus(e.target.value)}
-                helperText="Status kelolosan pada tahap target"
+                helperText="Pass status at target stage"
               >
-                <MenuItem value="in_progress">Sedang Berjalan (Aktif)</MenuItem>
-                <MenuItem value="passed">Lolos (Passed)</MenuItem>
-                <MenuItem value="failed">Gugur (Failed)</MenuItem>
+                <MenuItem value="in_progress">In Progress (Active)</MenuItem>
+                <MenuItem value="passed">Passed</MenuItem>
+                <MenuItem value="failed">Failed</MenuItem>
               </TextField>
             </Grid>
 
@@ -5623,11 +5623,11 @@ export default function AdminApplicantsPage() {
                 fullWidth
                 multiline
                 rows={3}
-                label="Alasan / Catatan Internal Perubahan Tahap"
-                placeholder="Contoh: Koreksi status karena salah klik / Pengaturan ulang jadwal interview / Evaluasi ulang"
+                label="Reason / Internal Note for Stage Change"
+                placeholder="Example: Status correction due to misclick / Interview reschedule / Re-evaluation"
                 value={overrideNotes}
                 onChange={(e) => setOverrideNotes(e.target.value)}
-                helperText="Catatan ini akan tersimpan sebagai riwayat administrasi"
+                helperText="This note will be saved as administrative history"
               />
             </Grid>
 
@@ -5665,7 +5665,7 @@ export default function AdminApplicantsPage() {
               '&:hover': { bgcolor: '#6D28D9' },
             }}
           >
-            {processing ? 'Memproses...' : 'Terapkan Perubahan Tahap'}
+            {processing ? 'Processing...' : 'Apply Stage Change'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -5673,7 +5673,7 @@ export default function AdminApplicantsPage() {
       {/* 2b. TEST SESSION SCHEDULE & LOCATION MODAL (EDIT ANYTIME FOR STAGE 2 & 3) */}
       <Dialog open={testSessionModalOpen} onClose={() => setTestSessionModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800, color: '#018730' }}>
-          Atur Jadwal, Tempat & Token Ujian {selectedApplicant?.currentStage === 2 ? 'Psikotes (HR)' : 'Teknis Kejuruan (User)'}
+          Configure Schedule, Venue & Exam Token {selectedApplicant?.currentStage === 2 ? 'Psychometric (HR)' : 'Technical (Department User)'}
         </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
@@ -5722,13 +5722,13 @@ export default function AdminApplicantsPage() {
             <Grid size={{ xs: 12 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
                 <Typography variant="caption" sx={{ color: '#018730', fontWeight: 700 }}>
-                  Pilihan Durasi Cepat:
+                  Quick Duration Options:
                 </Typography>
                 {[
                   { label: '60 Menit (1 Jam)', min: 60 },
                   { label: '90 Menit', min: 90 },
                   { label: '120 Menit (2 Jam)', min: 120 },
-                  { label: '1 Hari (24 Jam)', min: 1440 },
+                  { label: '1 Day (24 Hours)', min: 1440 },
                 ].map((d) => (
                   <Chip
                     key={d.min}
@@ -5757,15 +5757,15 @@ export default function AdminApplicantsPage() {
 
           <TextField
             fullWidth
-            label="Tempat / Lokasi / Ruangan Ujian"
+            label="Exam Venue / Location / Room"
             value={testSessionLocation}
             onChange={(e) => setTestSessionLocation(e.target.value)}
-            placeholder="Contoh: Portal Karir Online PT ITSP atau Lab Komputer Plant 1"
+            placeholder="Example: PT ITSP Online Career Portal or Plant 1 Computer Lab"
             sx={{ mb: 1 }}
           />
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 2.5 }}>
             <Typography variant="caption" sx={{ color: '#64748B', alignSelf: 'center', mr: 0.5 }}>
-              Pilihan Cepat:
+              Quick Options:
             </Typography>
             {[
               'Portal Karir Online PT ITSP',
@@ -5802,12 +5802,12 @@ export default function AdminApplicantsPage() {
               startIcon={<DiceIcon />}
               sx={{ whiteSpace: 'nowrap', fontWeight: 700, textTransform: 'none', px: 2, height: 54 }}
             >
-              Acak Token
+              Generate Random Token
             </Button>
           </Box>
 
           <Alert severity="info" sx={{ mt: 2.5, borderRadius: 2 }}>
-            <strong>Solusi Kendala Ujian:</strong> Jika peserta mengalami laptop mati, wifi terputus, atau tidak sengaja keluar/pindah tab sehingga ujian terhenti, Tim {selectedApplicant?.currentStage === 2 ? 'HR Recruitment' : 'User Departemen'} dapat menekan tombol <strong>Reset Ujian & Buka Kunci</strong> di bawah ini agar peserta dapat kembali masuk dan melanjutkan/mengulang ujian.
+            <strong>Exam Troubleshooting:</strong> If a participant experiences laptop failure, Wi-Fi disconnection, or accidentally exits/switches tabs causing the exam to stop, the team {selectedApplicant?.currentStage === 2 ? 'HR Recruitment' : 'User Departemen'} can press the <strong>Reset Exam & Unlock</strong> button below so the participant can re-enter and continue/repeat the exam.
           </Alert>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -5819,14 +5819,14 @@ export default function AdminApplicantsPage() {
             onClick={async () => {
               if (!selectedApplicant) return;
               const testType = selectedApplicant.currentStage === 2 ? 'psikotes' : 'user_test';
-              const testName = selectedApplicant.currentStage === 2 ? 'Psikotes (HR)' : 'Teknis Kejuruan (User Departemen)';
+              const testName = selectedApplicant.currentStage === 2 ? 'Psychometric (HR)' : 'Technical (Department User)';
               if (!confirm(`Reset sesi ujian ${testName} untuk ${selectedApplicant.fullName}?\n\nKunci anti-cheat dan status pengumpulan akan dibatalkan, sehingga kandidat dapat login kembali ke portal dan mengikuti ujian (misal karena wifi putus, laptop mati, atau kendala browser).`)) return;
               await handleResetTest(selectedApplicant.id, testType);
               setTestSessionModalOpen(false);
             }}
             sx={{ fontWeight: 700, textTransform: 'none', borderColor: '#EF4444', color: '#DC2626', '&:hover': { bgcolor: '#FEF2F2', borderColor: '#DC2626' } }}
           >
-            Reset Ujian & Buka Kunci Peserta
+            Reset Exam & Unlock Participant
           </Button>
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -5837,7 +5837,7 @@ export default function AdminApplicantsPage() {
               onClick={handleConfirmTestSession}
               sx={{ bgcolor: '#018730', fontWeight: 700, '&:hover': { bgcolor: '#005c21' } }}
             >
-              {processing ? 'Saving...' : 'Save Pengaturan Sesi'}
+              {processing ? 'Saving...' : 'Save Session Settings'}
             </Button>
           </Box>
         </DialogActions>
@@ -5846,7 +5846,7 @@ export default function AdminApplicantsPage() {
       {/* 3. INTERVIEW SCHEDULING MODAL */}
       <Dialog open={interviewModalOpen} onClose={() => setInterviewModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 800, color: '#018730' }}>
-          Jadwalkan Interview {interviewType === 'hr' ? 'HR Recruitment' : 'User Departemen'}
+          Schedule Interview {interviewType === 'hr' ? 'HR Recruitment' : 'User Departemen'}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
@@ -5857,7 +5857,7 @@ export default function AdminApplicantsPage() {
             fullWidth
             required
             type="datetime-local"
-            label="Jadwal Waktu Interview"
+            label="Interview Schedule"
             slotProps={{ inputLabel: { shrink: true } }}
             value={interviewDate}
             onChange={(e) => setInterviewDate(e.target.value)}
@@ -5867,13 +5867,13 @@ export default function AdminApplicantsPage() {
           <TextField
             select
             fullWidth
-            label="Mode Pelaksanaan"
+            label="Execution Mode"
             value={locationMode}
             onChange={(e) => setLocationMode(e.target.value as any)}
             sx={{ mb: 2 }}
           >
             <MenuItem value="online">Online Video Meeting (MS Teams / Zoom)</MenuItem>
-            <MenuItem value="onsite">Onsite di Pabrik PT ITSP (KIIC Karawang / GIIC Cikarang)</MenuItem>
+            <MenuItem value="onsite">Onsite at PT ITSP Plant (KIIC Karawang / GIIC Cikarang)</MenuItem>
           </TextField>
 
           {locationMode === 'online' ? (
@@ -6110,7 +6110,7 @@ export default function AdminApplicantsPage() {
             }}
             sx={{ bgcolor: '#018730', fontWeight: 700 }}
           >
-            {processing ? 'Memproses...' : 'Save & Terapkan Password'}
+            {processing ? 'Processing...' : 'Save & Apply Password'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -6122,7 +6122,7 @@ export default function AdminApplicantsPage() {
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: '#475569', mb: 2.5, lineHeight: 1.6 }}>
-            Fitur ini secara otomatis memproses pelamar yang tidak melanjutkan seleksi (mangkir) lebih dari 30 hari dan membersihkan berkas berat di database.
+            Fitur ini secara otomatis memproses applicants yang tidak melanjutkan seleksi (mangkir) lebih dari 30 hari dan membersihkan berkas berat di database.
           </Typography>
 
           {cleanupFeedback && (
@@ -6147,7 +6147,7 @@ export default function AdminApplicantsPage() {
                 1. Optimalisasi Penyimpanan (Rekomendasi)
               </Typography>
               <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
-                Otomatis ubah status pelamar mangkir &gt; 30 hari menjadi <strong>Gugur</strong>, dan kosongkan file CV Base64 dari pelamar gugur lama untuk menghemat kapasitas database hingga 95% tanpa menghapus riwayat nama &amp; nilai.
+                Otomatis ubah status applicants mangkir &gt; 30 hari menjadi <strong>Gugur</strong>, dan kosongkan file CV Base64 dari applicants gugur lama untuk menghemat kapasitas database hingga 95% tanpa menghapus riwayat nama &amp; nilai.
               </Typography>
             </Box>
 
@@ -6166,7 +6166,7 @@ export default function AdminApplicantsPage() {
                 2. Hapus Permanen Data Kedaluwarsa
               </Typography>
               <Typography variant="body2" sx={{ color: '#64748B', fontSize: 13 }}>
-                Hapus tuntas seluruh data pelamar yang berstatus gugur atau tidak aktif &gt; 30 hari beserta seluruh riwayat tesnya dari database.
+                Hapus tuntas seluruh data applicants yang berstatus gugur atau tidak aktif &gt; 30 hari beserta seluruh riwayat tesnya dari database.
               </Typography>
             </Box>
           </Box>
@@ -6183,7 +6183,7 @@ export default function AdminApplicantsPage() {
               '&:hover': { bgcolor: cleanupMode === 'hard_delete' ? '#DC2626' : '#005c21' },
             }}
           >
-            {cleaningUp ? 'Memproses...' : 'Jalankan Pembersihan Sekarang'}
+            {cleaningUp ? 'Processing...' : 'Jalankan Pembersihan Sekarang'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -6246,7 +6246,7 @@ export default function AdminApplicantsPage() {
           >
             <Box>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Calon Karyawan Terpilih
+                Selected Candidate
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A' }}>
                 {hiringApplicant?.fullName}
@@ -6257,7 +6257,7 @@ export default function AdminApplicantsPage() {
             </Box>
             <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
               <Chip
-                label={hiringApplicant?.jobPosting?.title || 'Posisi Terpilih'}
+                label={hiringApplicant?.jobPosting?.title || 'Selected Position'}
                 color="primary"
                 size="small"
                 sx={{ fontWeight: 800, mb: 0.5, bgcolor: '#018730' }}
@@ -6268,7 +6268,7 @@ export default function AdminApplicantsPage() {
             </Box>
           </Paper>
 
-          {/* Card Preview ID Karyawan Resmi */}
+          {/* Official Employee ID Card Preview */}
           <Paper
             elevation={0}
             sx={{
@@ -6284,7 +6284,7 @@ export default function AdminApplicantsPage() {
             <Grid container spacing={2} alignItems="center">
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Typography variant="caption" sx={{ color: '#4ADE80', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  Format ID Karyawan PT ITSP: {'{ID}.{Bulan}.{Tahun}'}
+                  PT ITSP Employee ID Format: {'{ID}.{Bulan}.{Tahun}'}
                 </Typography>
                 <Box sx={{ mt: 0.8, display: 'flex', alignItems: 'baseline', gap: 1 }}>
                   <Typography
@@ -6349,7 +6349,7 @@ export default function AdminApplicantsPage() {
           {/* Form Pengisian Kontrak */}
           <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ScheduleIcon fontSize="small" sx={{ color: '#018730' }} /> Periode Masa Kontrak &amp; Hubungan Kerja
+              <ScheduleIcon fontSize="small" sx={{ color: '#018730' }} /> Contract Period & Employment Type
             </Typography>
 
             <Grid container spacing={2.5}>
@@ -6377,7 +6377,7 @@ export default function AdminApplicantsPage() {
                 />
               </Grid>
 
-              {/* Preset Tombol Cepat Masa Kontrak */}
+              {/* Quick Contract Duration Presets */}
               <Grid size={{ xs: 12 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B' }}>
@@ -6510,7 +6510,7 @@ export default function AdminApplicantsPage() {
           {/* Alert Informasi Otomasi */}
           <Alert severity="success" icon={<VerifiedIcon />} sx={{ mt: 2.5, bgcolor: '#ECFDF5', border: '1px solid #A7F3D0' }}>
             <Typography variant="body2" sx={{ color: '#065F46', fontSize: 13, lineHeight: 1.5 }}>
-              <strong>Otomatisasi Data Karyawan:</strong> Saat Anda menekan tombol konfirmasi di bawah, seluruh data diri lengkap (NIK, nama, alamat KTP, domisili, kontak darurat, keluarga, pendidikan, riwayat kerja, foto, dan 11 berkas dokumen pendaftaran) akan otomatis disalin ke <strong>Tabel Data Karyawan</strong>. Calon karyawan ini resmi menjadi karyawan aktif dan seluruh tombol aksi seleksi di tabel pelamar akan dinonaktifkan.
+              <strong>Otomatisasi Data Karyawan:</strong> Saat Anda menekan tombol konfirmasi di bawah, seluruh data diri lengkap (NIK, nama, alamat KTP, domisili, kontak darurat, keluarga, pendidikan, riwayat kerja, foto, dan 11 berkas dokumen pendaftaran) akan otomatis disalin ke <strong>Tabel Data Karyawan</strong>. Calon karyawan ini resmi menjadi karyawan aktif dan seluruh tombol aksi seleksi di tabel applicants akan dinonaktifkan.
             </Typography>
           </Alert>
         </DialogContent>

@@ -26,6 +26,6 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Schedule interview error:", error);
-    return NextResponse.json({ error: error.message || "Gagal menjadwalkan interview." }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Failed to schedule interview." }, { status: 400 });
   }
 }

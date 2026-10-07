@@ -28,7 +28,7 @@ export async function GET() {
   } catch (error: any) {
     console.error("MFA setup error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal menyiapkan MFA." },
+      { error: error?.message || "Failed to set up MFA." },
       { status: error?.status || 500 }
     );
   }

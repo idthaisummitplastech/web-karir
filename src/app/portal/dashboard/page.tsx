@@ -154,7 +154,7 @@ const CandidateSignatureCanvas: React.FC<{
           onClick={handleClear}
           sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none' }}
         >
-          Hapus / Ulangi
+          Remove / Retry
         </Button>
       </Box>
       <canvas
@@ -237,7 +237,7 @@ export default function ApplicantDashboard() {
         }
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || 'Gagal memuat status seleksi pelamar.');
+          throw new Error(errData.error || 'Failed to load selection status.');
         }
         return res.json();
       })
@@ -284,7 +284,7 @@ export default function ApplicantDashboard() {
         }
       })
       .catch((err) => {
-        if (!silent) setError(err.message || 'Gagal memuat data status pelamar.');
+        if (!silent) setError(err.message || 'Failed to load applicant status data.');
       })
       .finally(() => {
         if (!silent) setLoading(false);
@@ -359,14 +359,14 @@ export default function ApplicantDashboard() {
     if (!signaturePayload) {
       alert(
         signingMethod === 'digital'
-          ? 'Mohon goreskan tanda tangan digital Anda pada area kanvas sebelum menyetujui penawaran.'
-          : 'Mohon unggah berkas PDF yang telah ditandatangani sebelum menyetujui penawaran.'
+          ? 'Please draw your digital signature on the canvas before accepting the offer.'
+          : 'Please upload the signed PDF file before accepting the offer.'
       );
       return;
     }
 
     if (!agreeTerms) {
-      alert('Mohon centang pernyataan persetujuan klausul penawaran kerja terlebih dahulu.');
+      alert('Please check the agreement statement for the job offer clauses first.');
       return;
     }
 
@@ -380,7 +380,7 @@ export default function ApplicantDashboard() {
         }),
       });
       const resData = await res.json();
-      if (!res.ok) throw new Error(resData.error || resData.message || 'Gagal menyetujui penawaran.');
+      if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to accept offer.');
       fetchStatus();
     } catch (err: any) {
       alert(err.message);
@@ -462,7 +462,7 @@ export default function ApplicantDashboard() {
         <Container maxWidth="sm" sx={{ py: 12, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Card sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px solid #E2E8F0', boxShadow: '0 8px 30px rgba(0,0,0,0.06)', width: '100%' }}>
             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-              {error || 'Sesi login pelamar telah berakhir atau akun belum terdaftar. Silakan login kembali.'}
+              {error || 'Applicant login session has expired or account is not registered. Please log in again.'}
             </Alert>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button variant="outlined" onClick={fetchStatus} startIcon={<RefreshIcon />} sx={{ borderRadius: 2, fontWeight: 700 }}>
@@ -551,7 +551,7 @@ export default function ApplicantDashboard() {
                   }}
                 />
                 <Typography variant="caption" sx={{ color: '#F1F5F9', fontWeight: 700, fontSize: 11.5 }}>
-                  {isTabActive ? 'Sinkron Otomatis (Live)' : 'Siaga'}
+                  {isTabActive ? 'Live Auto-Sync (Live)' : 'Siaga'}
                 </Typography>
               </Box>
 
@@ -566,7 +566,7 @@ export default function ApplicantDashboard() {
                   '&:hover': { borderColor: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' },
                 }}
               >
-                Segarkan
+                Refresh
               </Button>
               <Button
                 variant="contained"
@@ -592,10 +592,10 @@ export default function ApplicantDashboard() {
                   <CancelIcon sx={{ color: '#DC2626', fontSize: 26 }} />
                   <Box>
                     <Typography variant="subtitle2" sx={{ color: '#991B1B', fontWeight: 800 }}>
-                      Status Seleksi: Belum Memenuhi Qualifications pada Tahap {applicant?.failedAtStage}
+                      Selection Status: Did Not Meet Qualifications at Stage {applicant?.failedAtStage}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#7F1D1D' }}>
-                      {applicant?.rejectionReason || 'Terima kasih atas partisipasi Anda. Profil Anda tersimpan dalam Talent Pool kami.'}
+                      {applicant?.rejectionReason || 'Thank you for your participation. Your profile is saved in our Talent Pool.'}
                     </Typography>
                   </Box>
                 </>
@@ -738,7 +738,7 @@ export default function ApplicantDashboard() {
                     • <strong>Waktu Mulai Ujian:</strong>{' '}
                     {applicant?.psikotesScheduledAt
                       ? new Date(applicant.psikotesScheduledAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }) + ' WIB'
-                      : 'Terbuka / Sesuai Jadwal Ruangan'}
+                      : 'Open / As per Room Schedule'}
                   </Typography>
                   {applicant?.psikotesScheduledAt && (
                     <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
@@ -780,16 +780,16 @@ export default function ApplicantDashboard() {
                             '&:hover': { bgcolor: '#005c21' },
                           }}
                         >
-                          🗺️ Buka Rute Lokasi Ujian di Google Maps &rarr;
+                          🗺️ Open Exam Location Route in Google Maps &rarr;
                         </Button>
                       </Box>
                     );
                   })()}
                   <Typography variant="body2" sx={{ color: '#64748B', mb: 0.5 }}>
-                    • <strong>Token Sesi:</strong> Dibagikan oleh Tim HR sesaat sebelum tes dimulai di ruangan.
+                    • <strong>Session Token:</strong> Shared by the HR Team just before the test starts in the room.
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 600 }}>
-                    • <strong>Anti-Cheat Proctoring:</strong> Dilarang berpindah tab browser atau beralih ke aplikasi lain (AI/LLM). Pelanggaran 2 kali akan mengunci ujian secara otomatis!
+                    • <strong>Anti-Cheat Proctoring:</strong> Prohibited berpindah tab browser atau beralih ke aplikasi lain (AI/LLM). Pelanggaran 2 kali akan mengunci ujian secara otomatis!
                   </Typography>
                 </Box>
 
@@ -805,7 +805,7 @@ export default function ApplicantDashboard() {
                   </Alert>
                 ) : psikotesSub?.isLocked ? (
                   <Alert severity="error" sx={{ borderRadius: 2 }}>
-                    Sesi Ujian Terkunci karena pelanggaran batas perpindahan tab/jendela. Silakan melapor ke Tim HR untuk permintaan Reset Sesi bila terjadi kendala teknis.
+                    Exam Session Locked due to tab/window switching violation. Please report to HR for a Session Reset if you encounter technical issues.
                   </Alert>
                 ) : currentStageNum === 2 ? (
                   <Box sx={{ textAlign: 'center', py: 2 }}>
@@ -892,26 +892,26 @@ export default function ApplicantDashboard() {
                             '&:hover': { bgcolor: '#e03a03' },
                           }}
                         >
-                          🗺️ Buka Rute Lokasi Ujian di Google Maps &rarr;
+                          🗺️ Open Exam Location Route in Google Maps &rarr;
                         </Button>
                       </Box>
                     );
                   })()}
                   <Typography variant="body2" sx={{ color: '#78350F', mb: 0.5 }}>
-                    • <strong>Token Sesi Ujian:</strong> Memerlukan Token Ujian User yang dibagikan oleh penilai/tim departemen terkait.
+                    • <strong>Exam Session Token:</strong> Requires the User Exam Token shared by the assessor / relevant department team.
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#DC2626', fontWeight: 600 }}>
-                    • <strong>Peringatan Proctoring:</strong> Dilarang berpindah tab browser atau menggunakan tools bantuan otomatis saat pengerjaan soal teknis.
+                    • <strong>Proctoring Warning:</strong> Switching browser tabs or using automated assistance tools during the technical test is strictly prohibited.
                   </Typography>
                 </Box>
 
                 {userTestSub?.submittedAt ? (
                   <Alert severity="success" sx={{ borderRadius: 2 }}>
-                    Lembar Tes Teknis User telah berhasil dikirimkan. Penilai departemen sedang mengevaluasi lembar jawaban Anda.
+                    Your Technical Test sheet has been submitted successfully. The department evaluator is reviewing your answers.
                   </Alert>
                 ) : userTestSub?.isLocked ? (
                   <Alert severity="error" sx={{ borderRadius: 2 }}>
-                    Ujian terkunci karena sensor keamanan sistem mendeteksi aktivitas di luar halaman ujian.
+                    Exam locked because the system security sensor detected activity outside the exam page.
                   </Alert>
                 ) : currentStageNum === 3 ? (
                   <Box sx={{ textAlign: 'center', py: 2 }}>
@@ -930,12 +930,12 @@ export default function ApplicantDashboard() {
                         '&:hover': { bgcolor: '#e03a03' },
                       }}
                     >
-                      Mulai Tes Teknis Departemen
+                      Start Department Technical Test
                     </Button>
                   </Box>
                 ) : (
                   <Alert severity="info" sx={{ borderRadius: 2 }}>
-                    Tahapan tes teknis belum aktif atau telah Anda selesaikan.
+                    The technical test stage is not yet active or you have already completed it.
                   </Alert>
                 )}
               </Box>
@@ -945,18 +945,18 @@ export default function ApplicantDashboard() {
             {activeStep === 3 && (
               <Box>
                 <Typography variant="body1" sx={{ color: '#334155', mb: 3, lineHeight: 1.65 }}>
-                  Wawancara bersama Tim Human Capital Management untuk menggali motivasi, kepribadian, integritas, dan kesiapan Anda bergabung di lingkungan manufaktur otomotif.
+                  Interview with the Human Capital Management team to explore your motivation, personality, integrity, and readiness to join an automotive manufacturing environment.
                 </Typography>
 
                 {hrInterview ? (
                   <Card sx={{ bgcolor: '#F8FAFC', border: '1.5px solid #CBD5E1', borderRadius: 2.5, p: 3 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#018730', mb: 1.5 }}>
-                      JADWAL INTERVIEW HR ANDA
+                      YOUR HR INTERVIEW SCHEDULE
                     </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 3 }}>
                       <Box>
                         <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                          Waktu Pelaksanaan:
+                          Schedule:
                         </Typography>
                         <Typography variant="body1" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {new Date(hrInterview.scheduledAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
@@ -1004,7 +1004,7 @@ export default function ApplicantDashboard() {
                           • Ruangan: {hrInterview.roomName || 'Ruang Meeting HCM Lt. 2'}
                         </Typography>
                         <Typography variant="body2" sx={{ color: '#78350F', mb: 1.5 }}>
-                          • Terms: Lapor pos security dengan membawa KTP asli, kemeja putih formal, dan sepatu tertutup.
+                          • Terms: Report to the security post bringing your original ID card, formal white shirt, and closed shoes.
                         </Typography>
                         {(() => {
                           const mapsUrl = hrInterview.mapsUrl || getPlantMapsUrl(hrInterview.locationAddress || data?.plantConfig?.karawang);
@@ -1028,7 +1028,7 @@ export default function ApplicantDashboard() {
                                 '&:hover': { bgcolor: '#005c21' },
                               }}
                             >
-                              🗺️ Buka Rute Lokasi Pabrik di Google Maps &rarr;
+                              🗺️ Buka Route Pabrik di Google Maps &rarr;
                             </Button>
                           ) : null;
                         })()}
@@ -1053,7 +1053,7 @@ export default function ApplicantDashboard() {
                 {userInterview ? (
                   <Card sx={{ bgcolor: '#F8FAFC', border: '1.5px solid #CBD5E1', borderRadius: 2.5, p: 3 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#fc4509', mb: 1.5 }}>
-                      JADWAL INTERVIEW USER DEPARTEMEN
+                      DEPARTMENT USER INTERVIEW SCHEDULE
                     </Typography>
                     <Typography variant="body2" sx={{ mb: 1 }}>
                       Pewawancara: <strong>{userInterview.interviewerName || 'Kepala Departemen Terkait'}</strong>
@@ -1085,7 +1085,7 @@ export default function ApplicantDashboard() {
                           </Typography>
                         )}
                         <Typography variant="body2" sx={{ color: '#78350F', mb: 1.5 }}>
-                          • Terms: Lapor pos security dengan membawa KTP asli, berkas portofolio teknis, kemeja rapi formal, dan sepatu safety/tertutup.
+                          • Terms: Report to the security post bringing your original ID card, technical portfolio documents, formal neat shirt, and safety/closed shoes.
                         </Typography>
                         {(() => {
                           const mapsUrl = userInterview.mapsUrl || getPlantMapsUrl(userInterview.locationAddress || data?.plantConfig?.karawang);
@@ -1109,7 +1109,7 @@ export default function ApplicantDashboard() {
                                 '&:hover': { bgcolor: '#e03a03' },
                               }}
                             >
-                              🗺️ Buka Rute Lokasi Pabrik di Google Maps &rarr;
+                              🗺️ Buka Route Pabrik di Google Maps &rarr;
                             </Button>
                           ) : null;
                         })()}
@@ -1164,7 +1164,7 @@ export default function ApplicantDashboard() {
                           startIcon={<LocationIcon />}
                           sx={{ mt: 1, bgcolor: '#018730', fontWeight: 700, textTransform: 'none', '&:hover': { bgcolor: '#005c21' } }}
                         >
-                          Buka Rute Google Maps Klinik &rarr;
+                          Open Clinic Route in Google Maps &rarr;
                         </Button>
                       )}
                     </Box>
@@ -1281,7 +1281,7 @@ export default function ApplicantDashboard() {
                     </Box>
 
                     <Alert severity="info" sx={{ textAlign: 'left', maxWidth: 600, mx: 'auto', borderRadius: 2 }}>
-                      Mohon hadir ke pabrik PT ITSP pada jadwal yang ditentukan untuk penandatanganan Kontrak Kerja Fisik (PKWT) dan pengambilan seragam & Kartu Tanda Pengenal (ID Card).
+                      Please report to PT ITSP plant at the scheduled time for Physical Employment Contract (PKWT) signing and uniform & ID Card collection.
                     </Alert>
                   </Card>
                 ) : applicant?.offeringStatus === 'issued' ? (
@@ -1361,7 +1361,7 @@ export default function ApplicantDashboard() {
                         </Box>
                       </Box>
                       <Alert severity="info" sx={{ bgcolor: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0', py: 0.8, px: 2, borderRadius: 1.5, '& .MuiAlert-icon': { color: '#018730' } }}>
-                        <strong>Wajib diunduh:</strong> Silakan buka atau unduh dokumen penawaran di atas terlebih dahulu untuk mempelajari seluruh hak, rincian gaji, dan klausul hubungan kerja sebelum menandatangani berkas.
+                        <strong>Required download:</strong> Please open or download the offer document above first to review all rights, salary details, and employment clauses before signing.
                       </Alert>
                     </Card>
 
@@ -1516,7 +1516,7 @@ export default function ApplicantDashboard() {
                                 />
                                 <Box>
                                   <Typography variant="body2" sx={{ fontWeight: 800, color: '#065F46' }}>
-                                    ✓ Tanda Tangan Anda Berhasil Direkam
+                                    ✓ Tanda Tangan Anda Success Direkam
                                   </Typography>
                                   <Typography variant="caption" sx={{ color: '#047857' }}>
                                     Nama: {applicant?.fullName || applicant?.full_name} • Siap disahkan ke surat resmi
@@ -1747,7 +1747,7 @@ export default function ApplicantDashboard() {
         </DialogTitle>
         <DialogContent className="notranslate" translate="no">
           <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
-            Masukkan <strong>Password / Token Sesi Ujian</strong> yang dibagikan oleh Tim HR / Pengawas di ruangan:
+            Enter <strong>Exam Password / Session Token</strong> shared by the HR Team / proctor in the room:
           </Typography>
 
           {tokenError && (

@@ -285,7 +285,7 @@ export default function UserTestExamPage() {
           <Card sx={{ borderRadius: 3, border: '2px solid #86EFAC', p: 5, textAlign: 'center', boxShadow: '0 8px 30px rgba(0,0,0,0.06)' }}>
             <CheckCircleIcon sx={{ fontSize: 60, color: '#16A34A', mb: 2 }} />
             <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
-              Ujian Teknis Berhasil Dikirimkan!
+              Ujian Teknis Success Dikirimkan!
             </Typography>
             <Typography variant="body1" sx={{ color: '#475569', maxWidth: 580, mx: 'auto', mb: 4, lineHeight: 1.6 }}>
               Hasil jawaban teknis Anda sedang dievaluasi oleh Tim Kepala Departemen & Human Capital PT ITSP. Pantau status perkembangan Anda di dashboard pelamar.

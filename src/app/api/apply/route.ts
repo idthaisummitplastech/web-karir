@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       !cvBase64
     ) {
       return NextResponse.json(
-        { error: "Mohon lengkapi seluruh data wajib bertanda bintang (*), termasuk identitas, kontak, tanggal lahir, dan CV." },
+        { error: "Please complete all required fields marked with an asterisk (*), including identity, contact, birth date, and CV." },
         { status: 400 }
       );
     }
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanEmail)) {
       return NextResponse.json(
-        { error: "Format alamat email tidak valid. Pastikan Anda memasukkan email aktif dengan benar." },
+        { error: "Invalid email address format. Please ensure you enter a valid active email." },
         { status: 400 }
       );
     }
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
     if (calculatedSize > MAX_FILE_SIZE_BYTES) {
       return NextResponse.json(
         {
-          error: `Ukuran file CV Anda (${(calculatedSize / 1024).toFixed(1)} KB) melebihi batas maksimal yang diizinkan (100 KB). Mohon kompres file PDF Anda menggunakan kompresor PDF online sebelum mengunggah.`,
+          error: `Your CV file size (${(calculatedSize / 1024).toFixed(1)} KB) exceeds the maximum allowed limit (100 KB). Please compress your PDF using an online PDF compressor before uploading.`,
         },
         { status: 400 }
       );
@@ -225,7 +225,7 @@ export async function POST(req: Request) {
         subject: emailSubject,
         html: emailHtml,
       }).catch((mailErr) => {
-        console.error("[APPLY EMAIL ERROR] Gagal mengirim email:", mailErr?.message);
+        console.error("[APPLY EMAIL ERROR] Failed to send email:", mailErr?.message);
       });
     }
 
@@ -237,7 +237,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Application submission error:", error);
     return NextResponse.json(
-      { error: error?.message || "Terjadi kesalahan saat memproses pendaftaran. Silakan coba kembali." },
+      { error: error?.message || "An error occurred while processing your registration. Please try again." },
       { status: error?.status || 500 }
     );
   }

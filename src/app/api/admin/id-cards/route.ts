@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
     }
     const body = await req.json();
     const { id, source } = body;
-    if (!id) return NextResponse.json({ error: "ID wajib disertakan." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
     if (source === 'karyawan_sementara') {
       const result = await fetchRawFromBackend(`/recruitment/karyawan-sementara/${id}/toggle-id-card`, {

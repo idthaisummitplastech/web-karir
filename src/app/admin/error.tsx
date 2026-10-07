@@ -39,7 +39,7 @@ export default function AdminError({
           <WarningAmberIcon sx={{ fontSize: 40 }} />
         </Box>
         <Typography variant="h6" sx={{ fontWeight: 800, color: '#991B1B', mb: 1 }}>
-          Dashboard Admin Gagal Dimuat
+          Admin Dashboard Failed to Load
         </Typography>
         <Typography variant="body2" sx={{ color: '#64748B', mb: 2, lineHeight: 1.6 }}>
           Terjadi kesalahan saat merender halaman admin ini — biasanya karena data API tidak sesuai,

@@ -100,10 +100,10 @@ const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
   labelAuthorizerSignature: "Authorizer's Signature ....................",
   hrmSignerTitle: 'HRM',
   hrmCompanyFooter: 'PT. Indonesia Thai Summit Plastech',
-  termsTitle: 'Terms Penggunaan',
-  termsItem1: 'ID Card harus selalu digunakan pada saat bekerja.',
-  termsItem2: 'Apabila tidak membawa ID card pada saat bekerja, maka akan diberikan sanksi sesuai dengan aturan yang berlaku.',
-  termsItem3: 'Apabila ID Card hilang diluar perusahaan, maka yang bersangkutan harus menunjukkan surat keterangan dari kepolisian.',
+  termsTitle: 'Terms of Use',
+  termsItem1: 'ID Card must be worn at all times while on duty.',
+  termsItem2: 'Failure to wear the ID card while on duty will be subject to sanctions per company regulations.',
+  termsItem3: 'If the ID Card is lost outside company premises, the holder must present a police report.',
   qualityTitleEn: 'QUALITY POLICY STATEMENT',
   qualityTextEn: 'The company is commited to providing quality products, on-time delivery, professional services and compliance with applicable regulations regarding products and customer requirements to meet customer satisfaction through continous improvement of quality management system.',
   qualityTitleId: 'KEBIJAKAN MUTU PERUSAHAAN',
@@ -282,7 +282,7 @@ const SignaturePad: React.FC<{
   const handlePasteFromClipboard = async () => {
     try {
       if (!navigator.clipboard?.read) {
-        alert('Browser Anda memerlukan pintasan keyboard: Silakan tekan Ctrl + V pada keyboard untuk menempelkan gambar tanda tangan.');
+        alert('Your browser requires a keyboard shortcut: Please press Ctrl + V to paste the signature image.');
         return;
       }
       const items = await navigator.clipboard.read();
@@ -294,10 +294,10 @@ const SignaturePad: React.FC<{
           return;
         }
       }
-      alert('Tidak ada gambar tanda tangan di clipboard. Silakan salin (Copy / Screenshot) gambar tanda tangan terlebih dahulu, lalu tekan tombol ini atau Ctrl + V.');
+      alert('No signature image in clipboard. Please copy (Copy / Screenshot) the signature image first, then press this button or Ctrl + V.');
     } catch (err: any) {
       console.warn('Clipboard read error:', err);
-      alert('Akses clipboard otomatis dibatasi oleh browser. Silakan langsung tekan pintasan keyboard: Ctrl + V untuk menempelkan gambar.');
+      alert('Automatic clipboard access is limited by the browser. Please directly press the keyboard shortcut: Ctrl + V to paste the image.');
     }
   };
 
@@ -457,7 +457,7 @@ const SignaturePad: React.FC<{
             onClick={handleClear}
             sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none' }}
           >
-            Hapus / Ulangi
+            Remove / Retry
           </Button>
         </Stack>
       </Box>
@@ -731,7 +731,7 @@ export default function AdminIdCardsPage() {
       }, 1000);
     } catch (e) {
       console.error(e);
-      setFormatSaveFeedback('Gagal menyimpan format ke local storage.');
+      setFormatSaveFeedback('Failed to save format to local storage.');
     }
   };
 
@@ -769,7 +769,7 @@ export default function AdminIdCardsPage() {
   const formatDisplayId = (idStr?: string) => {
     if (!idStr) return 'ITSP.----.--.--';
     let trimmed = idStr.trim();
-    // Bersihkan jika ada dobel awalan ITSP (contoh: "ITSP. ITSP-..." atau "ITSP.ITSP-...")
+    // Clean up duplicate ITSP prefix if present (contoh: "ITSP. ITSP-..." atau "ITSP.ITSP-...")
     trimmed = trimmed.replace(/^ITSP[\.\s\-_]+ITSP[\.\s\-_]*/i, 'ITSP.');
     if (/^ITSP[\.\s\-_]/i.test(trimmed) || trimmed.toUpperCase() === 'ITSP') {
       return trimmed;
@@ -777,7 +777,7 @@ export default function AdminIdCardsPage() {
     return `ITSP.${trimmed}`;
   };
 
-  // Karyawan yang akan dicetak
+  // Employee yang akan dicetak
   const employeesToPrint =
     selectedIds.length > 0
       ? employees.filter((e) => selectedIds.includes(e.id))
@@ -958,7 +958,7 @@ export default function AdminIdCardsPage() {
               )}
             </Box>
 
-            {/* Tabel 4 Baris: Employee ID, Name, Position, Department */}
+            {/* Table 4 Rows: Employee ID, Name, Position, Department */}
             <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }} className="notranslate" translate="no">
               <table className="notranslate" translate="no" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', color: '#000000', tableLayout: 'fixed' }}>
                 <tbody className="notranslate" translate="no">
@@ -1046,7 +1046,7 @@ export default function AdminIdCardsPage() {
                   />
                 ) : (
                   <Typography sx={{ color: '#94A3B8', fontSize: 8 }}>
-                    [Tanda Tangan HR]
+                    [HR Signature]
                   </Typography>
                 )}
               </Box>
@@ -1326,11 +1326,11 @@ export default function AdminIdCardsPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             <BadgeIcon sx={{ color: '#018730', fontSize: 30 }} />
             <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.5px' }}>
-              Modul Cetak ID Card &amp; Kartu Nama Karyawan
+              ID Card &amp; Business Card Printing Module
             </Typography>
           </Box>
           <Typography variant="body2" sx={{ color: '#64748B' }}>
-            Format resmi PT Indonesia Thai Summit Plastech • Kertas A4 muat 2 ID Card sekaligus, sesuaikan teks &amp; format template kartu secara bebas
+            Official PT Indonesia Thai Summit Plastech format • A4 sheet fits 2 ID cards at once — customize template text &amp; format freely
           </Typography>
         </Box>
 
@@ -1349,7 +1349,7 @@ export default function AdminIdCardsPage() {
               '&:hover': { bgcolor: '#F0F9FF', borderColor: '#0369A1' },
             }}
           >
-            Edit Format Kartu &amp; Preview
+            Edit Card Format &amp; Preview
           </Button>
 
           <Button
@@ -1370,7 +1370,7 @@ export default function AdminIdCardsPage() {
               '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
             }}
           >
-            Atur Tanda Tangan HR
+            Configure HR Signature
           </Button>
 
           <Button
@@ -1399,21 +1399,21 @@ export default function AdminIdCardsPage() {
         </Stack>
       </Box>
 
-      {/* Main Grid: Kolom Kiri Tabel Pilihan Karyawan, Kolom Kanan Preview ID Card */}
+      {/* Main Grid: Kolom Kiri Tabel Pilihan Employee, Kolom Kanan Preview ID Card */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.05fr 1.35fr' }, gap: 3 }}>
-        {/* Kolom Kiri: Tabel Karyawan dengan Multi-Select Checkbox */}
+        {/* Kolom Kiri: Tabel Employee dengan Multi-Select Checkbox */}
         <Box>
           {/* Quick Selection Bar */}
           <Paper elevation={0} sx={{ p: 1.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: 2, bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Chip
-                label={`${selectedIds.length} Karyawan Terpilih`}
+                label={`${selectedIds.length} Selected Employees`}
                 size="small"
                 color={selectedIds.length > 0 ? 'success' : 'default'}
                 sx={{ fontWeight: 800 }}
               />
               <Typography variant="caption" sx={{ color: '#64748B' }}>
-                (1 Lembar A4 muat 2 kartu)
+                (1 A4 sheet fits 2 cards)
               </Typography>
             </Box>
 
@@ -1424,7 +1424,7 @@ export default function AdminIdCardsPage() {
                 onClick={handleSelectTop2}
                 sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none', py: 0.3 }}
               >
-                Pilih 2 Teratas (1 Lembar A4)
+                Select Top 2 (1 A4 Sheet)
               </Button>
               <Button
                 size="small"
@@ -1433,7 +1433,7 @@ export default function AdminIdCardsPage() {
                 startIcon={<SelectAllIcon sx={{ fontSize: 14 }} />}
                 sx={{ fontSize: 11, fontWeight: 700, textTransform: 'none', py: 0.3 }}
               >
-                Pilih Semua
+                Select All
               </Button>
               {selectedIds.length > 1 && (
                 <Button
@@ -1456,7 +1456,7 @@ export default function AdminIdCardsPage() {
               setSearchQuery(val);
               setPage(0);
             }}
-            placeholder="Cari nama karyawan, nomor ID, jabatan, dept..."
+            placeholder="Search employee name, ID, position, dept..."
             totalCount={employees.length}
             filteredCount={filteredEmployees.length}
           />
@@ -1477,9 +1477,9 @@ export default function AdminIdCardsPage() {
                       sx={{ color: '#018730', '&.Mui-checked': { color: '#018730' } }}
                     />
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Karyawan</TableCell>
-                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>ID Karyawan</TableCell>
-                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Departemen</TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Employee</TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>ID Employee</TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Department</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1488,7 +1488,7 @@ export default function AdminIdCardsPage() {
                     <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
                       <CircularProgress size={30} sx={{ color: '#018730', mb: 1 }} />
                       <Typography variant="body2" sx={{ color: '#64748B' }}>
-                        Memuat data karyawan...
+                        Loading employee data...
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -1600,10 +1600,10 @@ export default function AdminIdCardsPage() {
               <Box sx={{ p: 2, bgcolor: '#0F172A', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 14 }}>
-                    Pratinjau Cetak ({employeesToPrint.length} Kartu Terpilih)
+                    Print Preview ({employeesToPrint.length} Cards Selected)
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                    {a4Pages.length} Lembar Kertas A4 (Maksimal 2 kartu per lembar A4)
+                    {a4Pages.length} A4 Sheets (Max 2 cards per A4 sheet)
                   </Typography>
                 </Box>
 
@@ -1650,7 +1650,7 @@ export default function AdminIdCardsPage() {
               <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <BusinessIcon sx={{ fontSize: 16, color: '#018730' }} /> Pilih Alamat Pabrik PT:
+                    <BusinessIcon sx={{ fontSize: 16, color: '#018730' }} /> Select Company Plant Address:
                   </Typography>
 
                   <RadioGroup
@@ -1682,7 +1682,7 @@ export default function AdminIdCardsPage() {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#334155' }}>
-                    Format Cetak:
+                    Print Format:
                   </Typography>
                   <Stack direction="row" spacing={1}>
                     <Button
@@ -1700,7 +1700,7 @@ export default function AdminIdCardsPage() {
                         color: printLayoutMode === 'all_panels' ? '#FFFFFF' : '#0F172A',
                       }}
                     >
-                      4 Panel Lengkap (Format Excel User)
+                      4 Full Panels (User Excel Format)
                     </Button>
                     <Button
                       size="small"
@@ -1738,7 +1738,7 @@ export default function AdminIdCardsPage() {
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: '#92400E', fontSize: 12, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      🔍 Ukuran Tanda Tangan di ID Card (Scale):
+                      🔍 Signature Size on ID Card (Scale):
                     </Typography>
                     <Chip
                       size="small"
@@ -1752,7 +1752,7 @@ export default function AdminIdCardsPage() {
                       size="small"
                       onClick={() => handleUpdateScale(Math.max(50, signatureScale - 10))}
                       disabled={signatureScale <= 50}
-                      title="Perkecil Ukuran Tanda Tangan"
+                      title="Decrease Signature Size"
                       sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
                     >
                       <ZoomOutIcon sx={{ fontSize: 16 }} />
@@ -1781,7 +1781,7 @@ export default function AdminIdCardsPage() {
                       size="small"
                       onClick={() => handleUpdateScale(Math.min(220, signatureScale + 10))}
                       disabled={signatureScale >= 220}
-                      title="Perbesar Ukuran Tanda Tangan"
+                      title="Increase Signature Size"
                       sx={{ p: 0.5, bgcolor: '#FFFFFF', border: '1px solid #FDE68A', color: '#92400E' }}
                     >
                       <ZoomInIcon sx={{ fontSize: 16 }} />
@@ -1818,10 +1818,10 @@ export default function AdminIdCardsPage() {
                     <EditIcon sx={{ color: '#0284C7', fontSize: 22 }} />
                     <Box>
                       <Typography variant="caption" sx={{ fontWeight: 800, color: '#1E3A8A', display: 'block', fontSize: 12 }}>
-                        Mau ubah teks, label, ketentuan, atau format kartu?
+                        Want to change text, labels, terms or card format?
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#3B82F6', fontSize: 11 }}>
-                        Tersedia fitur <strong>Live Preview</strong>: teks di kartu langsung berubah saat Anda mengetik di editor.
+                        <strong>Live Preview</strong> available: card text updates instantly as you type in the editor.
                       </Typography>
                     </Box>
                   </Box>
@@ -1868,14 +1868,14 @@ export default function AdminIdCardsPage() {
                     >
                       <Box className="no-print" sx={{ mb: 1.5, pb: 1, borderBottom: '1px dashed #CBD5E1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#018730' }}>
-                          📄 Lembar Kertas A4 #{pageIndex + 1} (Muat {pagePair.length} Kartu)
+                          📄 A4 Sheet #{pageIndex + 1} (Holds {pagePair.length} Kartu)
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>
-                          Karyawan: {pagePair.map((p) => p.namaLengkap).join(' & ')}
+                          Employee: {pagePair.map((p) => p.namaLengkap).join(' & ')}
                         </Typography>
                       </Box>
 
-                      {/* Render Kartu Karyawan 1 (Atas) */}
+                      {/* Render Kartu Employee 1 (Atas) */}
                       {renderSingleIdCard(pagePair[0])}
 
                       {/* Garis Potong Horizontal Pemisah Lembar A4 */}
@@ -1906,7 +1906,7 @@ export default function AdminIdCardsPage() {
                             </Typography>
                           </Box>
 
-                          {/* Render Kartu Karyawan 2 (Bawah) */}
+                          {/* Render Kartu Employee 2 (Bawah) */}
                           {renderSingleIdCard(pagePair[1])}
                         </>
                       ) : (
@@ -1976,7 +1976,7 @@ export default function AdminIdCardsPage() {
             <Card sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed #CBD5E1', bgcolor: '#FFFFFF' }}>
               <BadgeIcon sx={{ fontSize: 52, color: '#CBD5E1', mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#475569' }}>
-                Belum Ada Karyawan yang Dipilih
+                Belum Ada Employee yang Dipilih
               </Typography>
               <Typography variant="body2" sx={{ color: '#94A3B8', maxWidth: 380, mx: 'auto', mt: 0.5 }}>
                 Centang checkbox pada baris karyawan di tabel sebelah kiri (bisa 1 atau 2 orang sekaligus) untuk mencetaknya di 1 lembar A4.
@@ -2023,7 +2023,7 @@ export default function AdminIdCardsPage() {
                 sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}
               >
                 <Tab label="Identitas & Kartu Depan" sx={{ fontWeight: 700, fontSize: 12 }} />
-                <Tab label="Terms Penggunaan" sx={{ fontWeight: 700, fontSize: 12 }} />
+                <Tab label="Terms of Use" sx={{ fontWeight: 700, fontSize: 12 }} />
                 <Tab label="Quality Policy" sx={{ fontWeight: 700, fontSize: 12 }} />
               </Tabs>
 
@@ -2075,7 +2075,7 @@ export default function AdminIdCardsPage() {
                   />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#334155', display: 'block', mt: 1 }}>
-                    🏷️ Label Kolom Informasi Karyawan:
+                    🏷️ Label Kolom Informasi Employee:
                   </Typography>
                   <TextField
                     fullWidth
@@ -2101,7 +2101,7 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Label Departemen"
+                    label="Label Department"
                     value={tempFormat.labelDepartment}
                     onChange={(e) => setTempFormat({ ...tempFormat, labelDepartment: e.target.value })}
                   />
@@ -2235,9 +2235,9 @@ export default function AdminIdCardsPage() {
             <Box sx={{ p: 2.5, bgcolor: '#E2E8F0', display: 'flex', flexDirection: 'column', maxHeight: '70vh', overflowY: 'auto' }}>
               <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <ViewIcon fontSize="small" sx={{ color: '#018730' }} /> Pratinjau Langsung (Live Preview)
+                  <ViewIcon fontSize="small" sx={{ color: '#018730' }} /> Live Preview
                 </Typography>
-                <Chip size="small" label="Tersinkron Realtime" color="success" sx={{ fontWeight: 800, fontSize: 10 }} />
+                <Chip size="small" label="Synced in Realtime" color="success" sx={{ fontWeight: 800, fontSize: 10 }} />
               </Box>
 
               <Typography variant="caption" sx={{ color: '#64748B', mb: 2, display: 'block' }}>
@@ -2289,7 +2289,7 @@ export default function AdminIdCardsPage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <DrawIcon sx={{ color: '#4ADE80' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, color: '#FFFFFF' }}>
-                Atur Tanda Tangan Default HR (Authorizer&apos;s Signature)
+                Configure Default HR Signature (Authorizer&apos;s Signature)
               </Typography>
             </Box>
             <IconButton size="small" onClick={() => setAuthorizerModalOpen(false)} sx={{ color: '#94A3B8' }}>
@@ -2325,7 +2325,7 @@ export default function AdminIdCardsPage() {
                 onClick={async () => {
                   try {
                     if (!navigator.clipboard?.read) {
-                      alert('Silakan gunakan pintasan keyboard: Tekan Ctrl + V untuk langsung menempelkan gambar tanda tangan.');
+                      alert('Please use the keyboard shortcut: Press Ctrl + V to paste the signature image directly.');
                       return;
                     }
                     const items = await navigator.clipboard.read();
@@ -2343,10 +2343,10 @@ export default function AdminIdCardsPage() {
                         return;
                       }
                     }
-                    alert('Tidak ada gambar pada clipboard Anda. Silakan salin (Copy / Screenshot) gambar tanda tangan terlebih dahulu, lalu tekan tombol ini atau Ctrl + V.');
+                    alert('No image on your clipboard. Please copy (Copy / Screenshot) the signature image first, then press this button or Ctrl + V.');
                   } catch (err) {
                     console.warn(err);
-                    alert('Akses clipboard otomatis dibatasi oleh browser. Silakan langsung tekan pintasan keyboard: Ctrl + V untuk menempelkan gambar.');
+                    alert('Automatic clipboard access is limited by the browser. Please directly press the keyboard shortcut: Ctrl + V to paste the image.');
                   }
                 }}
                 sx={{
@@ -2385,7 +2385,7 @@ export default function AdminIdCardsPage() {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                 <Typography variant="caption" sx={{ fontWeight: 800, color: '#92400E', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: 12 }}>
-                  🔍 Ukuran Tanda Tangan di ID Card (Scale):
+                  🔍 Signature Size on ID Card (Scale):
                 </Typography>
                 <Chip
                   size="small"

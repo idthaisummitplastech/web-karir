@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch('/api/admin/users', { cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || `Gagal memuat pengguna (HTTP ${res.status})`);
+      if (!res.ok) throw new Error(data?.error || `Failed to load users (HTTP ${res.status})`);
       const list = (Array.isArray(data.users) ? data.users : Array.isArray(data) ? data : []).map(normalize);
       setUsers(list);
       if (data.departments && Array.isArray(data.departments) && data.departments.length > 0) {
@@ -356,7 +356,7 @@ export default function AdminUsersPage() {
         <Card sx={{ p: 3, textAlign: 'center', borderRadius: 3, border: '1px solid #E2E8F0' }}>
           <SecurityIcon sx={{ fontSize: 42, color: '#94A3B8', mb: 1 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
-            Gagal memuat data akun
+            Failed to load account data
           </Typography>
           <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
             Backend tidak merespons atau sesi Anda kedaluwarsa. Periksa koneksi ke <code>BACKEND_API_URL</code> dan coba login ulang.

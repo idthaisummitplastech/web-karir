@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Record violation error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal mencatat pelanggaran." },
+      { error: error?.message || "Failed to log violation." },
       { status: error?.status || 500 }
     );
   }

@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Accept offer error:", error);
     return NextResponse.json(
-      { error: error?.message || "Gagal memproses persetujuan offering." },
+      { error: error?.message || "Failed to process offer acceptance." },
       { status: error?.status || 500 }
     );
   }

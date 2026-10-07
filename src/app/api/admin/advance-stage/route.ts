@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const session = await getAdminSession();
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized. Silakan login." }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized. Please log in." }, { status: 401 });
     }
 
     const body = await req.json();
@@ -60,14 +60,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: result.message || result.data?.message || "Tahap berhasil diproses.",
+      message: result.message || result.data?.message || "Stage processed successfully.",
       emailSent: result.email_sent ?? result.data?.email_sent ?? true,
       emailError: result.email_error ?? result.data?.email_error ?? null,
     });
   } catch (error: any) {
     console.error("Advance stage error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memproses perubahan tahap." },
+      { error: error.message || "Failed to process stage change." },
       { status: 400 }
     );
   }

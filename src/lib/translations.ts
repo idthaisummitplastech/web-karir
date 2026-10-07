@@ -421,7 +421,7 @@ export const translations: Record<Language, CareerTranslations> = {
     admin_users_backToApplicants: 'Kembali ke Data Pelamar',
     admin_users_title: 'Kelola Akun HR & User Departemen',
     admin_users_subtitle: 'Manajemen kredensial tim internal rekrutmen, reset password akun, dan reset MFA jika perangkat Authenticator hilang.',
-    admin_users_searchPlaceholder: 'Cari nama, username, email, role, atau dept...',
+    admin_users_searchPlaceholder: 'Search name, username, email, role, or dept...',
     admin_users_mobileEmptyFiltered: 'Tidak ada akun pengguna yang sesuai kriteria pencarian.',
     admin_users_mobileEmptyAll: 'Belum ada data akun pengguna.',
     admin_users_deptPrefix: 'Departemen:',

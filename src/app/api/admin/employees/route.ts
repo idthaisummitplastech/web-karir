@@ -53,7 +53,7 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error("Fetch employees error:", error);
-    return NextResponse.json({ error: error.message || "Gagal memuat data karyawan." }, {
+    return NextResponse.json({ error: error.message || "Failed to load employee data." }, {
       status: 500,
       headers: ANTI_CACHE_HEADERS,
     });
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error("Employee create/hire error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal memproses penambahan data karyawan." },
+      { error: error.message || "Failed to process employee addition." },
       { status: 400, headers: ANTI_CACHE_HEADERS }
     );
   }
@@ -109,7 +109,7 @@ export async function DELETE(req: Request) {
   } catch (error: any) {
     console.error("Delete all employees error:", error);
     return NextResponse.json(
-      { error: error.message || "Gagal menghapus seluruh data karyawan." },
+      { error: error.message || "Failed to delete all employee data." },
       { status: 500, headers: ANTI_CACHE_HEADERS }
     );
   }

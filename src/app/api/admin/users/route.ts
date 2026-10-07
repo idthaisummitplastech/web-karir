@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Create user error:", error);
-    return NextResponse.json({ error: error.message || "Gagal menambah pengguna." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to add user." }, { status: 500 });
   }
 }
 
@@ -67,7 +67,7 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     const { id, ...updateData } = body;
-    if (!id) return NextResponse.json({ error: "ID wajib disertakan." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
     const result = await fetchRawFromBackend(`/cms/users/${id}`, {
       method: "PUT",
@@ -77,7 +77,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: true, user: result.data || result });
   } catch (error: any) {
     console.error("Update user error:", error);
-    return NextResponse.json({ error: error.message || "Gagal memperbarui pengguna." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to update user." }, { status: 500 });
   }
 }
 
@@ -90,7 +90,7 @@ export async function DELETE(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "ID wajib disertakan." }, { status: 400 });
+    if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
     await fetchRawFromBackend(`/cms/users/${id}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: "Pengguna berhasil dihapus." });

@@ -166,7 +166,7 @@ export async function sendMailDirect({
   } catch (error: any) {
     console.error('[EMAIL ERROR] Failed to send email to:', to, error.message);
 
-    // Kirim Log Gagal ke Grafana Cloud secara Non-blocking
+    // Send Failed Log to Grafana Cloud (Non-blocking)
     import('./grafana').then(({ pushEmailLogToGrafana }) => {
       pushEmailLogToGrafana({
         channel,
@@ -247,7 +247,7 @@ export function formatCorporateEmailBody(content: string): string {
     return content;
   }
 
-  // Bersihkan pembungkus div outer jika ada
+  // Clean up outer div wrapper if present
   let text = content.trim();
   const divMatch = text.match(/^<div[^>]*>([\s\S]*)<\/div>$/i);
   if (divMatch) {
@@ -433,7 +433,7 @@ export function generateCorporateEmailWrapper(title: string, bodyContent: string
 </html>`;
 }
 
-// 1. Pendaftaran Berhasil
+// 1. Pendaftaran Success
 export function emailAccountCreated(name: string, position: string, email: string, tempPass: string, appUrl: string) {
   const body = `
     <p style="margin: 0 0 16px 0; font-size: 15.5px; font-weight: 700; color: #0f172a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
