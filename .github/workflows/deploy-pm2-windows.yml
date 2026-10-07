@@ -1,9 +1,9 @@
-name: Deploy web-karir to D PM2
+name: Deploy web-karir to D PM2 — ZERO DOWNTIME
 
-# FULL OTOMATIS: push ke main -> server D:\itsp-karir langsung update (:3009).
-# Syarat 1x di server (terakhir sentuh): runner jalan sebagai Administrator + pm2 global.
-# Setelah itu: tidak perlu RDP lagi, cukup git push.
-# .env.production di D:\itsp-karir AMAN (di-ignore git, tidak tertimpa reset).
+# Web TETAP ON selama git fetch + npm ci + next build berjalan.
+# Downtime hanya ~1-2 detik saat swap .next + pm2 reload di akhir.
+# Syarat 1x di server: runner Administrator + pm2 global.
+# .env di D:\itsp-karir AMAN (di-ignore git, tidak tertimpa reset).
 
 on:
   push:
@@ -16,92 +16,78 @@ concurrency:
 
 jobs:
   deploy:
-    name: Pull + build + pm2 restart :3009
+    name: Pull + isolated build (ON) + atomic reload :3009
     runs-on: self-hosted
     defaults:
       run:
         shell: powershell
     steps:
-      - name: Update D:\itsp-karir dari GitHub
+      - name: Zero-downtime deploy D:\itsp-karir
         run: |
           $ErrorActionPreference = "Stop"
-          if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone web-karir. Clone dulu di Server sebagai Administrator: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
+          if (!(Test-Path D:\itsp-karir\.git)) { throw "D:\itsp-karir belum git clone. Clone dulu: git clone https://github.com/idthaisummitplastech/web-karir.git D:\itsp-karir" }
           Set-Location D:\itsp-karir
-          # Anti dubious-ownership (wajib bila runner ganti user)
           try { Remove-Item -Path "$env:USERPROFILE\.gitconfig.lock" -Force -ErrorAction SilentlyContinue } catch {}
           try { git config --global --add safe.directory '*' 2>$null } catch {}
-
           Write-Host "--- VERSIONS ---"
-          node -v
-          npm.cmd -v
-          whoami
+          node -v; npm.cmd -v; whoami
           Write-Host "USERPROFILE=$env:USERPROFILE APPDATA=$env:APPDATA"
-
           $extraPaths = @(
             (Join-Path $env:APPDATA "npm"),
             "C:\Users\IT-PLASTECH\AppData\Roaming\npm",
             "C:\Users\Administrator\AppData\Roaming\npm",
             "C:\Program Files\nodejs"
           )
-          foreach ($p in $extraPaths) {
-            if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
-          }
-          if (-not $env:PM2_HOME) {
-            if (Test-Path "C:\Users\IT-PLASTECH\.pm2") { $env:PM2_HOME = "C:\Users\IT-PLASTECH\.pm2" }
-          }
+          foreach ($p in $extraPaths) { if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" } }
+          if (-not $env:PM2_HOME) { if (Test-Path "C:\Users\IT-PLASTECH\.pm2") { $env:PM2_HOME = "C:\Users\IT-PLASTECH\.pm2" } }
           $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
-          if (-not $pm2Cmd) {
-            foreach ($p in $extraPaths) {
-              $cand = Join-Path $p "pm2.cmd"
-              if (Test-Path $cand) { $pm2Cmd = $cand; break }
-            }
-          }
-          if (-not $pm2Cmd) {
-            Write-Host "pm2.cmd tidak ditemukan, install global..."
-            npm.cmd i -g pm2
-            $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
-            if (-not $pm2Cmd) {
-              $maybe = Join-Path (Join-Path $env:APPDATA "npm") "pm2.cmd"
-              if (Test-Path $maybe) { $pm2Cmd = $maybe }
-            }
-          }
-          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Fix 1x di server sebagai Administrator: npm i -g pm2" }
-          Write-Host "pm2 at: $pm2Cmd"
-          & $pm2Cmd -v
-
-          Write-Host "--- STOP app dulu agar lepas lock node_modules/.next (wajib untuk full-otomatis) ---"
-          try { & $pm2Cmd stop itsp-karir 2>&1 | Out-String | Write-Host } catch {}
-          Start-Sleep -Seconds 3
-
-          Write-Host "--- GIT FETCH + RESET (best-effort self-heal, tanpa butuh RDP) ---"
+          if (-not $pm2Cmd) { foreach ($p in $extraPaths) { $cand = Join-Path $p "pm2.cmd"; if (Test-Path $cand) { $pm2Cmd = $cand; break } } }
+          if (-not $pm2Cmd) { npm.cmd i -g pm2; $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source; if (-not $pm2Cmd) { $maybe = Join-Path (Join-Path $env:APPDATA "npm") "pm2.cmd"; if (Test-Path $maybe) { $pm2Cmd = $maybe } } }
+          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan" }
+          Write-Host "pm2 at: $pm2Cmd"; & $pm2Cmd -v
+          $liveDir = "D:\itsp-karir"
+          $buildDir = "D:\itsp-karir-build-tmp"
+          $remoteUrl = (git config --get remote.origin.url); if (-not $remoteUrl) { $remoteUrl = "https://github.com/idthaisummitplastech/web-karir.git" }
+          Write-Host "--- GIT FETCH (web TETAP ON) ---"
           try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
           git fetch origin main
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "WARNING fetch gagal, coba hapus FETCH_HEAD sekali lagi..."
-            try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
-            Start-Sleep -Seconds 2
-            git fetch origin main
-          }
-          if ($LASTEXITCODE -ne 0) {
-            throw "git fetch gagal terus: 'cannot open .git/FETCH_HEAD: Permission denied'. Artinya folder D:\itsp-karir\.git milik Administrator tapi runner jalan sebagai NETWORK SERVICE. Fix 1x TERAKHIR di server (Administrator CMD): takeown /F D:\itsp-karir /R /D Y + icacls D:\itsp-karir /grant 'NETWORK SERVICE:(OI)(CI)F' /T ATAU (disarankan untuk full-otomatis) ganti service runner jadi Administrator."
-          }
-          git reset --hard origin/main
-          if ($LASTEXITCODE -ne 0) { throw "git reset gagal (unable to unlink package-lock.json). File dikunci / permission. Pastikan pm2 stop sukses + runner sudah Administrator. Coba Re-run jobs sekali lagi." }
-
-          Write-Host "--- BUILD (hapus .next dulu, tanpa sentuh server) ---"
-          if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
-          npm.cmd ci --legacy-peer-deps
-          npm.cmd run build
-          & $pm2Cmd restart itsp-karir
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
-            & $pm2Cmd start npm --name "itsp-karir" -- start
-          }
-          & $pm2Cmd save
-          & $pm2Cmd list
-
+          if ($LASTEXITCODE -ne 0) { try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}; Start-Sleep -Seconds 2; git fetch origin main }
+          if ($LASTEXITCODE -ne 0) { throw "git fetch gagal terus — cek permission/network" }
+          $newCommit = (git rev-parse origin/main).Trim(); $liveCommit = (git rev-parse HEAD).Trim()
+          Write-Host "live=$liveCommit new=$newCommit"
+          Write-Host "--- ISOLATED BUILD (web TETAP MELAYANI TRAFFIC) ---"
+          if (Test-Path $buildDir) { Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+          git clone --depth 1 --branch main $remoteUrl $buildDir
+          if ($LASTEXITCODE -ne 0) { throw "git clone ke buildDir gagal" }
+          Copy-Item "$liveDir\.env" "$buildDir\.env" -Force -ErrorAction SilentlyContinue
+          Copy-Item "$liveDir\.env.local" "$buildDir\.env.local" -Force -ErrorAction SilentlyContinue
+          Copy-Item "$liveDir\.env.production" "$buildDir\.env.production" -Force -ErrorAction SilentlyContinue
+          Set-Location $buildDir
+          Write-Host "npm ci di buildDir..."; npm.cmd ci --legacy-peer-deps; if ($LASTEXITCODE -ne 0) { throw "npm ci gagal" }
+          Write-Host "next build di buildDir (live web masih ON)..."; npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw "npm run build gagal" }
+          if (!(Test-Path "$buildDir\.next\BUILD_ID")) { throw ".next/BUILD_ID tidak ditemukan setelah build" }
+          Write-Host "Build sukses — siap swap."
+          Write-Host "--- ATOMIC SWAP + RELOAD (downtime 1-2 detik) ---"
+          Set-Location $liveDir
+          try { & $pm2Cmd stop itsp-karir 2>&1 | Out-String | Write-Host } catch {}; Start-Sleep -Seconds 2
+          git reset --hard $newCommit; if ($LASTEXITCODE -ne 0) { throw "git reset gagal — file terkunci" }
+          if (Test-Path ".next") { Remove-Item -Recurse -Force ".next" -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+          Copy-Item "$buildDir\.next" ".\.next" -Recurse -Force
+          Copy-Item "$buildDir\package.json" ".\package.json" -Force -ErrorAction SilentlyContinue
+          Copy-Item "$buildDir\package-lock.json" ".\package-lock.json" -Force -ErrorAction SilentlyContinue
+          $liveLock = Get-FileHash ".\package-lock.json" -Algorithm SHA256 -ErrorAction SilentlyContinue
+          $buildLock = Get-FileHash "$buildDir\package-lock.json" -Algorithm SHA256 -ErrorAction SilentlyContinue
+          if ($liveLock.Hash -ne $buildLock.Hash) {
+            Write-Host "package-lock berbeda — sync node_modules..."
+            if (Test-Path "node_modules") { Remove-Item -Recurse -Force "node_modules" -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1 }
+            Copy-Item "$buildDir\node_modules" ".\node_modules" -Recurse -Force
+          } else { Write-Host "package-lock sama — skip copy node_modules." }
+          & $pm2Cmd restart itsp-karir; if ($LASTEXITCODE -ne 0) { & $pm2Cmd start npm --name "itsp-karir" -- start }
+          & $pm2Cmd save; & $pm2Cmd list
+          try { Remove-Item -Recurse -Force $buildDir -ErrorAction SilentlyContinue } catch {}
+          Write-Host "=== ZERO-DOWNTIME DEPLOY SELESAI ==="
       - name: Health check :3009
         run: |
-          $ErrorActionPreference = "Stop"
-          Start-Sleep -Seconds 10
-          Invoke-WebRequest http://localhost:3009/ -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
+          $ErrorActionPreference = "Stop"; Start-Sleep -Seconds 8
+          $ok=$false; for ($i=1; $i -le 12; $i++) { try { $r=Invoke-WebRequest http://localhost:3009/ -UseBasicParsing -TimeoutSec 5; if ($r.StatusCode -in @(200,307,308)) { Write-Host "Health OK $($r.StatusCode) attempt $i"; $ok=$true; break } } catch { Write-Host "Waiting :3009 attempt $i/12..." }; Start-Sleep -Seconds 3 }
+          if (-not $ok) { throw "Health check :3009 gagal setelah 36 detik" }
