@@ -135,7 +135,7 @@ const trimSignatureImage = (sourceCanvas: HTMLCanvasElement): string => {
       const b = data[idx + 2];
       const a = data[idx + 3];
 
-      // Goresan terdeteksi jika bukan transparan dan bukan putih murni / kertas putih terang
+      // Stroke detected if not transparent and not pure white / bright paper white
       const isStroke = a > 20 && !(r > 235 && g > 235 && b > 235);
       if (isStroke) {
         if (x < minX) minX = x;
@@ -146,12 +146,12 @@ const trimSignatureImage = (sourceCanvas: HTMLCanvasElement): string => {
     }
   }
 
-  // Jika kanvas kosong sama sekali
+  // If canvas is completely empty
   if (maxX === -1 || maxY === -1) {
     return sourceCanvas.toDataURL('image/png');
   }
 
-  // Berikan sedikit padding aman di sekeliling goresan tanda tangan
+  // Add safe padding around signature strokes
   const pad = 6;
   const cropX = Math.max(0, minX - pad);
   const cropY = Math.max(0, minY - pad);
@@ -166,7 +166,7 @@ const trimSignatureImage = (sourceCanvas: HTMLCanvasElement): string => {
 
   trimmedCtx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-  // Jadikan pixel putih / abu-abu terang menjadi transparan agar tanda tangan terlihat seperti tinta asli di atas kartu
+  // Make white / light-gray pixels transparent so the signature looks like real ink on the card
   const tData = trimmedCtx.getImageData(0, 0, cropW, cropH);
   const pixels = tData.data;
   for (let i = 0; i < pixels.length; i += 4) {
@@ -231,7 +231,7 @@ const SignaturePad: React.FC<{
 
   const processImageFile = (file: Blob | File) => {
     if (!file.type.startsWith('image/')) {
-      alert('File atau konten clipboard yang ditempelkan harus berupa gambar (PNG/JPG).');
+      alert('Pasted file or clipboard content must be an image (PNG/JPG).');
       return;
     }
     const reader = new FileReader();
@@ -769,7 +769,7 @@ export default function AdminIdCardsPage() {
   const formatDisplayId = (idStr?: string) => {
     if (!idStr) return 'ITSP.----.--.--';
     let trimmed = idStr.trim();
-    // Clean up duplicate ITSP prefix if present (contoh: "ITSP. ITSP-..." atau "ITSP.ITSP-...")
+    // Clean up duplicate ITSP prefix if present (e.g.: "ITSP. ITSP-..." or "ITSP.ITSP-...")
     trimmed = trimmed.replace(/^ITSP[\.\s\-_]+ITSP[\.\s\-_]*/i, 'ITSP.');
     if (/^ITSP[\.\s\-_]/i.test(trimmed) || trimmed.toUpperCase() === 'ITSP') {
       return trimmed;
@@ -777,7 +777,7 @@ export default function AdminIdCardsPage() {
     return `ITSP.${trimmed}`;
   };
 
-  // Employee yang akan dicetak
+  // Employees to be printed
   const employeesToPrint =
     selectedIds.length > 0
       ? employees.filter((e) => selectedIds.includes(e.id))
@@ -785,17 +785,17 @@ export default function AdminIdCardsPage() {
       ? [selectedEmp]
       : [];
 
-  // Pecah daftar karyawan menjadi kelompok 2 per lembar A4
+  // Split employee list into groups of 2 per A4 sheet
   const a4Pages: any[][] = [];
   for (let i = 0; i < employeesToPrint.length; i += 2) {
     a4Pages.push(employeesToPrint.slice(i, i + 2));
   }
 
-  // Alamat aktif berdasarkan format saat ini
+  // Active address based on current format
   const plantLine1 = selectedPlant === 'GIIC' ? cardFormat.giicLine1 : cardFormat.kiicLine1;
   const plantLine2 = selectedPlant === 'GIIC' ? cardFormat.giicLine2 : cardFormat.kiicLine2;
 
-  // Component Renderer untuk 1 Unit ID Card Lengkap (4 Panel dengan Dimensi Sama Persis 2x2)
+  // Component renderer for 1 complete ID Card unit (4 panels with identical 2x2 dimensions)
   const renderSingleIdCard = (emp: any, customFmt: IdCardFormatConfig = cardFormat) => {
     const curLine1 = selectedPlant === 'GIIC' ? customFmt.giicLine1 : customFmt.kiicLine1;
     const curLine2 = selectedPlant === 'GIIC' ? customFmt.giicLine2 : customFmt.kiicLine2;
@@ -835,7 +835,7 @@ export default function AdminIdCardsPage() {
           }}
         />
 
-        {/* SISI 1: KARTU DEPAN (KIRI ATAS) */}
+        {/* SIDE 1: FRONT CARD (TOP LEFT) */}
         <Box
           className="notranslate itsp-idcard-panel"
           translate="no"
@@ -851,7 +851,7 @@ export default function AdminIdCardsPage() {
             overflow: 'hidden',
           }}
         >
-          {/* Header: Logo PLASTECH + Nama PT & Alamat */}
+          {/* Header: PLASTECH Logo + Company Name & Address */}
           <Box
             className="notranslate"
             translate="no"
@@ -1016,7 +1016,7 @@ export default function AdminIdCardsPage() {
                 justifyContent: 'flex-end',
               }}
             >
-              {/* Wadah Tanda Tangan */}
+              {/* Signature Container */}
               <Box
                 sx={{
                   height: `${Math.min(46, Math.max(24, Math.round(30 * (signatureScale / 100))))}px`,
@@ -1025,7 +1025,7 @@ export default function AdminIdCardsPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   position: 'relative',
-                  overflow: 'visible', // JANGAN PERNAH POTONG TANDA TANGAN
+                  overflow: 'visible', // NEVER CROP THE SIGNATURE
                 }}
               >
                 {defaultHrSignature ? (
@@ -1068,7 +1068,7 @@ export default function AdminIdCardsPage() {
           </Box>
         </Box>
 
-        {/* SISI 2: KETENTUAN PENGGUNAAN (KANAN ATAS) */}
+        {/* SIDE 2: TERMS OF USE (TOP RIGHT) */}
         <Box
           className="notranslate itsp-idcard-panel"
           translate="no"
@@ -1122,7 +1122,7 @@ export default function AdminIdCardsPage() {
           </Box>
         </Box>
 
-        {/* SISI 3: QUALITY POLICY STATEMENT (ENGLISH - KIRI BAWAH) */}
+        {/* SIDE 3: QUALITY POLICY STATEMENT (ENGLISH - BOTTOM LEFT) */}
         {printLayoutMode === 'all_panels' && (
           <Box
             className="notranslate itsp-idcard-panel"
@@ -1187,7 +1187,7 @@ export default function AdminIdCardsPage() {
           </Box>
         )}
 
-        {/* SISI 4: KEBIJAKAN MUTU PERUSAHAAN (BAHASA INDONESIA - KANAN BAWAH) */}
+        {/* SIDE 4: QUALITY POLICY (INDONESIAN - BOTTOM RIGHT) */}
         {printLayoutMode === 'all_panels' && (
           <Box
             className="notranslate itsp-idcard-panel"
@@ -1849,7 +1849,7 @@ export default function AdminIdCardsPage() {
                 </Box>
               </Box>
 
-              {/* AREA CETAK / PRINTABLE AREA: 1 LEMBAR A4 BERISI 2 KARTU */}
+              {/* PRINTABLE AREA: 1 A4 SHEET HOLDS 2 CARDS */}
               <CardContent sx={{ p: 2.5, bgcolor: '#E2E8F0', maxHeight: '72vh', overflowY: 'auto' }}>
                 <Box id="itsp-idcard-printable-container" className="notranslate" translate="no">
                   {a4Pages.map((pagePair, pageIndex) => (
@@ -1986,7 +1986,7 @@ export default function AdminIdCardsPage() {
         </Box>
       </Box>
 
-      {/* MODAL 1: EDITOR FORMAT ID CARD DENGAN LIVE PREVIEW REAL-TIME */}
+      {/* MODAL 1: ID CARD FORMAT EDITOR WITH REAL-TIME LIVE PREVIEW */}
       <Dialog
         open={formatModalOpen}
         onClose={() => setFormatModalOpen(false)}
@@ -2162,23 +2162,23 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nama Company Bawah (HRM PT. ITSP)"
+                    label="Company Footer Name (HRM PT. ITSP)"
                     value={tempFormat.hrmCompanyFooter}
                     onChange={(e) => setTempFormat({ ...tempFormat, hrmCompanyFooter: e.target.value })}
                   />
                 </Stack>
               )}
 
-              {/* TAB 2: KEBIJAKAN MUTU PERUSAHAAN */}
+              {/* TAB 2: COMPANY QUALITY POLICY (INDONESIAN) */}
               {formatTab === 2 && (
                 <Stack spacing={2}>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#1E3A8A' }}>
-                    🇬🇧 Quality Policy (Versi Bahasa Inggris - Kiri Bawah):
+                    🇬🇧 Quality Policy (English Version - Bottom Left):
                   </Typography>
                   <TextField
                     fullWidth
                     size="small"
-                    label="Judul English"
+                    label="Title (English)"
                     value={tempFormat.qualityTitleEn}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTitleEn: e.target.value })}
                   />
@@ -2187,14 +2187,14 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={3}
                     size="small"
-                    label="Teks Quality Policy English"
+                    label="Quality Policy Text English"
                     value={tempFormat.qualityTextEn}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTextEn: e.target.value })}
                   />
                   <TextField
                     fullWidth
                     size="small"
-                    label="Label Halaman English"
+                    label="Page Label English"
                     value={tempFormat.qualityPageEn}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityPageEn: e.target.value })}
                   />
@@ -2202,12 +2202,12 @@ export default function AdminIdCardsPage() {
                   <Divider sx={{ my: 1 }} />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#166534' }}>
-                    🇮🇩 Quality Policy (Versi Bahasa Indonesia - Kanan Bawah):
+                    🇮🇩 Quality Policy (Indonesian Version - Bottom Right):
                   </Typography>
                   <TextField
                     fullWidth
                     size="small"
-                    label="Judul Indonesia"
+                    label="Indonesian Title"
                     value={tempFormat.qualityTitleId}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTitleId: e.target.value })}
                   />
@@ -2216,14 +2216,14 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={3}
                     size="small"
-                    label="Teks Quality Policy Indonesia"
+                    label="Quality Policy Text Indonesian"
                     value={tempFormat.qualityTextId}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityTextId: e.target.value })}
                   />
                   <TextField
                     fullWidth
                     size="small"
-                    label="Label Halaman Indonesia"
+                    label="Page Label Indonesian"
                     value={tempFormat.qualityPageId}
                     onChange={(e) => setTempFormat({ ...tempFormat, qualityPageId: e.target.value })}
                   />
@@ -2282,7 +2282,7 @@ export default function AdminIdCardsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* MODAL 2: PENGATURAN TANDA TANGAN DEFAULT HR */}
+      {/* MODAL 2: DEFAULT HR SIGNATURE SETTINGS */}
       <Dialog open={authorizerModalOpen} onClose={() => setAuthorizerModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: '#0F172A', color: '#FFFFFF', pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2444,7 +2444,7 @@ export default function AdminIdCardsPage() {
                 )}
               </Box>
 
-              {/* Simulasi Card Footer Preview */}
+              {/* Card Footer Preview Simulation */}
               <Box sx={{ mt: 2, p: 2, bgcolor: '#FFFFFF', borderRadius: 1.5, border: '1px dashed #D97706', textAlign: 'center' }}>
                 <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 800, fontSize: 11, mb: 1, display: 'block' }}>
                   Signature Preview on ID Card (Not Cropped):
@@ -2487,7 +2487,7 @@ export default function AdminIdCardsPage() {
                         const blob = await res.blob();
                         if (navigator.clipboard?.write) {
                           await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })]);
-                          alert('Gambar tanda tangan berhasil disalin (Copy) ke clipboard!');
+                          alert('Signature image copied to clipboard!');
                           return;
                         }
                       } catch (e) {
