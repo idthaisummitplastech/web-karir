@@ -60,7 +60,7 @@ import {
 } from '@mui/icons-material';
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 
-// Struktur Konfigurasi Format ID Card yang dapat diedit oleh HR
+// ID Card Format Config Structure (editable by HR)
 export interface IdCardFormatConfig {
   companyName: string;
   kiicLine1: string;
@@ -86,7 +86,7 @@ export interface IdCardFormatConfig {
   qualityPageId: string;
 }
 
-// Default Format Resmi Pabrik Sesuai Dokumen Excel User
+// Default Official Factory Format as per User Excel Document
 const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
   companyName: 'PT. Indonesia Thai Summit Plastech',
   kiicLine1: 'Jln. Permata Raya Lot FF-5, Teluk Jambe Timur',
@@ -112,12 +112,12 @@ const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
   qualityPageId: 'Page 3',
 };
 
-// Default Sample Signature HR (Base64 safe SVG)
+// Default Sample HR Signature (Base64 safe SVG)
 const DEFAULT_HR_SIGNATURE =
   'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCAxNDAgNjAiPjxwYXRoIGQ9Ik0gMTUgNDUgUSAyNSAxNSwgNDAgMzAgVCA2NSAyNSBUIDkwIDQwIFQgMTE1IDIwIFQgMTMwIDM1IiBmaWxsPSJub25lIiBzdHJva2U9IiMwRjE3MkEiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cGF0aCBkPSJNIDQ1IDM1USA1NSA1LCA1MCA0OCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMEYxNzJBIiBzdHJva2Utd2lkdGg9IjIuNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iOTUiIGN5PSIyMiIgcj0iMi41IiBmaWxsPSIjMEYxNzJBIi8+PC9zdmc=';
 
-// Helper untuk auto-crop / trim background putih dan transparan kosong dari tanda tangan
-// sehingga tanda tangan tersimpan hanya pada goresan aslinya tanpa batas kosong yang memperkecil atau memotong gambar
+// Helper to auto-crop / trim white and transparent empty background from signature
+// so the signature is saved only on its actual strokes without empty bounds that would shrink or clip it
 const trimSignatureImage = (sourceCanvas: HTMLCanvasElement): string => {
   const ctx = sourceCanvas.getContext('2d');
   if (!ctx) return sourceCanvas.toDataURL('image/png');
@@ -249,7 +249,7 @@ const SignaturePad: React.FC<{
             const trimmed = trimSignatureImage(tempC);
             drawTrimmedToCanvas(trimmed);
             onChange(trimmed);
-            setFeedback('✓ Gambar tanda tangan berhasil ditempel (background dibersihkan & dipotong rapi)!');
+            setFeedback('✓ Signature image pasted successfully (background cleaned & neatly cropped)!');
             setTimeout(() => setFeedback(null), 3500);
           }
         };
@@ -310,14 +310,14 @@ const SignaturePad: React.FC<{
         await navigator.clipboard.write([
           new ClipboardItem({ [blob.type || 'image/png']: blob }),
         ]);
-        setFeedback('✓ Gambar tanda tangan berhasil disalin ke clipboard!');
+        setFeedback('✓ Signature image copied to clipboard!');
         setTimeout(() => setFeedback(null), 3000);
         return;
       }
     } catch (e) {
       console.warn(e);
     }
-    setFeedback('✓ Tanda tangan aktif siap digunakan.');
+    setFeedback('✓ Active signature ready to use.');
     setTimeout(() => setFeedback(null), 3000);
   };
 
@@ -381,7 +381,7 @@ const SignaturePad: React.FC<{
     setIsDrawing(false);
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Auto trim batas kosong setelah selesai menggambar
+    // Auto-trim empty bounds after drawing completes
     const trimmed = trimSignatureImage(canvas);
     onChange(trimmed);
   };
@@ -411,7 +411,7 @@ const SignaturePad: React.FC<{
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, flexWrap: 'wrap', gap: 1 }}>
         <Typography variant="caption" sx={{ fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          ✍️ Goreskan Mouse / Touchscreen atau Tempel (Paste) Gambar:
+          ✍️ Draw with Mouse / Touchscreen or Paste Image:
         </Typography>
         <Stack direction="row" spacing={0.8} sx={{ alignItems: 'center' }}>
           <Button
@@ -446,7 +446,7 @@ const SignaturePad: React.FC<{
                 '&:hover': { bgcolor: '#DCFCE7' },
               }}
             >
-              Salin (Copy)
+              Copy
             </Button>
           )}
 
@@ -516,17 +516,17 @@ export default function AdminIdCardsPage() {
   const [formatTab, setFormatTab] = useState(0);
   const [formatSaveFeedback, setFormatSaveFeedback] = useState<string | null>(null);
 
-  // Pilihan Alamat PT (KIIC atau GIIC)
+  // PT Address Choice (KIIC or GIIC)
   const [selectedPlant, setSelectedPlant] = useState<'GIIC' | 'KIIC'>('GIIC');
 
-  // Mode Tampilan Cetak: 'all_panels' (4 Panel seperti gambar user) atau 'id_card_only' (Depan & Belakang Saja)
+  // Print Display Mode: 'all_panels' (4 panels as per user image) or 'id_card_only' (Front & Back Only)
   const [printLayoutMode, setPrintLayoutMode] = useState<'all_panels' | 'id_card_only'>('all_panels');
 
-  // Default Tanda Tangan Digital HR
+  // Default Digital HR Signature
   const [defaultHrSignature, setDefaultHrSignature] = useState<string>('');
   const [authorizerModalOpen, setAuthorizerModalOpen] = useState(false);
   const [tempSignature, setTempSignature] = useState<string>('');
-  // Scale tanda tangan untuk preview cetak ID Card (30-250%, default 100)
+  // Signature scale for ID Card print preview (30-250%, default 100)
   const [signatureScale, setSignatureScale] = useState<number>(100);
   const [tempSignatureScale, setTempSignatureScale] = useState<number>(100);
 
@@ -724,7 +724,7 @@ export default function AdminIdCardsPage() {
     setCardFormat({ ...tempFormat });
     try {
       localStorage.setItem('itsp_custom_idcard_format', JSON.stringify(tempFormat));
-      setFormatSaveFeedback('✓ Format template ID Card berhasil disimpan dan langsung diterapkan.');
+      setFormatSaveFeedback('✓ ID Card template format saved and applied instantly.');
       setTimeout(() => {
         setFormatModalOpen(false);
         setFormatSaveFeedback(null);
@@ -741,7 +741,7 @@ export default function AdminIdCardsPage() {
     try {
       localStorage.removeItem('itsp_custom_idcard_format');
     } catch {}
-    setFormatSaveFeedback('✓ Format template berhasil dikembalikan ke default pabrik.');
+    setFormatSaveFeedback('✓ Card format has been reset to factory default.');
   };
 
   // Trigger Native Print Dialog
@@ -821,7 +821,7 @@ export default function AdminIdCardsPage() {
           gridTemplateRows: printLayoutMode === 'all_panels' ? '225px 225px' : '225px',
         }}
       >
-        {/* Garis Lipat / Potong Putus-putus Biru di Tengah Sesuai Format Resmi Excel */}
+        {/* Blue Dashed Fold / Cut Line in Middle as per Official Excel Format */}
         <Box
           sx={{
             position: 'absolute',
@@ -910,9 +910,9 @@ export default function AdminIdCardsPage() {
             </Box>
           </Box>
 
-          {/* Body: Pas Foto di Kiri + 4 Kolom Data di Kanan */}
+          {/* Body: Photo on Left + 4 Data Columns on Right */}
           <Box sx={{ display: 'flex', gap: 1, py: 0.4, flexGrow: 1, alignItems: 'center' }}>
-            {/* Kotak Pas Foto Resmi */}
+            {/* Official Photo Box */}
             <Box
               sx={{
                 width: 68,
@@ -953,7 +953,7 @@ export default function AdminIdCardsPage() {
                   }}
                 >
                   <PersonIcon sx={{ fontSize: 34 }} />
-                  <Typography sx={{ fontSize: 8, fontWeight: 700 }}>Pas Foto</Typography>
+                  <Typography sx={{ fontSize: 8, fontWeight: 700 }}>Photo</Typography>
                 </Box>
               )}
             </Box>
@@ -1317,10 +1317,10 @@ export default function AdminIdCardsPage() {
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
-      {/* Stylesheet Cetak Khusus Kertas A4 Portrait (1 Lembar Muat 2 ID Card) */}
+      {/* Special A4 Portrait Print Stylesheet (1 Sheet Fits 2 ID Cards) */}
       <style dangerouslySetInnerHTML={{ __html: printCss }} />
 
-      {/* Header Halaman */}
+      {/* Page Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -1388,10 +1388,10 @@ export default function AdminIdCardsPage() {
               '&:hover': { bgcolor: '#005c21' },
             }}
           >
-            Cetak {employeesToPrint.length} Kartu (A4 Print)
+            Print {employeesToPrint.length} Cards (A4 Print)
           </Button>
 
-          <Tooltip title="Muat Ulang Data">
+          <Tooltip title="Reload Data">
             <IconButton onClick={fetchEmployees} sx={{ bgcolor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
               <RefreshIcon />
             </IconButton>
@@ -1399,9 +1399,9 @@ export default function AdminIdCardsPage() {
         </Stack>
       </Box>
 
-      {/* Main Grid: Kolom Kiri Tabel Pilihan Employee, Kolom Kanan Preview ID Card */}
+      {/* Main Grid: Left Column Employee Selection Table, Right Column ID Card Preview */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1.05fr 1.35fr' }, gap: 3 }}>
-        {/* Kolom Kiri: Tabel Employee dengan Multi-Select Checkbox */}
+        {/* Left Column: Employee Table with Multi-Select Checkbox */}
         <Box>
           {/* Quick Selection Bar */}
           <Paper elevation={0} sx={{ p: 1.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: 2, bgcolor: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
@@ -1496,8 +1496,8 @@ export default function AdminIdCardsPage() {
                   <TableRow>
                     <TableCell colSpan={4} align="center" sx={{ py: 6, color: '#64748B' }}>
                       {searchQuery
-                        ? 'Tidak ada karyawan yang cocok dengan pencarian.'
-                        : 'Belum ada data karyawan. Angkat calon karyawan di menu Pelamar untuk otomatis memasukkannya ke sini.'}
+                        ? 'No employees match your search.'
+                        : 'No employee data yet. Promote applicants in the Applicants menu to automatically add them here.'}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -1592,11 +1592,11 @@ export default function AdminIdCardsPage() {
           </TableContainer>
         </Box>
 
-        {/* Kolom Kanan: Pengaturan Kartu & Live Print Preview */}
+        {/* Right Column: Card Settings & Live Print Preview */}
         <Box>
           {employeesToPrint.length > 0 ? (
             <Card sx={{ borderRadius: 2.5, border: '1px solid #CBD5E1', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
-              {/* Toolbar Pengaturan Kartu */}
+              {/* Card Settings Toolbar */}
               <Box sx={{ p: 2, bgcolor: '#0F172A', color: '#FFFFFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 14 }}>
@@ -1641,12 +1641,12 @@ export default function AdminIdCardsPage() {
                       '&:hover': { bgcolor: '#005c21' },
                     }}
                   >
-                    Cetak Sekarang (Print)
+                    Print Now
                   </Button>
                 </Stack>
               </Box>
 
-              {/* Selector Alamat Pabrik & Mode Cetak */}
+              {/* Plant Address & Print Mode Selector */}
               <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#334155', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1717,12 +1717,12 @@ export default function AdminIdCardsPage() {
                         color: printLayoutMode === 'id_card_only' ? '#FFFFFF' : '#0F172A',
                       }}
                     >
-                      Kartu Depan &amp; Belakang Saja
+                      Front &amp; Back Only
                     </Button>
                   </Stack>
                 </Box>
 
-                {/* Kontrol Ukuran / Scale Tanda Tangan Langsung di Live Print Preview */}
+                {/* Live Signature Size / Scale Control in Print Preview */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -1799,7 +1799,7 @@ export default function AdminIdCardsPage() {
                   </Box>
                 </Box>
 
-                {/* Banner Aksi Cepat: Edit Format & Teks ID Card (Dengan Live Preview) */}
+                {/* Quick Action Banner: Edit ID Card Format & Text (With Live Preview) */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -1868,17 +1868,17 @@ export default function AdminIdCardsPage() {
                     >
                       <Box className="no-print" sx={{ mb: 1.5, pb: 1, borderBottom: '1px dashed #CBD5E1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 800, color: '#018730' }}>
-                          📄 A4 Sheet #{pageIndex + 1} (Holds {pagePair.length} Kartu)
+                          📄 A4 Sheet #{pageIndex + 1} (Holds {pagePair.length} Cards)
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>
                           Employee: {pagePair.map((p) => p.namaLengkap).join(' & ')}
                         </Typography>
                       </Box>
 
-                      {/* Render Kartu Employee 1 (Atas) */}
+                      {/* Render Employee Card 1 (Top) */}
                       {renderSingleIdCard(pagePair[0])}
 
-                      {/* Garis Potong Horizontal Pemisah Lembar A4 */}
+                      {/* Horizontal Cutting Line Separating A4 Sheets */}
                       {pagePair.length > 1 ? (
                         <>
                           <Box
@@ -1902,11 +1902,11 @@ export default function AdminIdCardsPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              ✂️ Garis Potong Antar Kartu (Kertas A4)
+                              ✂️ Cutting Line Between Cards (A4 Paper)
                             </Typography>
                           </Box>
 
-                          {/* Render Kartu Employee 2 (Bawah) */}
+                          {/* Render Employee Card 2 (Bottom) */}
                           {renderSingleIdCard(pagePair[1])}
                         </>
                       ) : (
@@ -1922,10 +1922,10 @@ export default function AdminIdCardsPage() {
                           }}
                         >
                           <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>
-                            Sisi Bawah Lembar A4 Masih Kosong.
+                            Bottom of A4 Sheet Still Empty.
                           </Typography>
                           <Typography variant="caption" sx={{ display: 'block', color: '#94A3B8', mt: 0.3 }}>
-                            Centang 1 karyawan lagi di tabel sebelah kiri agar 1 lembar A4 ini memuat 2 kartu sekaligus.
+                            Check one more employee in the left table so this A4 sheet holds 2 cards at once.
                           </Typography>
                         </Box>
                       )}
@@ -1934,12 +1934,12 @@ export default function AdminIdCardsPage() {
                 </Box>
               </CardContent>
 
-              {/* Status Selesai Cetak Toggle */}
+              {/* Print Completion Status Toggle */}
               {selectedEmp && (
                 <Box sx={{ p: 2, bgcolor: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Chip
-                      label={selectedEmp.idCardPrinted ? 'Sudah Selesai Dicetak' : 'Belum Dicetak'}
+                      label={selectedEmp.idCardPrinted ? 'Already Printed' : 'Not Yet Printed'}
                       size="small"
                       sx={{
                         fontWeight: 800,
@@ -1948,7 +1948,7 @@ export default function AdminIdCardsPage() {
                       }}
                     />
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                      Status untuk: <strong>{selectedEmp.namaLengkap}</strong>
+                      Status for: <strong>{selectedEmp.namaLengkap}</strong>
                     </Typography>
                   </Box>
 
@@ -1967,7 +1967,7 @@ export default function AdminIdCardsPage() {
                       },
                     }}
                   >
-                    {selectedEmp.idCardPrinted ? 'Cancelkan Status Cetak' : 'Tandai Selesai Dicetak'}
+                    {selectedEmp.idCardPrinted ? 'Cancel Print Status' : 'Mark as Printed'}
                   </Button>
                 </Box>
               )}
@@ -1976,10 +1976,10 @@ export default function AdminIdCardsPage() {
             <Card sx={{ p: 6, textAlign: 'center', borderRadius: 3, border: '1px dashed #CBD5E1', bgcolor: '#FFFFFF' }}>
               <BadgeIcon sx={{ fontSize: 52, color: '#CBD5E1', mb: 1 }} />
               <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#475569' }}>
-                Belum Ada Employee yang Dipilih
+                No Employee Selected
               </Typography>
               <Typography variant="body2" sx={{ color: '#94A3B8', maxWidth: 380, mx: 'auto', mt: 0.5 }}>
-                Centang checkbox pada baris karyawan di tabel sebelah kiri (bisa 1 atau 2 orang sekaligus) untuk mencetaknya di 1 lembar A4.
+                Check the checkbox on an employee row in the left table (select 1 or 2 at once) to print on 1 A4 sheet.
               </Typography>
             </Card>
           )}
@@ -1998,7 +1998,7 @@ export default function AdminIdCardsPage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <EditIcon sx={{ color: '#4ADE80' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 18, color: '#FFFFFF' }}>
-                Editor Format &amp; Template ID Card PT ITSP (Dengan Live Preview)
+                ID Card Format &amp; Template Editor - PT ITSP (With Live Preview)
               </Typography>
             </Box>
             <IconButton size="small" onClick={() => setFormatModalOpen(false)} sx={{ color: '#94A3B8' }}>
@@ -2015,67 +2015,67 @@ export default function AdminIdCardsPage() {
           )}
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.05fr 1.15fr' }, minHeight: '620px' }}>
-            {/* Sisi Kiri: Form Input Format & Teks */}
+            {/* Left Side: Format & Text Input Form */}
             <Box sx={{ p: 3, borderRight: '1px solid #E2E8F0', bgcolor: '#FFFFFF', maxHeight: '70vh', overflowY: 'auto' }}>
               <Tabs
                 value={formatTab}
                 onChange={(_, val) => setFormatTab(val)}
                 sx={{ mb: 2.5, borderBottom: 1, borderColor: 'divider' }}
               >
-                <Tab label="Identitas & Kartu Depan" sx={{ fontWeight: 700, fontSize: 12 }} />
+                <Tab label="Identity & Front Card" sx={{ fontWeight: 700, fontSize: 12 }} />
                 <Tab label="Terms of Use" sx={{ fontWeight: 700, fontSize: 12 }} />
                 <Tab label="Quality Policy" sx={{ fontWeight: 700, fontSize: 12 }} />
               </Tabs>
 
-              {/* TAB 0: IDENTITAS & KARTU DEPAN */}
+              {/* TAB 0: IDENTITY & FRONT CARD */}
               {formatTab === 0 && (
                 <Stack spacing={2}>
                   <TextField
                     fullWidth
                     size="small"
-                    label="Nama Company (Header)"
+                    label="Company Name (Header)"
                     value={tempFormat.companyName}
                     onChange={(e) => setTempFormat({ ...tempFormat, companyName: e.target.value })}
                   />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#018730', display: 'block', mt: 1 }}>
-                    📍 Alamat Pabrik KIIC (Karawang):
+                    📍 Factory Address KIIC (Karawang):
                   </Typography>
                   <TextField
                     fullWidth
                     size="small"
-                    label="KIIC Baris 1"
+                    label="KIIC Line 1"
                     value={tempFormat.kiicLine1}
                     onChange={(e) => setTempFormat({ ...tempFormat, kiicLine1: e.target.value })}
                   />
                   <TextField
                     fullWidth
                     size="small"
-                    label="KIIC Baris 2"
+                    label="KIIC Line 2"
                     value={tempFormat.kiicLine2}
                     onChange={(e) => setTempFormat({ ...tempFormat, kiicLine2: e.target.value })}
                   />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#0284C7', display: 'block', mt: 1 }}>
-                    📍 Alamat Pabrik GIIC (Cikarang Bekasi):
+                    📍 Factory Address GIIC (Cikarang Bekasi):
                   </Typography>
                   <TextField
                     fullWidth
                     size="small"
-                    label="GIIC Baris 1"
+                    label="GIIC Line 1"
                     value={tempFormat.giicLine1}
                     onChange={(e) => setTempFormat({ ...tempFormat, giicLine1: e.target.value })}
                   />
                   <TextField
                     fullWidth
                     size="small"
-                    label="GIIC Baris 2"
+                    label="GIIC Line 2"
                     value={tempFormat.giicLine2}
                     onChange={(e) => setTempFormat({ ...tempFormat, giicLine2: e.target.value })}
                   />
 
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#334155', display: 'block', mt: 1 }}>
-                    🏷️ Label Kolom Informasi Employee:
+                    🏷️ Employee Info Column Labels:
                   </Typography>
                   <TextField
                     fullWidth
@@ -2087,14 +2087,14 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Label Nama"
+                    label="Label Name"
                     value={tempFormat.labelName}
                     onChange={(e) => setTempFormat({ ...tempFormat, labelName: e.target.value })}
                   />
                   <TextField
                     fullWidth
                     size="small"
-                    label="Label Jabatan / Posisi"
+                    label="Label Position"
                     value={tempFormat.labelPosition}
                     onChange={(e) => setTempFormat({ ...tempFormat, labelPosition: e.target.value })}
                   />
@@ -2108,20 +2108,20 @@ export default function AdminIdCardsPage() {
                   <TextField
                     fullWidth
                     size="small"
-                    label="Teks Authorizer's Signature"
+                    label="Authorizer's Signature Text"
                     value={tempFormat.labelAuthorizerSignature}
                     onChange={(e) => setTempFormat({ ...tempFormat, labelAuthorizerSignature: e.target.value })}
                   />
                 </Stack>
               )}
 
-              {/* TAB 1: KETENTUAN PENGGUNAAN */}
+              {/* TAB 1: TERMS OF USE */}
               {formatTab === 1 && (
                 <Stack spacing={2}>
                   <TextField
                     fullWidth
                     size="small"
-                    label="Judul Terms"
+                    label="Terms Title"
                     value={tempFormat.termsTitle}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsTitle: e.target.value })}
                   />
@@ -2130,7 +2130,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Terms Butir 1"
+                    label="Terms Item 1"
                     value={tempFormat.termsItem1}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem1: e.target.value })}
                   />
@@ -2139,7 +2139,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Terms Butir 2"
+                    label="Terms Item 2"
                     value={tempFormat.termsItem2}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem2: e.target.value })}
                   />
@@ -2148,7 +2148,7 @@ export default function AdminIdCardsPage() {
                     multiline
                     rows={2}
                     size="small"
-                    label="Terms Butir 3"
+                    label="Terms Item 3"
                     value={tempFormat.termsItem3}
                     onChange={(e) => setTempFormat({ ...tempFormat, termsItem3: e.target.value })}
                   />
@@ -2231,7 +2231,7 @@ export default function AdminIdCardsPage() {
               )}
             </Box>
 
-            {/* Sisi Kanan: LIVE PREVIEW REAL-TIME */}
+            {/* Right Side: LIVE PREVIEW */}
             <Box sx={{ p: 2.5, bgcolor: '#E2E8F0', display: 'flex', flexDirection: 'column', maxHeight: '70vh', overflowY: 'auto' }}>
               <Box sx={{ mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -2241,17 +2241,17 @@ export default function AdminIdCardsPage() {
               </Box>
 
               <Typography variant="caption" sx={{ color: '#64748B', mb: 2, display: 'block' }}>
-                Setiap perubahan teks pada form di sebelah kiri langsung ter-update di kartu pratinjau ini:
+                Any text change on the left form instantly updates this preview card:
               </Typography>
 
-              {/* Render Preview dengan Konfigurasi tempFormat */}
+              {/* Render Preview with tempFormat Config */}
               <Box sx={{ transform: 'scale(0.84)', transformOrigin: 'top center', mb: -6 }}>
                 {renderSingleIdCard(selectedEmp || employees[0] || {
                   id: 999,
                   employeeId: '1530.09.26',
-                  namaLengkap: 'CONTOH NAMA KARYAWAN',
-                  jabatan: 'Staff IT & Sistem Company',
-                  departemen: 'Teknologi Informasi',
+                  namaLengkap: 'SAMPLE EMPLOYEE NAME',
+                  jabatan: 'IT & Company Systems Staff',
+                  departemen: 'Information Technology',
                   photoProfile: null,
                 }, tempFormat)}
               </Box>
@@ -2266,7 +2266,7 @@ export default function AdminIdCardsPage() {
             onClick={handleResetToFactoryDefault}
             sx={{ fontWeight: 700, textTransform: 'none' }}
           >
-            Kembalikan ke Default Excel
+            Restore Factory Default
           </Button>
 
           <Stack direction="row" spacing={1.5}>
@@ -2276,7 +2276,7 @@ export default function AdminIdCardsPage() {
               onClick={handleSaveCustomFormat}
               sx={{ bgcolor: '#018730', fontWeight: 800, px: 3, '&:hover': { bgcolor: '#005c21' } }}
             >
-              Save Format Kartu
+              Save Card Format
             </Button>
           </Stack>
         </DialogActions>
@@ -2300,7 +2300,7 @@ export default function AdminIdCardsPage() {
 
         <DialogContent dividers sx={{ p: 3, bgcolor: '#F8FAFC' }}>
           <Typography variant="body2" sx={{ color: '#334155', mb: 2 }}>
-            Tanda tangan ini akan otomatis terpasang di seluruh ID Card karyawan pada kolom <strong>Authorizer&apos;s Signature</strong>, sehingga Anda tidak perlu menandatangani ulang setiap kali mencetak ID Card.
+            This signature will be automatically applied to all employee ID cards in the <strong>Authorizer&apos;s Signature</strong>, so you don\'t need to sign again each time you print.
           </Typography>
 
           <Box sx={{ mb: 2 }}>
@@ -2315,7 +2315,7 @@ export default function AdminIdCardsPage() {
                 startIcon={<UploadIcon />}
                 sx={{ textTransform: 'none', fontWeight: 700, fontSize: 12, borderColor: '#CBD5E1', color: '#334155' }}
               >
-                Upload File Gambar (PNG/JPG)
+                Upload Image File (PNG/JPG)
                 <input type="file" hidden accept="image/*" onChange={handleUploadSignature} />
               </Button>
 
@@ -2359,7 +2359,7 @@ export default function AdminIdCardsPage() {
                   '&:hover': { bgcolor: '#E0F2FE', borderColor: '#0369A1' },
                 }}
               >
-                Tempel dari Clipboard (Ctrl + V)
+                Paste from Clipboard (Ctrl + V)
               </Button>
             </Stack>
 
@@ -2369,7 +2369,7 @@ export default function AdminIdCardsPage() {
               onClick={() => setTempSignature(DEFAULT_HR_SIGNATURE)}
               sx={{ textTransform: 'none', fontSize: 11.5, color: '#64748B' }}
             >
-              Gunakan Tanda Tangan Contoh
+              Use Sample Signature
             </Button>
           </Box>
 
@@ -2447,7 +2447,7 @@ export default function AdminIdCardsPage() {
               {/* Simulasi Card Footer Preview */}
               <Box sx={{ mt: 2, p: 2, bgcolor: '#FFFFFF', borderRadius: 1.5, border: '1px dashed #D97706', textAlign: 'center' }}>
                 <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 800, fontSize: 11, mb: 1, display: 'block' }}>
-                  Simulasi Tampilan Tanda Tangan pada ID Card (Tidak Terpotong):
+                  Signature Preview on ID Card (Not Cropped):
                 </Typography>
                 <Box
                   sx={{
@@ -2493,11 +2493,11 @@ export default function AdminIdCardsPage() {
                       } catch (e) {
                         console.warn(e);
                       }
-                      alert('Tanda tangan siap digunakan.');
+                      alert('Signature ready to use.');
                     }}
                     sx={{ textTransform: 'none', fontSize: 11, fontWeight: 700, color: '#475569', borderColor: '#CBD5E1' }}
                   >
-                    Salin Gambar
+                    Copy Image
                   </Button>
                   <Button
                     size="small"
@@ -2505,7 +2505,7 @@ export default function AdminIdCardsPage() {
                     onClick={() => setTempSignature('')}
                     sx={{ textTransform: 'none', fontSize: 11, fontWeight: 700 }}
                   >
-                    Hapus Tanda Tangan
+                    Remove Signature
                   </Button>
                 </Stack>
               </Box>
@@ -2525,7 +2525,7 @@ export default function AdminIdCardsPage() {
               '&:hover': { bgcolor: '#005c21' },
             }}
           >
-            Save Tanda Tangan Default
+            Save Default Signature
           </Button>
         </DialogActions>
       </Dialog>
