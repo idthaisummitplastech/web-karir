@@ -6,11 +6,15 @@ import QRCode from "qrcode";
 
 export async function POST(req: Request) {
   try {
-    const { username, password, mfaCode } = await req.json();
+    const body = await req.json();
+    // Employee ID primary (DataKaryawan.employee_id e.g. ITSP.004.02.16), email/username fallback 6 months
+    const raw: string = String(body.employee_id || body.employee_id_or_email || body.login || body.username || body.email || "").trim();
+    const password: string = String(body.password || "");
+    const mfaCode: string = String(body.mfaCode || body.mfa_code || "");
 
-    if (!username || !password) {
+    if (!raw || !password) {
       return NextResponse.json(
-        { error: "Username/Email and password are required." },
+        { error: "Employee ID / Email and password are required." },
         { status: 400 }
       );
     }
@@ -20,7 +24,11 @@ export async function POST(req: Request) {
       result = await fetchRawFromBackend("/auth/ats-login", {
         method: "POST",
         body: JSON.stringify({
-          username: username.trim(),
+          employee_id: raw,
+          employee_id_or_email: raw,
+          login: raw,
+          username: raw,
+          email: raw,
           password,
           mfa_code: mfaCode || "",
         }),
@@ -32,15 +40,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Backend returns requireMfaSetup or requireMfa if MFA step needed
     if (result.requireMfaSetup || result.require_mfa_setup) {
-      // Generate QR code from totp_uri
       const totpUri = result.totpUri || result.totp_uri;
       let qrCodeDataUrl = "";
       if (totpUri) {
         qrCodeDataUrl = await QRCode.toDataURL(totpUri);
       }
-
       return NextResponse.json({
         requireMfaSetup: true,
         qrCodeDataUrl,
@@ -59,13 +64,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // Successful login
     const admin = result.admin;
     if (!admin) {
       return NextResponse.json({ error: "Data admin tidak valid." }, { status: 500 });
     }
 
-    // Sign local JWT for Next.js cookie session
     const token = await signAdminToken({
       adminId: admin.id,
       username: admin.username,
@@ -81,7 +84,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24, // 24 hours
+      maxAge: 60 * 60 * 24,
       path: "/",
     });
 
@@ -91,6 +94,8 @@ export async function POST(req: Request) {
       admin: {
         id: admin.id,
         username: admin.username,
+        employee_id: admin.employee_id || admin.employeeId || null,
+        employeeId: admin.employee_id || admin.employeeId || null,
         name: admin.name,
         role: admin.role,
         department: admin.department,

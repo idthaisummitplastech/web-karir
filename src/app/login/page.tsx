@@ -25,6 +25,7 @@ import {
   Visibility as EyeIcon,
   VisibilityOff as EyeOffIcon,
   Person as PersonIcon,
+    Badge as BadgeIcon,
   AdminPanelSettings as AdminIcon,
   Lock as LockIcon,
   Security as SecurityIcon,
@@ -42,8 +43,8 @@ export default function LoginPage() {
   const [applicantPassword, setApplicantPassword] = useState('');
   const [showApplicantPassword, setShowApplicantPassword] = useState(false);
 
-  // Admin fields
-  const [adminUsername, setAdminUsername] = useState('');
+  // Admin fields — Employee ID primary (DataKaryawan.employee_id e.g. ITSP.004.02.16), email/username fallback 6 months
+  const [adminIdentifier, setAdminIdentifier] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminMfaCode, setAdminMfaCode] = useState('');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
@@ -86,18 +87,23 @@ export default function LoginPage() {
     }
   };
 
-  // Handle Admin HR/User Login
+  // Handle Admin HR/User Login — Employee ID primary (DataKaryawan.employee_id ITSP.004.02.16), dual-mode fallback email/username 6 months
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
+      const raw = adminIdentifier.trim();
       const res = await fetch('/api/auth/admin-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: adminUsername,
+          employee_id: raw,
+          employee_id_or_email: raw,
+          login: raw,
+          username: raw,
+          email: raw,
           password: adminPassword,
           mfaCode: adminMfaCode,
         }),
@@ -476,19 +482,19 @@ export default function LoginPage() {
                   <>
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155', mb: 1 }}>
-                        {language === 'id' ? 'Username / Email HR / User' : 'Username / HR Email / User'}
+                        Employee ID
                       </Typography>
                       <TextField
                         fullWidth
                         required
-                        placeholder="admin / recruitment@itsp.co.id"
-                        value={adminUsername}
-                        onChange={(e) => setAdminUsername(e.target.value)}
+                        placeholder="ITSP.004.02.16"
+                        value={adminIdentifier}
+                        onChange={(e) => setAdminIdentifier(e.target.value)}
                         slotProps={{
                           input: {
                             startAdornment: (
                               <InputAdornment position="start">
-                                <PersonIcon sx={{ color: '#94A3B8' }} />
+                                <BadgeIcon sx={{ color: '#94A3B8' }} />
                               </InputAdornment>
                             ),
                           },
@@ -496,8 +502,8 @@ export default function LoginPage() {
                       />
                       <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>
                         {language === 'id'
-                          ? '*Gunakan username (misal: admin) atau email resmi (@itsp.co.id).'
-                          : '*Use username (e.g. admin) or company email (@itsp.co.id).'}
+                          ? '*Employee ID immutable (contoh: ITSP.004.02.16). Email tetap tercatat untuk audit. Fallback email/username 6 bulan.'
+                          : '*Immutable Employee ID (e.g. ITSP.004.02.16). Email retained for audit. Email/username fallback 6 months.'}
                       </Typography>
                     </Box>
 

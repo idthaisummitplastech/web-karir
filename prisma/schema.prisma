@@ -171,6 +171,7 @@ model KaryawanSementara {
 // 7. Pengguna Admin HR & User Internal (Dengan MFA TOTP) + Toggle Portal
 model RecruitmentAdmin {
   id           Int      @id @default(autoincrement())
+  employeeId   String?  @unique @map("employee_id")
   username     String   @unique
   name         String
   email        String   @unique
@@ -181,6 +182,7 @@ model RecruitmentAdmin {
   isMfaEnabled Boolean  @default(false) @map("is_mfa_enabled")
   isActive     Boolean  @default(true) @map("is_active")
   portalAccess String   @default("both") @map("portal_access") // perusahaan | karir | both
+  isFirstLogin Boolean  @default(true) @map("is_first_login")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("recruitment_admins")

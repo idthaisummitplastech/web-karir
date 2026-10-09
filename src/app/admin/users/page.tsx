@@ -60,8 +60,9 @@ export default function AdminUsersPage() {
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
 
-  // Add User Modal
+  // Add User Modal — Employee ID immutable (ITSP.004.02.16), email retained for audit, fallback 6 months
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [newEmployeeId, setNewEmployeeId] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -74,6 +75,7 @@ export default function AdminUsersPage() {
   // Edit User Modal
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedEditUser, setSelectedEditUser] = useState<any | null>(null);
+  const [editEmployeeId, setEditEmployeeId] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -107,7 +109,13 @@ export default function AdminUsersPage() {
     'Warehouse & Delivery',
   ]);
 
-  const normalize = (u: any) => ({ ...u, isActive: u.isActive ?? u.is_active ?? true, portalAccess: u.portalAccess ?? u.portal_access ?? 'both' });
+  const normalize = (u: any) => ({
+    ...u,
+    employeeId: u.employeeId ?? u.employee_id ?? u.employeeID ?? '',
+    employee_id: u.employee_id ?? u.employeeId ?? u.employeeID ?? '',
+    isActive: u.isActive ?? u.is_active ?? true,
+    portalAccess: u.portalAccess ?? u.portal_access ?? 'both',
+  });
   const fetchUsers = async () => {
     setLoading(true);
     setLoadError(null);
@@ -212,6 +220,8 @@ export default function AdminUsersPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          employee_id: newEmployeeId.trim(),
+          employeeId: newEmployeeId.trim(),
           username: newUsername,
           name: newName,
           email: newEmail,
@@ -228,6 +238,7 @@ export default function AdminUsersPage() {
 
       alert(data.message);
       setAddModalOpen(false);
+      setNewEmployeeId('');
       setNewUsername('');
       setNewName('');
       setNewEmail('');
@@ -241,6 +252,7 @@ export default function AdminUsersPage() {
 
   const handleOpenEdit = (user: any) => {
     setSelectedEditUser(user);
+    setEditEmployeeId(user.employeeId ?? user.employee_id ?? '');
     setEditUsername(user.username);
     setEditName(user.name);
     setEditEmail(user.email);
@@ -278,6 +290,8 @@ export default function AdminUsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedEditUser.id,
+          employee_id: editEmployeeId.trim(),
+          employeeId: editEmployeeId.trim(),
           username: editUsername,
           name: editName,
           email: editEmail,
@@ -462,6 +476,8 @@ export default function AdminUsersPage() {
             (u.name && u.name.toLowerCase().includes(q)) ||
             (u.username && u.username.toLowerCase().includes(q)) ||
             (u.email && u.email.toLowerCase().includes(q)) ||
+            (u.employeeId && String(u.employeeId).toLowerCase().includes(q)) ||
+            (u.employee_id && String(u.employee_id).toLowerCase().includes(q)) ||
             (u.role && u.role.toLowerCase().includes(q)) ||
             (u.department && u.department.toLowerCase().includes(q))
           );
@@ -523,8 +539,8 @@ export default function AdminUsersPage() {
                       />
                     </Box>
 
-                    {/* Email & Dept + Aktif & Portal */}
-                    <Box sx={{ fontSize: 13, color: '#475569', mb: 1.5 }}>
+                    <Box sx={{ fontSize: 13, color: '#475569', mb: 1.2 }}>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 800, color: '#018730' }}>🪪 {(u.employeeId || u.employee_id || '—')}</div>
                       <div>✉️ {u.email}</div>
                       <div>🏢 {t('admin_users_deptPrefix')} <strong>{u.department}</strong></div>
                     </Box>
@@ -614,9 +630,10 @@ export default function AdminUsersPage() {
                 mb: 2,
               }}
             >
-              <Table sx={{ minWidth: 980 }}>
+              <Table sx={{ minWidth: 1050 }}>
                 <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
+                    <TableCell sx={{ fontWeight: 800 }}>Employee ID</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableUsername')}</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableRoleDept')}</TableCell>
                     <TableCell sx={{ fontWeight: 800 }}>{t('admin_users_tableMfa')}</TableCell>
@@ -628,13 +645,21 @@ export default function AdminUsersPage() {
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#64748B' }}>
                         {searchQuery ? t('admin_users_mobileEmptyFiltered') : t('admin_users_mobileEmptyAll')}
                       </TableCell>
                     </TableRow>
                   ) : (
                     paginatedUsers.map((u) => (
                       <TableRow key={u.id} hover>
+                        <TableCell>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#018730', fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+                            {(u.employeeId || u.employee_id || '—')}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', fontSize: 10 }}>
+                            {u.employeeId || u.employee_id ? 'immutable' : '—'}
+                          </Typography>
+                        </TableCell>
                         <TableCell>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
                             {u.name}
@@ -804,6 +829,16 @@ export default function AdminUsersPage() {
               <TextField
                 fullWidth
                 required
+                label="Employee ID *"
+                placeholder="ITSP.004.02.16"
+                value={newEmployeeId}
+                onChange={(e) => setNewEmployeeId(e.target.value)}
+                helperText="immutable — contoh: ITSP.004.02.16"
+                slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
+              />
+              <TextField
+                fullWidth
+                required
                 label={t('admin_users_fieldUsername')}
                 placeholder="e.g. hr.staff"
                 value={newUsername}
@@ -906,6 +941,16 @@ export default function AdminUsersPage() {
               {t('admin_users_dialogEditDescPrefix')} <strong>{selectedEditUser?.name}</strong>
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
+              <TextField
+                fullWidth
+                label="Employee ID"
+                placeholder="ITSP.004.02.16"
+                value={editEmployeeId}
+                onChange={(e) => setEditEmployeeId(e.target.value)}
+                helperText={(selectedEditUser?.employeeId || selectedEditUser?.employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'Isi Employee ID (contoh: ITSP.004.02.16)'}
+                disabled={Boolean(selectedEditUser?.employeeId || selectedEditUser?.employee_id)}
+                slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
+              />
               <TextField
                 fullWidth
                 required
