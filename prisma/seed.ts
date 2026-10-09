@@ -69,13 +69,13 @@ async function main() {
     });
   }
 
-  // 2b. Primary Superadmin ITSP.1526.08.26 / it-04@thaisummit.co.id — Employee ID immutable, role admin portal both
+  // 2b. Primary Superadmin 1526.08.26 / it-04@thaisummit.co.id — Employee ID immutable, role admin portal both
   const it04Plain = process.env.SEED_IT04_PASSWORD && process.env.SEED_IT04_PASSWORD.length >= 12 ? process.env.SEED_IT04_PASSWORD : `Itsp@${new Date().getFullYear()}`;
   const hashedIT04 = await bcrypt.hash(it04Plain, 10);
   await prisma.recruitmentAdmin.upsert({
     where: { email: "it-04@thaisummit.co.id" },
     update: {
-      employeeId: "ITSP.1526.08.26",
+      employeeId: "1526.08.26",
       username: "it-04",
       name: "IT Admin",
       role: "admin",
@@ -86,7 +86,7 @@ async function main() {
       password: hashedIT04,
     } as any,
     create: {
-      employeeId: "ITSP.1526.08.26",
+      employeeId: "1526.08.26",
       username: "it-04",
       name: "IT Admin",
       email: "it-04@thaisummit.co.id",
@@ -100,10 +100,10 @@ async function main() {
   });
   try {
     await prisma.recruitmentAdmin.upsert({
-      where: { employeeId: "ITSP.1526.08.26" } as any,
+      where: { employeeId: "1526.08.26" } as any,
       update: { email: "it-04@thaisummit.co.id", username: "it-04", role: "admin", isActive: true, portalAccess: "both", isFirstLogin: true, password: hashedIT04 } as any,
       create: {
-        employeeId: "ITSP.1526.08.26",
+        employeeId: "1526.08.26",
         username: "it-04",
         name: "IT Admin",
         email: "it-04@thaisummit.co.id",
@@ -116,7 +116,7 @@ async function main() {
       } as any,
     });
   } catch {}
-  console.log("✅ Primary superadmin ready: it-04@thaisummit.co.id / ITSP.1526.08.26");
+  console.log("✅ Primary superadmin ready: it-04@thaisummit.co.id / 1526.08.26");
 
   // 3. Lowongan Kerja Aktif
   const jobs = [
