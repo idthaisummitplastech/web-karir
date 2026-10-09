@@ -168,9 +168,9 @@ export default function AdminUsersPage() {
     };
   }, []);
 
-  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26
+  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26 (Add + Edit)
   React.useEffect(() => {
-    if (!addModalOpen) return;
+    if (!addModalOpen && !editModalOpen) return;
     let active=true;
     const fetchKaryawanOptions=async()=>{
       setKaryawanLoading(true);
@@ -185,7 +185,7 @@ export default function AdminUsersPage() {
     };
     const tm=setTimeout(fetchKaryawanOptions,300);
     return()=>{active=false;clearTimeout(tm);};
-  },[karyawanQuery,addModalOpen]);
+  },[karyawanQuery,addModalOpen,editModalOpen]);
 
   const handleConfirmResetPassword = async () => {
     if (!selectedUser) return;
@@ -860,7 +860,7 @@ export default function AdminUsersPage() {
                 value={selectedKaryawan}
                 onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setNewEmployeeId(eid); if(nm) setNewName(nm); if(em) setNewEmail(em); const un=String(val.username||'').trim(); if(un) setNewUsername(un); } }}
                 noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...params.InputProps,endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps.endAdornment}</>)}} /> )}
+                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}}} /> )}
                 sx={{gridColumn:{xs:'1 / -1'}}}
               />
               <TextField
@@ -978,6 +978,19 @@ export default function AdminUsersPage() {
               {t('admin_users_dialogEditDescPrefix')} <strong>{selectedEditUser?.name}</strong>
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
+              <Autocomplete
+                options={karyawanOptions}
+                loading={karyawanLoading}
+                disabled={Boolean(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id)}
+                getOptionLabel={(opt:any)=>`${opt.employee_id||opt.employeeId||''} \u2014 ${opt.full_name||opt.name||''} ${opt.email?'('+opt.email+')':''} `}
+                inputValue={editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? karyawanQuery : ''}
+                onInputChange={(_,v)=>{ if(editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id)) setKaryawanQuery(v); }}
+                value={null}
+                onChange={(_,val:any)=>{ if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); const un=String((val as any).username||'').trim(); if(eid) setEditEmployeeId(eid); if(nm) setEditName(nm); if(em) setEditEmail(em); if(un) setEditUsername(un); }}
+                noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
+                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo)" placeholder={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID immutable \u2014 tidak dapat diubah' : 'Ketik nama / Employee ID / email...'} helperText={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID sudah terpasang \u2014 immutable' : 'Cari & pilih untuk auto-fill (anti-typo); kosongkan jika tidak perlu'} InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}}} /> )}
+                sx={{gridColumn:{xs:'1 / -1'}}}
+              />
               <TextField
                 fullWidth
                 label="Employee ID"
