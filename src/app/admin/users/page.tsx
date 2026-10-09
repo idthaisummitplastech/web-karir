@@ -986,7 +986,7 @@ export default function AdminUsersPage() {
                 inputValue={editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? karyawanQuery : ''}
                 onInputChange={(_,v)=>{ if(editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id)) setKaryawanQuery(v); }}
                 value={null}
-                onChange={(_,val:any)=>{ if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); const un=String((val as any).username||'').trim(); if(eid) setEditEmployeeId(eid); if(nm) setEditName(nm); if(em) setEditEmail(em); if(un) setEditUsername(un); }}
+                onChange={(_,val:any)=>{ if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); const un=String((val as any).username||'').trim(); if(eid) setEditEmployeeId(eid); if(nm) setEditName(nm); if(em) setEditEmail(em); if(un) setEditUsername(un); } }}
                 noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
                 renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo)" placeholder={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID immutable \u2014 tidak dapat diubah' : 'Ketik nama / Employee ID / email...'} helperText={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID sudah terpasang \u2014 immutable' : 'Cari & pilih untuk auto-fill (anti-typo); kosongkan jika tidak perlu'} InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}}} /> )}
                 sx={{gridColumn:{xs:'1 / -1'}}}
@@ -997,7 +997,7 @@ export default function AdminUsersPage() {
                 placeholder="1526.08.26"
                 value={editEmployeeId}
                 onChange={(e) => setEditEmployeeId(e.target.value)}
-                helperText={(selectedEditUser?.employeeId || selectedEditUser?.employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'Isi Employee ID (contoh: 1526.08.26 (tanpa prefix ITSP.))'}
+                helperText={(selectedEditUser?.employeeId || selectedEditUser?.employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'Otomatis dari dropdown di atas — tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'}
                 disabled={Boolean(selectedEditUser?.employeeId || selectedEditUser?.employee_id)}
                 slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
               />
