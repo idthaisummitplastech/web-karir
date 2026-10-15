@@ -30,6 +30,7 @@ import {
   Divider,
   Switch,
   FormControlLabel,
+  InputAdornment,
 } from '@mui/material';
 import {
   LockReset as ResetPasswordIcon,
@@ -38,9 +39,15 @@ import {
   CheckCircle as CheckCircleIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility,
+  VisibilityOff,
+  OpenInNew,
 } from '@mui/icons-material';
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 import { useLanguage } from '@/lib/LanguageContext';
+
+// Helper: default password otomatis sesuai tahun berjalan (e.g. Itsp@2026, Itsp@2027)
+const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -59,6 +66,7 @@ export default function AdminUsersPage() {
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // Add User Modal — Employee ID immutable (1526.08.26), email retained for audit, fallback 6 months
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -68,9 +76,10 @@ export default function AdminUsersPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
-  const [newUserPassword, setNewUserPassword] = useState(`Itsp@${new Date().getFullYear()}`);
+  const [newUserPassword, setNewUserPassword] = useState(getDefaultPassword());
   const [newPortalAccess, setNewPortalAccess] = useState('both');
   const [newIsActive, setNewIsActive] = useState(true);
+  const [showAddPassword, setShowAddPassword] = useState(false);
   const [karyawanOptions, setKaryawanOptions] = useState<any[]>([]);
   const [karyawanLoading, setKaryawanLoading] = useState(false);
   const [karyawanQuery, setKaryawanQuery] = useState('');
@@ -88,6 +97,7 @@ export default function AdminUsersPage() {
   const [editNewPassword, setEditNewPassword] = useState('');
   const [editPortalAccess, setEditPortalAccess] = useState('both');
   const [editIsActive, setEditIsActive] = useState(true);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   // Daftar Departemen Resmi dari Data Karyawan
   const [availableDepartments, setAvailableDepartments] = useState<string[]>([
@@ -234,8 +244,32 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleOpenAdd = () => {
+    setNewEmployeeId('');
+    setNewUsername('');
+    setNewName('');
+    setNewEmail('');
+    setNewRole('hr');
+    setNewDepartment('Human Capital');
+    setNewUserPassword(getDefaultPassword());
+    setShowAddPassword(false);
+    setNewPortalAccess('both');
+    setNewIsActive(true);
+    setSelectedKaryawan(null);
+    setKaryawanQuery('');
+    setAddModalOpen(true);
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newEmployeeId || !newEmployeeId.trim()) {
+      alert("⚠️ Silakan pilih Employee ID dari data karyawan terlebih dahulu.");
+      return;
+    }
+    if (!newEmail || !newEmail.trim()) {
+      alert("⚠️ Karyawan ini belum memiliki email di data karyawan. Akun login memerlukan email aktif. Silakan lengkapi email karyawan di halaman Employee Data terlebih dahulu sebelum membuat akun.");
+      return;
+    }
     setProcessing(true);
 
     try {
@@ -245,9 +279,9 @@ export default function AdminUsersPage() {
         body: JSON.stringify({
           employee_id: newEmployeeId.trim(),
           employeeId: newEmployeeId.trim(),
-          username: newUsername,
-          name: newName,
-          email: newEmail,
+          username: newUsername.trim(),
+          name: newName.trim(),
+          email: newEmail.trim(),
           role: newRole,
           department: newDepartment,
           password: newUserPassword,
@@ -261,12 +295,7 @@ export default function AdminUsersPage() {
 
       alert(data.message);
       setAddModalOpen(false);
-      setSelectedKaryawan(null);
-      setKaryawanQuery('');
-      setNewEmployeeId('');
-      setNewUsername('');
-      setNewName('');
-      setNewEmail('');
+      handleOpenAdd();
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
@@ -277,15 +306,19 @@ export default function AdminUsersPage() {
 
   const handleOpenEdit = (user: any) => {
     setSelectedEditUser(user);
-    setEditEmployeeId(user.employeeId ?? user.employee_id ?? '');
-    setEditUsername(user.username);
-    setEditName(user.name);
-    setEditEmail(user.email);
-    setEditRole(user.role);
+    const eid = user.employeeId ?? user.employee_id ?? '';
+    setEditEmployeeId(eid);
+    setEditUsername(user.username || '');
+    setEditName(user.name || '');
+    setEditEmail(user.email || '');
+    setEditRole(user.role || 'hr');
     setEditDepartment(user.department || '');
     setEditNewPassword('');
+    setShowEditPassword(false);
     setEditPortalAccess(user.portalAccess || user.portal_access || 'both');
     setEditIsActive(user.isActive ?? user.is_active ?? true);
+    setSelectedKaryawan(null);
+    setKaryawanQuery('');
     setEditModalOpen(true);
   };
   const handleToggleActiveRow = async (user: any) => {
@@ -470,7 +503,7 @@ export default function AdminUsersPage() {
         <Button
           variant="contained"
           startIcon={<AddUserIcon />}
-          onClick={() => setAddModalOpen(true)}
+          onClick={handleOpenAdd}
           sx={{
             bgcolor: '#018730',
             fontWeight: 700,
@@ -825,11 +858,26 @@ export default function AdminUsersPage() {
 
           <TextField
             fullWidth
+            type={showResetPassword ? 'text' : 'password'}
             label={t('admin_users_dialogNewPasswordLabel')}
             placeholder={t('admin_users_dialogNewPasswordPlaceholder')}
             value={newPasswordInput}
             onChange={(e) => setNewPasswordInput(e.target.value)}
             helperText={t('admin_users_dialogNewPasswordHelper')}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowResetPassword((p) => !p)}
+                    edge="end"
+                    size="small"
+                    title={showResetPassword ? "Sembunyikan password" : "Lihat password"}
+                  >
+                    {showResetPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>
@@ -851,36 +899,132 @@ export default function AdminUsersPage() {
           <DialogTitle sx={{ fontWeight: 800 }}>{t('admin_users_dialogAddTitle')}</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
-                            <Autocomplete
-                options={karyawanOptions}
-                loading={karyawanLoading}
-                getOptionLabel={(opt:any)=>`${opt.employee_id||opt.employeeId||''} \u2014 ${opt.full_name||opt.name||''} ${opt.email?'('+opt.email+')':''} `}
-                inputValue={karyawanQuery}
-                onInputChange={(_,v)=>setKaryawanQuery(v)}
-                value={selectedKaryawan}
-                onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setNewEmployeeId(eid); if(nm) setNewName(nm); if(em) setNewEmail(em); const un=String(val.username||'').trim(); if(un) setNewUsername(un); } }}
-                noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params: any)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan — otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}}} /> )}
-                sx={{gridColumn:{xs:'1 / -1'}}}
-              />
-              <TextField
-                fullWidth
-                required
-                label="Employee ID (otomatis)"
-                placeholder="1526.08.26"
-                value={newEmployeeId}
-                onChange={(e)=>setNewEmployeeId(e.target.value)}
-                helperText="Otomatis dari dropdown di atas \u2014 tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu."
-                slotProps={{htmlInput:{style:{fontFamily:'monospace',fontWeight:700}}}}
-              />
+              
+              {/* === DROPDOWN EMPLOYEE ID (SEARCHABLE AUTOCOMPLETE) === */}
+              <Box sx={{ gridColumn: { xs: '1 / -1' } }}>
+                <Autocomplete
+                  options={karyawanOptions}
+                  loading={karyawanLoading}
+                  getOptionLabel={(opt: any) => {
+                    if (typeof opt === 'string') return opt;
+                    return opt.employee_id || opt.employeeId || '';
+                  }}
+                  isOptionEqualToValue={(opt: any, val: any) => {
+                    const id1 = opt.employee_id || opt.employeeId || '';
+                    const id2 = val.employee_id || val.employeeId || '';
+                    return id1 === id2;
+                  }}
+                  filterOptions={(opts, state) => {
+                    const q = state.inputValue.toLowerCase().trim();
+                    if (!q) return opts;
+                    return opts.filter((o: any) => {
+                      const eid = String(o.employee_id || o.employeeId || '').toLowerCase();
+                      const nm = String(o.full_name || o.name || '').toLowerCase();
+                      const em = String(o.email || '').toLowerCase();
+                      const dp = String(o.department || '').toLowerCase();
+                      return eid.includes(q) || nm.includes(q) || em.includes(q) || dp.includes(q);
+                    });
+                  }}
+                  inputValue={karyawanQuery}
+                  onInputChange={(_, v) => setKaryawanQuery(v)}
+                  value={selectedKaryawan}
+                  onChange={(_, val: any) => {
+                    setSelectedKaryawan(val);
+                    if (val) {
+                      const eid = String(val.employee_id || val.employeeId || '').trim();
+                      const nm = String(val.full_name || val.name || '').trim();
+                      const em = String(val.email || '').trim();
+                      const dp = String(val.department || '').trim();
+                      const un = String(val.username || eid || '').trim();
+                      setNewEmployeeId(eid);
+                      setNewName(nm);
+                      setNewEmail(em);
+                      if (un) setNewUsername(un);
+                      if (dp) setNewDepartment(dp);
+                    } else {
+                      setNewEmployeeId('');
+                      setNewName('');
+                      setNewEmail('');
+                      setNewUsername('');
+                    }
+                  }}
+                  noOptionsText={karyawanLoading ? 'Memuat data karyawan...' : 'Tidak ada karyawan ditemukan'}
+                  renderOption={(props, opt: any) => {
+                    const eid = opt.employee_id || opt.employeeId || '';
+                    const nm = opt.full_name || opt.name || '';
+                    const em = opt.email || '';
+                    const dp = opt.department || '';
+                    return (
+                      <Box component="li" {...props} key={eid || props.id} sx={{ py: 1, borderBottom: '1px solid #F1F5F9' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: 'monospace', color: '#018730' }}>
+                              🪪 {eid}
+                            </Typography>
+                            {dp && (
+                              <Chip label={dp} size="small" sx={{ fontSize: 10, height: 20, bgcolor: '#F1F5F9' }} />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', mt: 0.3 }}>
+                            {nm}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: em ? '#64748B' : '#DC2626', mt: 0.2 }}>
+                            {em ? `✉️ ${em}` : '⚠️ Belum ada email di Employee Data'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      required
+                      label="Pilih Employee ID *"
+                      placeholder="Ketik Employee ID atau nama karyawan..."
+                      helperText={
+                        !newEmployeeId
+                          ? "Pilih Employee ID dari Data Karyawan — Nama & Email akan otomatis terisi"
+                          : `Terpilih: ${newEmployeeId} (${newName || 'Karyawan'})`
+                      }
+                    />
+                  )}
+                />
+              </Box>
+
+              {/* Banner Peringatan jika karyawan belum ada email */}
+              {selectedKaryawan && !newEmail && (
+                <Alert
+                  severity="warning"
+                  sx={{ gridColumn: { xs: '1 / -1' }, borderRadius: 2 }}
+                  action={
+                    <Button
+                      color="inherit"
+                      size="small"
+                      variant="outlined"
+                      endIcon={<OpenInNew fontSize="small" />}
+                      onClick={() => window.open('/admin/employees', '_blank')}
+                      sx={{ fontWeight: 700, textTransform: 'none' }}
+                    >
+                      Buka Employee Data
+                    </Button>
+                  }
+                >
+                  <strong>Karyawan ini belum memiliki email.</strong> Akun login memerlukan email aktif. Silakan lengkapi email di halaman <strong>Employee Data</strong> terlebih dahulu, lalu pilih kembali.
+                </Alert>
+              )}
+
+              {/* Login Username */}
               <TextField
                 fullWidth
                 required
                 label={t('admin_users_fieldUsername')}
-                placeholder="e.g. hr.staff"
+                placeholder="e.g. hr.staff atau 1526.08.26"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
+                helperText="Username unik untuk login ke portal"
               />
+
+              {/* Full Name & Title */}
               <TextField
                 fullWidth
                 required
@@ -888,7 +1032,10 @@ export default function AdminUsersPage() {
                 placeholder="e.g. John Doe, M.Psi"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                helperText="Otomatis terisi dari pilihan Employee ID"
               />
+
+              {/* Official Email */}
               <TextField
                 fullWidth
                 required
@@ -897,7 +1044,15 @@ export default function AdminUsersPage() {
                 placeholder="name@itsp.co.id"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
+                error={Boolean(selectedKaryawan && !newEmail)}
+                helperText={
+                  !newEmail
+                    ? "⚠️ Email belum tersedia. Lengkapi di halaman Employee Data."
+                    : "✅ Otomatis terisi dari Data Karyawan"
+                }
               />
+
+              {/* Account Role */}
               <TextField
                 select
                 fullWidth
@@ -910,6 +1065,8 @@ export default function AdminUsersPage() {
                 <MenuItem value="user_dept">{t('admin_users_roleDept')}</MenuItem>
                 <MenuItem value="admin">{t('admin_users_roleAdmin')}</MenuItem>
               </TextField>
+
+              {/* Department */}
               <Autocomplete
                 freeSolo
                 options={availableDepartments}
@@ -923,17 +1080,37 @@ export default function AdminUsersPage() {
                     required
                     label={t('admin_users_fieldDept')}
                     placeholder={t('admin_users_fieldDeptPlaceholder')}
-                    helperText={t('admin_users_fieldDeptPlaceholder')}
+                    helperText="Pilih atau ketik departemen"
                   />
                 )}
               />
+
+              {/* Initial Password dengan Eye Toggle dan Default Dinamis */}
               <TextField
                 fullWidth
                 required
+                type={showAddPassword ? 'text' : 'password'}
                 label={t('admin_users_fieldPassword')}
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
+                helperText={`Default otomatis tahun ini: ${getDefaultPassword()}`}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowAddPassword((p) => !p)}
+                        edge="end"
+                        size="small"
+                        title={showAddPassword ? "Sembunyikan password" : "Lihat password"}
+                      >
+                        {showAddPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
+
+              {/* Portal Access */}
               <TextField
                 select
                 fullWidth
@@ -946,6 +1123,8 @@ export default function AdminUsersPage() {
                 <MenuItem value="karir">{t('admin_users_portalKarir')}</MenuItem>
                 <MenuItem value="both">{t('admin_users_portalBoth')}</MenuItem>
               </TextField>
+
+              {/* Active Switch */}
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <FormControlLabel
                   control={
@@ -978,29 +1157,85 @@ export default function AdminUsersPage() {
               {t('admin_users_dialogEditDescPrefix')} <strong>{selectedEditUser?.name}</strong>
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
-              <Autocomplete
-                options={karyawanOptions}
-                loading={karyawanLoading}
-                disabled={Boolean(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id)}
-                getOptionLabel={(opt:any)=>`${opt.employee_id||opt.employeeId||''} \u2014 ${opt.full_name||opt.name||''} ${opt.email?'('+opt.email+')':''} `}
-                inputValue={editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? karyawanQuery : ''}
-                onInputChange={(_,v)=>{ if(editModalOpen && !(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id)) setKaryawanQuery(v); }}
-                value={null}
-                onChange={(_,val:any)=>{ if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); const un=String((val as any).username||'').trim(); if(eid) setEditEmployeeId(eid); if(nm) setEditName(nm); if(em) setEditEmail(em); if(un) setEditUsername(un); } }}
-                noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params: any)=>( <TextField {...params} label="Pilih Karyawan (anti-typo)" placeholder={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID immutable — tidak dapat diubah' : 'Ketik nama / Employee ID / email...'} helperText={(selectedEditUser?.employeeId || (selectedEditUser as any)?.employee_id) ? 'Employee ID sudah terpasang — immutable' : 'Cari & pilih untuk auto-fill (anti-typo); kosongkan jika tidak perlu'} InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}}} /> )}
-                sx={{gridColumn:{xs:'1 / -1'}}}
-              />
-              <TextField
-                fullWidth
-                label="Employee ID"
-                placeholder="1526.08.26"
-                value={editEmployeeId}
-                onChange={(e) => setEditEmployeeId(e.target.value)}
-                helperText={(selectedEditUser?.employeeId || selectedEditUser?.employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'Otomatis dari dropdown di atas — tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'}
-                disabled={Boolean(selectedEditUser?.employeeId || selectedEditUser?.employee_id)}
-                slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
-              />
+              
+              {/* Employee ID: jika sudah ada maka immutable, jika kosong bisa dipilih dari dropdown */}
+              {editEmployeeId ? (
+                <TextField
+                  fullWidth
+                  label="Employee ID (immutable)"
+                  value={editEmployeeId}
+                  disabled
+                  helperText="Employee ID immutable — tidak dapat diubah (hubungi HR jika salah)"
+                  slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
+                  sx={{ gridColumn: { xs: '1 / -1' } }}
+                />
+              ) : (
+                <Box sx={{ gridColumn: { xs: '1 / -1' } }}>
+                  <Autocomplete
+                    options={karyawanOptions}
+                    loading={karyawanLoading}
+                    getOptionLabel={(opt: any) => {
+                      if (typeof opt === 'string') return opt;
+                      return opt.employee_id || opt.employeeId || '';
+                    }}
+                    filterOptions={(opts, state) => {
+                      const q = state.inputValue.toLowerCase().trim();
+                      if (!q) return opts;
+                      return opts.filter((o: any) => {
+                        const eid = String(o.employee_id || o.employeeId || '').toLowerCase();
+                        const nm = String(o.full_name || o.name || '').toLowerCase();
+                        const em = String(o.email || '').toLowerCase();
+                        return eid.includes(q) || nm.includes(q) || em.includes(q);
+                      });
+                    }}
+                    inputValue={karyawanQuery}
+                    onInputChange={(_, v) => setKaryawanQuery(v)}
+                    value={null}
+                    onChange={(_, val: any) => {
+                      if (val) {
+                        const eid = String(val.employee_id || val.employeeId || '').trim();
+                        const nm = String(val.full_name || val.name || '').trim();
+                        const em = String(val.email || '').trim();
+                        const dp = String(val.department || '').trim();
+                        if (eid) setEditEmployeeId(eid);
+                        if (nm) setEditName(nm);
+                        if (em) setEditEmail(em);
+                        if (dp) setEditDepartment(dp);
+                      }
+                    }}
+                    noOptionsText={karyawanLoading ? 'Memuat data karyawan...' : 'Tidak ada karyawan ditemukan'}
+                    renderOption={(props, opt: any) => {
+                      const eid = opt.employee_id || opt.employeeId || '';
+                      const nm = opt.full_name || opt.name || '';
+                      const em = opt.email || '';
+                      return (
+                        <Box component="li" {...props} key={eid || props.id} sx={{ py: 1 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: 'monospace', color: '#018730' }}>
+                              🪪 {eid}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
+                              {nm}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: em ? '#64748B' : '#DC2626' }}>
+                              {em ? `✉️ ${em}` : '⚠️ Belum ada email'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Hubungkan ke Employee ID"
+                        placeholder="Pilih Employee ID untuk menautkan akun ini..."
+                        helperText="Akun ini belum memiliki Employee ID — pilih karyawan untuk menautkan"
+                      />
+                    )}
+                  />
+                </Box>
+              )}
+
               <TextField
                 fullWidth
                 required
@@ -1022,6 +1257,7 @@ export default function AdminUsersPage() {
                 label={t('admin_users_fieldEmail')}
                 value={editEmail}
                 onChange={(e) => setEditEmail(e.target.value)}
+                helperText="Alamat email resmi untuk notifikasi dan login"
               />
               <TextField
                 select
@@ -1051,14 +1287,32 @@ export default function AdminUsersPage() {
                   />
                 )}
               />
+
+              {/* Password Baru (Opsional) dengan Eye Toggle */}
               <TextField
                 fullWidth
+                type={showEditPassword ? 'text' : 'password'}
                 label={t('admin_users_fieldNewPasswordOpt')}
                 placeholder={t('admin_users_fieldNewPasswordPlaceholder')}
                 value={editNewPassword}
                 onChange={(e) => setEditNewPassword(e.target.value)}
                 helperText={t('admin_users_fieldNewPasswordHelper')}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowEditPassword((p) => !p)}
+                        edge="end"
+                        size="small"
+                        title={showEditPassword ? "Sembunyikan password" : "Lihat password"}
+                      >
+                        {showEditPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
+
               <TextField
                 select
                 fullWidth
