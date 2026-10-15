@@ -318,7 +318,7 @@ export default function AdminUsersPage() {
     setEditPortalAccess(user.portalAccess || user.portal_access || 'both');
     setEditIsActive(user.isActive ?? user.is_active ?? true);
     setSelectedKaryawan(null);
-    setKaryawanQuery('');
+    setKaryawanQuery(eid);
     setEditModalOpen(true);
   };
   const handleToggleActiveRow = async (user: any) => {
@@ -1158,83 +1158,91 @@ export default function AdminUsersPage() {
             </Typography>
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mt: 1 }}>
               
-              {/* Employee ID: jika sudah ada maka immutable, jika kosong bisa dipilih dari dropdown */}
-              {editEmployeeId ? (
-                <TextField
-                  fullWidth
-                  label="Employee ID (immutable)"
-                  value={editEmployeeId}
-                  disabled
-                  helperText="Employee ID immutable — tidak dapat diubah (hubungi HR jika salah)"
-                  slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
-                  sx={{ gridColumn: { xs: '1 / -1' } }}
-                />
-              ) : (
-                <Box sx={{ gridColumn: { xs: '1 / -1' } }}>
-                  <Autocomplete
-                    options={karyawanOptions}
-                    loading={karyawanLoading}
-                    getOptionLabel={(opt: any) => {
-                      if (typeof opt === 'string') return opt;
-                      return opt.employee_id || opt.employeeId || '';
-                    }}
-                    filterOptions={(opts, state) => {
-                      const q = state.inputValue.toLowerCase().trim();
-                      if (!q) return opts;
-                      return opts.filter((o: any) => {
-                        const eid = String(o.employee_id || o.employeeId || '').toLowerCase();
-                        const nm = String(o.full_name || o.name || '').toLowerCase();
-                        const em = String(o.email || '').toLowerCase();
-                        return eid.includes(q) || nm.includes(q) || em.includes(q);
-                      });
-                    }}
-                    inputValue={karyawanQuery}
-                    onInputChange={(_, v) => setKaryawanQuery(v)}
-                    value={null}
-                    onChange={(_, val: any) => {
-                      if (val) {
-                        const eid = String(val.employee_id || val.employeeId || '').trim();
-                        const nm = String(val.full_name || val.name || '').trim();
-                        const em = String(val.email || '').trim();
-                        const dp = String(val.department || '').trim();
-                        if (eid) setEditEmployeeId(eid);
-                        if (nm) setEditName(nm);
-                        if (em) setEditEmail(em);
-                        if (dp) setEditDepartment(dp);
-                      }
-                    }}
-                    noOptionsText={karyawanLoading ? 'Memuat data karyawan...' : 'Tidak ada karyawan ditemukan'}
-                    renderOption={(props, opt: any) => {
-                      const eid = opt.employee_id || opt.employeeId || '';
-                      const nm = opt.full_name || opt.name || '';
-                      const em = opt.email || '';
-                      return (
-                        <Box component="li" {...props} key={eid || props.id} sx={{ py: 1 }}>
-                          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              {/* === DROPDOWN EMPLOYEE ID (SEARCHABLE & EDITABLE - NOT DISABLED) === */}
+              <Box sx={{ gridColumn: { xs: '1 / -1' } }}>
+                <Autocomplete
+                  freeSolo
+                  options={karyawanOptions}
+                  loading={karyawanLoading}
+                  getOptionLabel={(opt: any) => {
+                    if (typeof opt === 'string') return opt;
+                    return opt.employee_id || opt.employeeId || '';
+                  }}
+                  filterOptions={(opts, state) => {
+                    const q = state.inputValue.toLowerCase().trim();
+                    if (!q) return opts;
+                    return opts.filter((o: any) => {
+                      const eid = String(o.employee_id || o.employeeId || '').toLowerCase();
+                      const nm = String(o.full_name || o.name || '').toLowerCase();
+                      const em = String(o.email || '').toLowerCase();
+                      const dp = String(o.department || '').toLowerCase();
+                      return eid.includes(q) || nm.includes(q) || em.includes(q) || dp.includes(q);
+                    });
+                  }}
+                  inputValue={karyawanQuery}
+                  onInputChange={(_, v) => {
+                    setKaryawanQuery(v);
+                    setEditEmployeeId(v);
+                  }}
+                  value={
+                    karyawanOptions.find((o) => (o.employee_id || o.employeeId) === editEmployeeId) || editEmployeeId
+                  }
+                  onChange={(_, val: any) => {
+                    if (typeof val === 'string') {
+                      setEditEmployeeId(val);
+                      setKaryawanQuery(val);
+                    } else if (val) {
+                      const eid = String(val.employee_id || val.employeeId || '').trim();
+                      const nm = String(val.full_name || val.name || '').trim();
+                      const em = String(val.email || '').trim();
+                      const dp = String(val.department || '').trim();
+                      setEditEmployeeId(eid);
+                      setKaryawanQuery(eid);
+                      if (nm) setEditName(nm);
+                      if (em) setEditEmail(em);
+                      if (dp) setEditDepartment(dp);
+                    } else {
+                      setEditEmployeeId('');
+                      setKaryawanQuery('');
+                    }
+                  }}
+                  noOptionsText={karyawanLoading ? 'Memuat data karyawan...' : 'Tidak ada karyawan ditemukan'}
+                  renderOption={(props, opt: any) => {
+                    const eid = opt.employee_id || opt.employeeId || '';
+                    const nm = opt.full_name || opt.name || '';
+                    const em = opt.email || '';
+                    const dp = opt.department || '';
+                    return (
+                      <Box component="li" {...props} key={eid || props.id} sx={{ py: 1, borderBottom: '1px solid #F1F5F9' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="body2" sx={{ fontWeight: 800, fontFamily: 'monospace', color: '#018730' }}>
                               🪪 {eid}
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
-                              {nm}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: em ? '#64748B' : '#DC2626' }}>
-                              {em ? `✉️ ${em}` : '⚠️ Belum ada email'}
-                            </Typography>
+                            {dp && (
+                              <Chip label={dp} size="small" sx={{ fontSize: 10, height: 20, bgcolor: '#F1F5F9' }} />
+                            )}
                           </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', mt: 0.3 }}>
+                            {nm}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: em ? '#64748B' : '#DC2626', mt: 0.2 }}>
+                            {em ? `✉️ ${em}` : '⚠️ Belum ada email'}
+                          </Typography>
                         </Box>
-                      );
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Hubungkan ke Employee ID"
-                        placeholder="Pilih Employee ID untuk menautkan akun ini..."
-                        helperText="Akun ini belum memiliki Employee ID — pilih karyawan untuk menautkan"
-                      />
-                    )}
-                  />
-                </Box>
-              )}
+                      </Box>
+                    );
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Employee ID (Pilih / Ubah Karyawan)"
+                      placeholder="Ketik Employee ID atau nama untuk mencari..."
+                      helperText="Pilih dari dropdown data karyawan untuk mengganti, atau ketik langsung Employee ID"
+                    />
+                  )}
+                />
+              </Box>
 
               <TextField
                 fullWidth
