@@ -6,8 +6,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), "public", "templates", "Template_Master_Karyawan_ITSP.xlsx");
-    if (!fs.existsSync(filePath)) {
+    const candidatePaths = [
+      path.join(process.cwd(), "public", "templates", "Template_Master_Karyawan_ITSP.xlsx"),
+      path.join(process.cwd(), "templates", "Template_Master_Karyawan_ITSP.xlsx"),
+      path.resolve(process.cwd(), "..", "web-karir v1.0", "public", "templates", "Template_Master_Karyawan_ITSP.xlsx"),
+      path.resolve(process.cwd(), "..", "backend-api", "app", "static", "Template_Master_Karyawan_ITSP.xlsx"),
+      path.resolve(process.cwd(), "..", "backend-api", "static", "Template_Master_Karyawan_ITSP.xlsx"),
+    ];
+    const filePath = candidatePaths.find((p) => fs.existsSync(p));
+    if (!filePath) {
       return NextResponse.json({ error: "Template file not found." }, { status: 404 });
     }
 

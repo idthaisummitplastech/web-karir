@@ -62,6 +62,7 @@ import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/Kari
 
 // ID Card Format Config Structure (editable by HR)
 export interface IdCardFormatConfig {
+  templateVersion?: number;
   companyName: string;
   kiicLine1: string;
   kiicLine2: string;
@@ -82,17 +83,26 @@ export interface IdCardFormatConfig {
   qualityTextEn: string;
   qualityTitleId: string;
   qualityTextId: string;
-  qualityPageEn: string;
-  qualityPageId: string;
+  environmentalTitleEn: string;
+  environmentalItem1En: string;
+  environmentalItem2En: string;
+  environmentalItem3En: string;
+  environmentalTitleId: string;
+  environmentalItem1Id: string;
+  environmentalItem2Id: string;
+  environmentalItem3Id: string;
+  qualityPageEn?: string;
+  qualityPageId?: string;
 }
 
 // Default Official Factory Format as per User Excel Document
 const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
+  templateVersion: 2,
   companyName: 'PT. Indonesia Thai Summit Plastech',
-  kiicLine1: 'Jln. Permata Raya Lot FF-5, Teluk Jambe Timur',
-  kiicLine2: 'Kawasan KIIC, Karawang - 41361',
-  giicLine1: 'Greenland International Industrial Center Block DC',
-  giicLine2: 'No. 18 Kota Deltamas, Cikarang Bekasi',
+  kiicLine1: 'Jl. Permata Raya Lot FF-5, Telukjambe Timur',
+  kiicLine2: 'Kawasan KIIC, Karawang – 41361',
+  giicLine1: 'Jl. Edelweis Block DC-1B, Sukamukti Bojongmangu',
+  giicLine2: 'Kawasan GIIC, Kabupaten Bekasi – 17350',
   labelEmployeeId: 'Employee ID.',
   labelName: 'Name',
   labelPosition: 'Position',
@@ -100,16 +110,22 @@ const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
   labelAuthorizerSignature: "Authorizer's Signature ....................",
   hrmSignerTitle: 'HRM',
   hrmCompanyFooter: 'PT. Indonesia Thai Summit Plastech',
-  termsTitle: 'Terms of Use',
-  termsItem1: 'ID Card must be worn at all times while on duty.',
-  termsItem2: 'Failure to wear the ID card while on duty will be subject to sanctions per company regulations.',
-  termsItem3: 'If the ID Card is lost outside company premises, the holder must present a police report.',
+  termsTitle: 'Ketentuan Penggunaan',
+  termsItem1: 'ID Card harus selalu digunakan pada saat bekerja.',
+  termsItem2: 'Apabila tidak membawa ID card pada saat bekerja, maka akan diberikan sanksi sesuai dengan aturan yang berlaku.',
+  termsItem3: 'Apabila ID Card hilang diluar perusahaan, maka yang bersangkutan harus menunjukkan surat keterangan dari kepolisian.',
   qualityTitleEn: 'QUALITY POLICY STATEMENT',
   qualityTextEn: 'The company is commited to providing quality products, on-time delivery, professional services and compliance with applicable regulations regarding products and customer requirements to meet customer satisfaction through continous improvement of quality management system.',
   qualityTitleId: 'KEBIJAKAN MUTU PERUSAHAAN',
-  qualityTextId: 'Company berkomitmen untuk menyediakan produk berkualitas, pengiriman tepat waktu, layanan profesional dan kepatuhan terhadap peraturan yang berlaku mengenai produk dan persyaratan pelanggan untuk memenuhi kepuasan pelanggan melalui perbaikan sistem manajemen mutu secara berkesinambungan.',
-  qualityPageEn: 'Page 1',
-  qualityPageId: 'Page 3',
+  qualityTextId: 'Perusahaan berkomitmen untuk menyediakan produk berkualitas, pengiriman tepat waktu, layanan profesional dan kepatuhan terhadap peraturan yang berlaku mengenai produk dan persyaratan pelanggan untuk memenuhi kepuasan pelanggan melalui perbaikan sistem manajemen mutu secara berkesinambungan.',
+  environmentalTitleEn: 'ENVIROMENTAL POLICY STATEMENT',
+  environmentalItem1En: '1. Comply with laws and regulations and other',
+  environmentalItem2En: '2. Conduct environmental protection with pollution prevention, use of sustainable resources and mitigation of climate change adaptation.',
+  environmentalItem3En: '3. Make continuous improvement of enviromental management system to improve enviromental performance.',
+  environmentalTitleId: 'KEBIJAKAN LINGKUNGAN PERUSAHAAN',
+  environmentalItem1Id: '1. Mematuhi peraturan perundangan dan persyaratan',
+  environmentalItem2Id: '2. Melakukan perlindungan lingkungan dengan pencegahan pencemaran, penggunaan sumberdaya berkelanjutan dan mitigasi adaptasi perubahan iklim.',
+  environmentalItem3Id: '3. Melakukan peningkatan berkesinambungan sistem manajemen lingkungan guna meningkatkan kinerja lingkungan.',
 };
 
 // Default Sample HR Signature (Base64 safe SVG)
@@ -519,8 +535,8 @@ export default function AdminIdCardsPage() {
   // PT Address Choice (KIIC or GIIC)
   const [selectedPlant, setSelectedPlant] = useState<'GIIC' | 'KIIC'>('GIIC');
 
-  // Print Display Mode: 'all_panels' (4 panels as per user image) or 'id_card_only' (Front & Back Only)
-  const [printLayoutMode, setPrintLayoutMode] = useState<'all_panels' | 'id_card_only'>('all_panels');
+  // Print Display Mode: 'all_panels' (6 panels official Excel) | 'mutu_only' (4 panels) | 'id_card_only' (Front & Back only)
+  const [printLayoutMode, setPrintLayoutMode] = useState<'all_panels' | 'mutu_only' | 'id_card_only'>('all_panels');
 
   // Default Digital HR Signature
   const [defaultHrSignature, setDefaultHrSignature] = useState<string>('');
@@ -552,8 +568,18 @@ export default function AdminIdCardsPage() {
       const savedFormat = localStorage.getItem('itsp_custom_idcard_format');
       if (savedFormat) {
         const parsed = JSON.parse(savedFormat);
-        setCardFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
-        setTempFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
+        if (parsed && parsed.templateVersion === 2) {
+          setCardFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
+          setTempFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
+        } else {
+          // Auto-upgrade to Version 2 (Official ITSP Template with Kebijakan Lingkungan)
+          setCardFormat(DEFAULT_IDCARD_FORMAT);
+          setTempFormat(DEFAULT_IDCARD_FORMAT);
+          localStorage.setItem('itsp_custom_idcard_format', JSON.stringify(DEFAULT_IDCARD_FORMAT));
+        }
+      } else {
+        setCardFormat(DEFAULT_IDCARD_FORMAT);
+        setTempFormat(DEFAULT_IDCARD_FORMAT);
       }
     } catch (e) {
       console.warn('Could not load localStorage settings:', e);
@@ -785,469 +811,551 @@ export default function AdminIdCardsPage() {
       ? [selectedEmp]
       : [];
 
-  // Split employee list into groups of 2 per A4 sheet
+  // Split employee list to A4 sheets
+  // In 'all_panels' (6 panels) or 'mutu_only' (4 panels), 1 employee kit fits perfectly per A4 sheet (height ~172mm on 297mm A4).
+  // In 'id_card_only' (2 panels), 2 employees fit per A4 sheet.
   const a4Pages: any[][] = [];
-  for (let i = 0; i < employeesToPrint.length; i += 2) {
-    a4Pages.push(employeesToPrint.slice(i, i + 2));
+  const employeesPerSheet = printLayoutMode === 'id_card_only' ? 2 : 1;
+  for (let i = 0; i < employeesToPrint.length; i += employeesPerSheet) {
+    a4Pages.push(employeesToPrint.slice(i, i + employeesPerSheet));
   }
 
-  // Active address based on current format
-  const plantLine1 = selectedPlant === 'GIIC' ? cardFormat.giicLine1 : cardFormat.kiicLine1;
-  const plantLine2 = selectedPlant === 'GIIC' ? cardFormat.giicLine2 : cardFormat.kiicLine2;
-
-  // Component renderer for 1 complete ID Card unit (4 panels with identical 2x2 dimensions)
+  // Component renderer for 1 employee's ID Card kit
   const renderSingleIdCard = (emp: any, customFmt: IdCardFormatConfig = cardFormat) => {
-    const curLine1 = selectedPlant === 'GIIC' ? customFmt.giicLine1 : customFmt.kiicLine1;
-    const curLine2 = selectedPlant === 'GIIC' ? customFmt.giicLine2 : customFmt.kiicLine2;
-
     return (
-      <Box
-        key={emp.id}
-        className="notranslate itsp-idcard-card"
-        translate="no"
-        sx={{
-          width: '100%',
-          maxWidth: '710px',
-          mx: 'auto',
-          bgcolor: '#FFFFFF',
-          fontFamily: 'Arial, Helvetica, sans-serif',
-          color: '#000000',
-          border: '1.5px solid #000000',
-          boxSizing: 'border-box',
-          mb: 2,
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gridTemplateRows: printLayoutMode === 'all_panels' ? '225px 225px' : '225px',
-        }}
-      >
-        {/* Blue Dashed Fold / Cut Line in Middle as per Official Excel Format */}
+      <Box key={emp.id} className="notranslate itsp-employee-card-kit" translate="no" sx={{ width: '100%', maxWidth: '710px', mx: 'auto' }}>
+        {/* ROW 1: FRONT & BACK ID CARD */}
         <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: '50%',
-            width: '0px',
-            borderRight: '1.5px dashed #2563EB',
-            zIndex: 2,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* SIDE 1: FRONT CARD (TOP LEFT) */}
-        <Box
-          className="notranslate itsp-idcard-panel"
+          className="notranslate itsp-idcard-row-pair"
           translate="no"
           sx={{
-            p: 1.2,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            borderRight: '1px solid #000000',
-            borderBottom: printLayoutMode === 'all_panels' ? '1.5px solid #000000' : 'none',
-            height: '225px',
+            width: '100%',
+            maxWidth: '710px',
+            mx: 'auto',
+            bgcolor: '#FFFFFF',
+            fontFamily: 'Arial, Helvetica, sans-serif',
+            color: '#000000',
+            border: '1.5px solid #000000',
             boxSizing: 'border-box',
-            overflow: 'hidden',
+            mb: 2,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            height: { xs: 'auto', sm: '224px' },
           }}
         >
-          {/* Header: PLASTECH Logo + Company Name & Address */}
+          {/* PANEL 1: FRONT ID CARD (LEFT) */}
           <Box
-            className="notranslate"
+            className="notranslate itsp-idcard-panel"
             translate="no"
             sx={{
+              borderRight: '1.5px solid #000000',
               display: 'flex',
-              alignItems: 'center',
-              pb: 0.4,
-              borderBottom: '1.5px solid #000000',
-              gap: 1,
+              flexDirection: 'column',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              height: '100%',
+              bgcolor: '#FFFFFF',
             }}
           >
-            <Box className="notranslate" translate="no" sx={{ width: 58, textAlign: 'center', flexShrink: 0 }}>
-              <Box
-                component="img"
-                src="/logo-plastech.jpg"
-                alt="PLASTECH"
-                sx={{ height: 32, width: 'auto', objectFit: 'contain', mx: 'auto', display: 'block' }}
-              />
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontFamily: 'Impact, Arial Black, sans-serif',
-                  fontSize: 9,
-                  fontWeight: 900,
-                  color: '#1E3A8A',
-                  letterSpacing: '0.6px',
-                  lineHeight: 1,
-                  mt: 0.2,
-                }}
-              >
-                PLASTECH
-              </Typography>
-            </Box>
-
-            <Box className="notranslate" translate="no" sx={{ flexGrow: 1, textAlign: 'center', pr: 0.5 }}>
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 11.5,
-                  color: '#000000',
-                  lineHeight: 1.15,
-                  fontFamily: 'Arial, sans-serif',
-                }}
-              >
-                {customFmt.companyName}
-              </Typography>
-              <Typography className="notranslate" translate="no" sx={{ fontSize: 8.5, color: '#000000', lineHeight: 1.15, mt: 0.2 }}>
-                {curLine1}
-              </Typography>
-              <Typography className="notranslate" translate="no" sx={{ fontSize: 8.5, color: '#000000', lineHeight: 1.15 }}>
-                {curLine2}
-              </Typography>
-            </Box>
-          </Box>
-
-          {/* Body: Photo on Left + 4 Data Columns on Right */}
-          <Box sx={{ display: 'flex', gap: 1, py: 0.4, flexGrow: 1, alignItems: 'center' }}>
-            {/* Official Photo Box */}
+            {/* Header: Exact Excel Table Layout with Grid Borders */}
             <Box
               sx={{
-                width: 68,
-                height: 80,
-                border: '1.5px solid #1E40AF',
-                p: 0.2,
-                bgcolor: '#FFFFFF',
-                flexShrink: 0,
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
+                borderBottom: '1.5px solid #000000',
+                height: '84px',
+                flexShrink: 0,
               }}
             >
-              {emp.photoProfile ? (
+              {/* Left Logo Box: bordered cell */}
+              <Box
+                sx={{
+                  width: '92px',
+                  borderRight: '1.5px solid #000000',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  p: 0.5,
+                  flexShrink: 0,
+                  bgcolor: '#FFFFFF',
+                }}
+              >
                 <Box
                   component="img"
-                  src={emp.photoProfile}
-                  alt={emp.namaLengkap}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
+                  src="/logo-plastech.jpg"
+                  alt="PLASTECH"
+                  sx={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }}
                 />
-              ) : (
-                <Box
+                <Typography
                   sx={{
-                    width: '100%',
-                    height: '100%',
-                    bgcolor: '#F1F5F9',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#94A3B8',
+                    fontFamily: 'Impact, Arial Black, sans-serif',
+                    fontSize: 9.5,
+                    fontWeight: 900,
+                    color: '#1E3A8A',
+                    letterSpacing: '0.8px',
+                    lineHeight: 1,
+                    mt: 0.4,
                   }}
                 >
-                  <PersonIcon sx={{ fontSize: 34 }} />
-                  <Typography sx={{ fontSize: 8, fontWeight: 700 }}>Photo</Typography>
-                </Box>
-              )}
-            </Box>
+                  PLASTECH
+                </Typography>
+              </Box>
 
-            {/* Table 4 Rows: Employee ID, Name, Position, Department */}
-            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }} className="notranslate" translate="no">
-              <table className="notranslate" translate="no" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', color: '#000000', tableLayout: 'fixed' }}>
-                <tbody className="notranslate" translate="no">
-                  <tr className="notranslate" translate="no">
-                    <td className="notranslate" translate="no" style={{ width: '78px', fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelEmployeeId}</td>
-                    <td style={{ width: '6px', textAlign: 'center' }}>:</td>
-                    <td className="notranslate" translate="no" style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '10.5px', wordBreak: 'break-word' }}>
-                      {formatDisplayId(emp.employeeId)}
-                    </td>
-                  </tr>
-                  <tr className="notranslate" translate="no">
-                    <td className="notranslate" translate="no" style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelName}</td>
-                    <td style={{ textAlign: 'center' }}>:</td>
-                    <td className="notranslate" translate="no" style={{ fontWeight: 700, wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.namaLengkap}</td>
-                  </tr>
-                  <tr className="notranslate" translate="no">
-                    <td className="notranslate" translate="no" style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelPosition}</td>
-                    <td style={{ textAlign: 'center' }}>:</td>
-                    <td className="notranslate" translate="no" style={{ wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.jabatan || '-'}</td>
-                  </tr>
-                  <tr className="notranslate" translate="no">
-                    <td className="notranslate" translate="no" style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelDepartment}</td>
-                    <td style={{ textAlign: 'center' }}>:</td>
-                    <td className="notranslate" translate="no" style={{ wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.departemen || '-'}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          </Box>
-
-          {/* Footer: Authorizer's Signature */}
-          <Box
-            className="notranslate"
-            translate="no"
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'flex-end',
-              mt: 'auto',
-              pt: 0.2,
-              position: 'relative',
-              zIndex: 1,
-            }}
-          >
-            <Box
-              className="notranslate"
-              translate="no"
-              sx={{
-                textAlign: 'center',
-                width: '160px',
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-              }}
-            >
-              {/* Signature Container */}
+              {/* Right Address Table: 3 rows separated by borders */}
               <Box
                 sx={{
-                  height: `${Math.min(46, Math.max(24, Math.round(30 * (signatureScale / 100))))}px`,
-                  width: '100%',
+                  flexGrow: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minWidth: 0,
+                }}
+              >
+                {/* Row 1: Company Name */}
+                <Box
+                  sx={{
+                    p: '2px 4px',
+                    textAlign: 'center',
+                    borderBottom: '1px solid #000000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexGrow: 1,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontWeight: 800,
+                      fontSize: 11,
+                      color: '#000000',
+                      lineHeight: 1.15,
+                      fontFamily: 'Arial, sans-serif',
+                    }}
+                  >
+                    {customFmt.companyName}
+                  </Typography>
+                </Box>
+
+                {/* Row 2: Plan 1 (KIIC) */}
+                <Box
+                  sx={{
+                    p: '2px 6px',
+                    borderBottom: '1px solid #000000',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: 8,
+                    lineHeight: 1.15,
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#000000',
+                    flexGrow: 1,
+                  }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Plan 1 :</span>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customFmt.kiicLine1.replace(/^Plan\s*1\s*:\s*/i, '')}</span>
+                    </Box>
+                    <Box sx={{ pl: '37px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {customFmt.kiicLine2}
+                    </Box>
+                  </Box>
+                </Box>
+
+                {/* Row 3: Plan 2 (GIIC) */}
+                <Box
+                  sx={{
+                    p: '2px 6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: 8,
+                    lineHeight: 1.15,
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#000000',
+                    flexGrow: 1,
+                  }}
+                >
+                  <Box sx={{ width: '100%' }}>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Plan 2 :</span>
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customFmt.giicLine1.replace(/^Plan\s*2\s*:\s*/i, '')}</span>
+                    </Box>
+                    <Box sx={{ pl: '37px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {customFmt.giicLine2}
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Body: Photo on Left + 4 Data Columns on Right */}
+            <Box sx={{ display: 'flex', gap: 1, p: 0.8, alignItems: 'center', flexGrow: 1 }}>
+              {/* Official Photo Box with sharp 1px solid border */}
+              <Box
+                sx={{
+                  width: 66,
+                  height: 78,
+                  border: '1px solid #000000',
+                  p: 0.2,
+                  bgcolor: '#FFFFFF',
+                  flexShrink: 0,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  position: 'relative',
-                  overflow: 'visible', // NEVER CROP THE SIGNATURE
+                  overflow: 'hidden',
                 }}
               >
-                {defaultHrSignature ? (
+                {emp.photoProfile ? (
                   <Box
                     component="img"
-                    src={defaultHrSignature}
-                    alt="Authorizer's Signature"
+                    src={emp.photoProfile}
+                    alt={emp.namaLengkap}
                     sx={{
-                      height: `${Math.round(28 * (signatureScale / 100))}px`,
-                      maxWidth: `${Math.round(140 * (signatureScale / 100))}px`,
-                      maxHeight: `${Math.round(52 * (signatureScale / 100))}px`,
-                      objectFit: 'contain',
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
                       display: 'block',
-                      position: signatureScale > 130 ? 'absolute' : 'relative',
-                      bottom: signatureScale > 130 ? 0 : 'auto',
-                      transformOrigin: 'bottom center',
                     }}
                   />
                 ) : (
-                  <Typography sx={{ color: '#94A3B8', fontSize: 8 }}>
-                    [HR Signature]
-                  </Typography>
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      bgcolor: '#F8FAFC',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#94A3B8',
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: 32 }} />
+                    <Typography sx={{ fontSize: 7.5, fontWeight: 700 }}>Photo</Typography>
+                  </Box>
                 )}
               </Box>
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontSize: 8,
-                  fontWeight: 700,
-                  color: '#000000',
-                  lineHeight: 1.1,
-                  mt: 0.2,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {customFmt.labelAuthorizerSignature}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
 
-        {/* SIDE 2: TERMS OF USE (TOP RIGHT) */}
-        <Box
-          className="notranslate itsp-idcard-panel"
-          translate="no"
-          sx={{
-            p: 1.5,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            borderBottom: printLayoutMode === 'all_panels' ? '1.5px solid #000000' : 'none',
-            height: '225px',
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-          }}
-        >
-          <Box className="notranslate" translate="no">
-            <Typography
-              className="notranslate"
-              translate="no"
+              {/* Table 4 Rows: Employee ID, Name, Position, Department */}
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', color: '#000000', tableLayout: 'fixed', fontFamily: 'Arial, sans-serif' }}>
+                  <tbody>
+                    <tr>
+                      <td style={{ width: '74px', fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelEmployeeId}</td>
+                      <td style={{ width: '6px', textAlign: 'center' }}>:</td>
+                      <td style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '10px', wordBreak: 'break-word' }}>
+                        {formatDisplayId(emp.employeeId)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelName}</td>
+                      <td style={{ textAlign: 'center' }}>:</td>
+                      <td style={{ fontWeight: 700, wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.namaLengkap}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelPosition}</td>
+                      <td style={{ textAlign: 'center' }}>:</td>
+                      <td style={{ wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.jabatan || '-'}</td>
+                    </tr>
+                    <tr>
+                      <td style={{ fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelDepartment}</td>
+                      <td style={{ textAlign: 'center' }}>:</td>
+                      <td style={{ wordBreak: 'break-word', lineHeight: 1.15 }}>{emp.departemen || '-'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </Box>
+            </Box>
+
+            {/* Footer: Authorizer's Signature */}
+            <Box
               sx={{
-                fontWeight: 800,
-                fontSize: 11.5,
-                textAlign: 'center',
-                color: '#000000',
-                mb: 1,
-                fontFamily: 'Arial, sans-serif',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'flex-end',
+                px: 1,
+                pb: 0.5,
+                mt: 'auto',
               }}
             >
-              {customFmt.termsTitle}
-            </Typography>
-
-            <Box component="ol" className="notranslate" translate="no" sx={{ pl: 2, m: 0, fontSize: '9.5px', color: '#000000', lineHeight: 1.35 }}>
-              <li className="notranslate" translate="no" style={{ marginBottom: '4px' }}>
-                {customFmt.termsItem1}
-              </li>
-              <li className="notranslate" translate="no" style={{ marginBottom: '4px' }}>
-                {customFmt.termsItem2}
-              </li>
-              <li className="notranslate" translate="no" style={{ marginBottom: '4px' }}>
-                {customFmt.termsItem3}
-              </li>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  width: '150px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                }}
+              >
+                {/* Signature Image above dots */}
+                <Box
+                  sx={{
+                    height: `${Math.min(42, Math.max(22, Math.round(26 * (signatureScale / 100))))}px`,
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'center',
+                    overflow: 'visible',
+                  }}
+                >
+                  {defaultHrSignature ? (
+                    <Box
+                      component="img"
+                      src={defaultHrSignature}
+                      alt="Authorizer's Signature"
+                      sx={{
+                        height: `${Math.round(24 * (signatureScale / 100))}px`,
+                        maxWidth: `${Math.round(120 * (signatureScale / 100))}px`,
+                        objectFit: 'contain',
+                        display: 'block',
+                      }}
+                    />
+                  ) : (
+                    <Typography sx={{ color: '#94A3B8', fontSize: 7.5 }}>
+                      [HR Signature]
+                    </Typography>
+                  )}
+                </Box>
+                <Typography
+                  sx={{
+                    fontSize: 7.5,
+                    fontWeight: 700,
+                    color: '#000000',
+                    lineHeight: 1.1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {customFmt.labelAuthorizerSignature}
+                </Typography>
+              </Box>
             </Box>
           </Box>
 
-          <Box className="notranslate" translate="no" sx={{ textAlign: 'right', pt: 0.5 }}>
-            <Typography className="notranslate" translate="no" sx={{ fontWeight: 800, fontSize: 10, color: '#000000' }}>
-              {customFmt.hrmSignerTitle}
-            </Typography>
-            <Typography className="notranslate" translate="no" sx={{ fontWeight: 700, fontSize: 9, color: '#000000' }}>
-              {customFmt.hrmCompanyFooter}
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* SIDE 3: QUALITY POLICY STATEMENT (ENGLISH - BOTTOM LEFT) */}
-        {printLayoutMode === 'all_panels' && (
+          {/* PANEL 2: KETENTUAN PENGGUNAAN (RIGHT) */}
           <Box
             className="notranslate itsp-idcard-panel"
             translate="no"
             sx={{
               p: 1.5,
-              borderRight: '1px solid #000000',
-              height: '225px',
-              boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
+              boxSizing: 'border-box',
               overflow: 'hidden',
+              height: '100%',
+              bgcolor: '#FFFFFF',
             }}
           >
-            <Box className="notranslate" translate="no">
+            <Box>
               <Typography
-                className="notranslate"
-                translate="no"
                 sx={{
                   fontWeight: 800,
-                  fontSize: 10,
+                  fontSize: 11,
                   textAlign: 'center',
                   color: '#000000',
-                  lineHeight: 1.15,
+                  mb: 1.2,
+                  fontFamily: 'Arial, sans-serif',
                 }}
               >
-                {customFmt.companyName.toUpperCase()}
-              </Typography>
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 10,
-                  textAlign: 'center',
-                  color: '#000000',
-                  mb: 0.8,
-                  lineHeight: 1.15,
-                }}
-              >
-                {customFmt.qualityTitleEn}
+                {customFmt.termsTitle}
               </Typography>
 
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontSize: '9px',
-                  color: '#000000',
-                  textAlign: 'justify',
-                  lineHeight: 1.32,
-                }}
-              >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, fontSize: '9px', color: '#000000', lineHeight: 1.35, fontFamily: 'Arial, sans-serif' }}>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>1.</span>
+                  <span>{customFmt.termsItem1.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>2.</span>
+                  <span>{customFmt.termsItem2.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>3.</span>
+                  <span>{customFmt.termsItem3.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+              </Box>
+            </Box>
+
+            <Box sx={{ textAlign: 'right', pt: 0.5 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 10, color: '#000000' }}>
+                {customFmt.hrmSignerTitle}
+              </Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: 9, color: '#000000' }}>
+                {customFmt.hrmCompanyFooter}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ROW 2: QUALITY POLICY STATEMENT (Shown if printLayoutMode !== 'id_card_only') */}
+        {printLayoutMode !== 'id_card_only' && (
+          <Box
+            className="notranslate itsp-idcard-row-pair"
+            translate="no"
+            sx={{
+              width: '100%',
+              maxWidth: '710px',
+              mx: 'auto',
+              bgcolor: '#FFFFFF',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              color: '#000000',
+              border: '1.5px solid #000000',
+              boxSizing: 'border-box',
+              mb: 2,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              height: { xs: 'auto', sm: '224px' },
+            }}
+          >
+            {/* Panel 3: Quality Policy Statement (English - Left) */}
+            <Box
+              className="notranslate itsp-idcard-panel"
+              translate="no"
+              sx={{
+                p: 1.5,
+                borderRight: '1.5px solid #000000',
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                overflow: 'hidden',
+                bgcolor: '#FFFFFF',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
+                {customFmt.companyName.toUpperCase()}
+              </Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
+                {customFmt.qualityTitleEn}
+              </Typography>
+              <Typography sx={{ fontSize: '9px', color: '#000000', textAlign: 'justify', lineHeight: 1.4 }}>
                 {customFmt.qualityTextEn}
               </Typography>
             </Box>
 
-            <Typography className="notranslate" translate="no" sx={{ fontSize: 22, fontWeight: 900, color: 'rgba(0,0,0,0.16)', textAlign: 'center', my: 'auto' }}>
-              {customFmt.qualityPageEn}
-            </Typography>
-          </Box>
-        )}
-
-        {/* SIDE 4: QUALITY POLICY (INDONESIAN - BOTTOM RIGHT) */}
-        {printLayoutMode === 'all_panels' && (
-          <Box
-            className="notranslate itsp-idcard-panel"
-            translate="no"
-            sx={{
-              p: 1.5,
-              height: '225px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              overflow: 'hidden',
-            }}
-          >
-            <Box className="notranslate" translate="no">
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 10,
-                  textAlign: 'center',
-                  color: '#000000',
-                  lineHeight: 1.15,
-                }}
-              >
+            {/* Panel 4: Kebijakan Mutu Perusahaan (Indonesian - Right) */}
+            <Box
+              className="notranslate itsp-idcard-panel"
+              translate="no"
+              sx={{
+                p: 1.5,
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                overflow: 'hidden',
+                bgcolor: '#FFFFFF',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
                 {customFmt.companyName.toUpperCase()}
               </Typography>
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 10,
-                  textAlign: 'center',
-                  color: '#000000',
-                  mb: 0.8,
-                  lineHeight: 1.15,
-                }}
-              >
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
                 {customFmt.qualityTitleId}
               </Typography>
-
-              <Typography
-                className="notranslate"
-                translate="no"
-                sx={{
-                  fontSize: '9px',
-                  color: '#000000',
-                  textAlign: 'justify',
-                  lineHeight: 1.32,
-                }}
-              >
+              <Typography sx={{ fontSize: '9px', color: '#000000', textAlign: 'justify', lineHeight: 1.4 }}>
                 {customFmt.qualityTextId}
               </Typography>
             </Box>
+          </Box>
+        )}
 
-            <Typography className="notranslate" translate="no" sx={{ fontSize: 8.5, color: '#64748B', textAlign: 'right', mt: 0.5 }}>
-              {customFmt.qualityPageId}
-            </Typography>
+        {/* ROW 3: ENVIRONMENTAL POLICY STATEMENT (Shown if printLayoutMode === 'all_panels') */}
+        {printLayoutMode === 'all_panels' && (
+          <Box
+            className="notranslate itsp-idcard-row-pair"
+            translate="no"
+            sx={{
+              width: '100%',
+              maxWidth: '710px',
+              mx: 'auto',
+              bgcolor: '#FFFFFF',
+              fontFamily: 'Arial, Helvetica, sans-serif',
+              color: '#000000',
+              border: '1.5px solid #000000',
+              boxSizing: 'border-box',
+              mb: 2,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              height: { xs: 'auto', sm: '224px' },
+            }}
+          >
+            {/* Panel 5: Enviromental Policy Statement (English - Left) */}
+            <Box
+              className="notranslate itsp-idcard-panel"
+              translate="no"
+              sx={{
+                p: 1.5,
+                borderRight: '1.5px solid #000000',
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                overflow: 'hidden',
+                bgcolor: '#FFFFFF',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
+                {customFmt.companyName.toUpperCase()}
+              </Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
+                {customFmt.environmentalTitleEn}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, fontSize: '8.8px', color: '#000000', lineHeight: 1.32 }}>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>1.</span>
+                  <span>{customFmt.environmentalItem1En.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>2.</span>
+                  <span>{customFmt.environmentalItem2En.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>3.</span>
+                  <span>{customFmt.environmentalItem3En.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Panel 6: Kebijakan Lingkungan Perusahaan (Indonesian - Right) */}
+            <Box
+              className="notranslate itsp-idcard-panel"
+              translate="no"
+              sx={{
+                p: 1.5,
+                height: '100%',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                overflow: 'hidden',
+                bgcolor: '#FFFFFF',
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
+                {customFmt.companyName.toUpperCase()}
+              </Typography>
+              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
+                {customFmt.environmentalTitleId}
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, fontSize: '8.8px', color: '#000000', lineHeight: 1.32 }}>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>1.</span>
+                  <span>{customFmt.environmentalItem1Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>2.</span>
+                  <span>{customFmt.environmentalItem2Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
+                  <span style={{ fontWeight: 700 }}>3.</span>
+                  <span>{customFmt.environmentalItem3Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
+                </Box>
+              </Box>
+            </Box>
           </Box>
         )}
       </Box>
@@ -1269,7 +1377,7 @@ export default function AdminIdCardsPage() {
         top: 0 !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 4mm 8mm !important;
+        padding: 0 !important;
         background: #ffffff !important;
       }
       .no-print {
@@ -1278,27 +1386,42 @@ export default function AdminIdCardsPage() {
       .a4-print-sheet {
         page-break-after: always !important;
         break-after: page !important;
-        min-height: 275mm !important;
+        width: 210mm !important;
+        min-height: 297mm !important;
+        max-height: 297mm !important;
+        padding: 16mm 19.5mm !important;
+        box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
         justifyContent: flex-start !important;
-        padding-bottom: 5mm !important;
+        align-items: center !important;
+        background: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 auto !important;
       }
       .a4-print-sheet:last-child {
         page-break-after: avoid !important;
         break-after: avoid !important;
       }
-      .itsp-idcard-card {
+      .itsp-idcard-row-pair {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         width: 171mm !important;
         max-width: 171mm !important;
-        margin: 0 auto !important;
+        min-width: 171mm !important;
+        height: 54mm !important;
+        max-height: 54mm !important;
+        min-height: 54mm !important;
+        margin: 0 auto 5mm auto !important;
         display: grid !important;
         grid-template-columns: 85.5mm 85.5mm !important;
-        grid-template-rows: 54mm 54mm !important;
         border: 1.5px solid #000000 !important;
         box-sizing: border-box !important;
+        background: #ffffff !important;
+      }
+      .itsp-idcard-row-pair:last-child {
+        margin-bottom: 0 !important;
       }
       .itsp-idcard-panel {
         width: 85.5mm !important;
@@ -1310,7 +1433,7 @@ export default function AdminIdCardsPage() {
       }
       @page {
         size: A4 portrait;
-        margin: 8mm 6mm;
+        margin: 0mm;
       }
     }
   `;

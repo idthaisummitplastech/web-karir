@@ -50,6 +50,7 @@ import {
 import { RECRUITMENT_STAGES, getPlantMapsUrl } from '@/lib/constants';
 import { generateOfferingLetterHtml, openOfferingLetterWindow } from '@/lib/offering-letter';
 import { useSmartSync } from '@/lib/use-smart-sync';
+import { downloadFile } from '@/lib/download-helper';
 
 // Interactive Digital Signature Canvas for Candidates
 const CandidateSignatureCanvas: React.FC<{
@@ -1261,19 +1262,31 @@ export default function ApplicantDashboard() {
                         const sigFile = applicant?.signedContractFile || applicant?.signed_contract_file;
                         const isPdf = sigFile?.startsWith('data:application/pdf') || sigFile?.endsWith('.pdf');
                         if (isPdf) {
+                          const candName = (applicant?.fullName || 'Kandidat').replace(/\s+/g, '_');
                           return (
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<PdfIcon />}
-                              onClick={() => {
-                                const w = window.open('');
-                                w?.document.write(`<iframe src="${sigFile}" style="width:100%;height:100%;border:none;"></iframe>`);
-                              }}
-                              sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' }, fontWeight: 700, textTransform: 'none' }}
-                            >
-                              Lihat Berkas PDF Bertanda Tangan
-                            </Button>
+                            <>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                startIcon={<PdfIcon />}
+                                onClick={() => {
+                                  const w = window.open('');
+                                  w?.document.write(`<iframe src="${sigFile}" style="width:100%;height:100%;border:none;"></iframe>`);
+                                }}
+                                sx={{ bgcolor: '#059669', '&:hover': { bgcolor: '#047857' }, fontWeight: 700, textTransform: 'none' }}
+                              >
+                                Lihat Berkas PDF Bertanda Tangan
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<DownloadIcon />}
+                                onClick={() => downloadFile(sigFile, `Kontrak_Kerja_PT_ITSP_${candName}.pdf`)}
+                                sx={{ color: '#059669', borderColor: '#059669', '&:hover': { bgcolor: '#ECFDF5', borderColor: '#047857' }, fontWeight: 700, textTransform: 'none' }}
+                              >
+                                Unduh Kontrak (PDF)
+                              </Button>
+                            </>
                           );
                         }
                         return null;
@@ -1341,9 +1354,11 @@ export default function ApplicantDashboard() {
                             <Button
                               variant="contained"
                               startIcon={<DownloadIcon />}
-                              component="a"
-                              href={applicant?.offeringAttachment || applicant?.offering_attachment}
-                              download={`Offering_Letter_PT_ITSP_${applicant?.fullName || 'Kandidat'}.pdf`}
+                              onClick={() => {
+                                const file = applicant?.offeringAttachment || applicant?.offering_attachment;
+                                const candName = (applicant?.fullName || 'Kandidat').replace(/\s+/g, '_');
+                                downloadFile(file, `Offering_Letter_PT_ITSP_${candName}.pdf`);
+                              }}
                               sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', px: 2.5, '&:hover': { bgcolor: '#005c21' } }}
                             >
                               Unduh Dokumen PDF

@@ -115,6 +115,7 @@ import {
   openOfferingLetterWindow,
 } from '@/lib/offering-letter';
 import { useSmartSync } from '@/lib/use-smart-sync';
+import { downloadFile } from '@/lib/download-helper';
 
 // Interactive Digital Signature Canvas for HR/Admin
 const DigitalSignatureCanvas: React.FC<{
@@ -2744,9 +2745,11 @@ export default function AdminApplicantsPage() {
                 <Button
                   variant="outlined"
                   size="small"
-                  component="a"
-                  href={selectedApplicant.cvFile || selectedApplicant.cv_file}
-                  download={`CV_${(selectedApplicant.fullName || 'Pelamar').replace(/\s+/g, '_')}.pdf`}
+                  onClick={() => {
+                    const cvUrl = selectedApplicant.cvFile || selectedApplicant.cv_file;
+                    const name = (selectedApplicant.fullName || 'Pelamar').replace(/\s+/g, '_');
+                    downloadFile(cvUrl, `CV_${name}.pdf`);
+                  }}
                   startIcon={<DownloadIcon />}
                   sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#018730', color: '#018730' }}
                 >
@@ -3504,9 +3507,12 @@ export default function AdminApplicantsPage() {
                                       size="small"
                                       variant="contained"
                                       fullWidth
-                                      component="a"
-                                      href={doc.file}
-                                      download={`${doc.title.replace(/[^a-zA-Z0-9]/g, '_')}_${(selectedApplicant.fullName || '').replace(/\s+/g, '_')}.${isPdf ? 'pdf' : 'jpg'}`}
+                                      onClick={() => {
+                                        const cleanTitle = doc.title.replace(/[^a-zA-Z0-9]/g, '_');
+                                        const name = (selectedApplicant.fullName || '').replace(/\s+/g, '_');
+                                        const ext = isPdf ? 'pdf' : 'jpg';
+                                        downloadFile(doc.file, `${cleanTitle}_${name}.${ext}`);
+                                      }}
                                       startIcon={<DownloadIcon />}
                                       sx={{
                                         textTransform: 'none',
@@ -4068,9 +4074,11 @@ export default function AdminApplicantsPage() {
               <Button
                 size="small"
                 variant="outlined"
-                component="a"
-                href={docPreview.url}
-                download={`${docPreview.title.replace(/\s+/g, '_')}.${docPreview.isPdf ? 'pdf' : 'jpg'}`}
+                onClick={() => {
+                  const cleanTitle = docPreview.title.replace(/\s+/g, '_');
+                  const ext = docPreview.isPdf ? 'pdf' : 'jpg';
+                  downloadFile(docPreview.url, `${cleanTitle}.${ext}`);
+                }}
                 startIcon={<DownloadIcon />}
                 sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#CBD5E1', color: '#334155' }}
               >

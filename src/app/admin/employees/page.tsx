@@ -810,27 +810,62 @@ export default function AdminEmployeesPage() {
     }
   };
 
-  // Export Employees to CSV / Excel with UTF-8 BOM
-  const handleExportEmployees = () => {
+  // Export Employees to genuine Excel (.xlsx) with clean CSV fallback
+  const handleExportEmployees = async (format: 'xlsx' | 'csv' = 'xlsx') => {
     if (employees.length === 0) {
       alert('No employee data to export.');
       return;
     }
 
+    const curDate = new Date().toISOString().split('T')[0];
+
+    // 1. Primary: Download formatted .xlsx from backend endpoint
+    if (format === 'xlsx') {
+      try {
+        const params = new URLSearchParams();
+        if (deptFilter) params.set('department', deptFilter);
+        if (contractFilter) params.set('contract_status', contractFilter);
+        if (employeeStatusFilter) params.set('employee_status', employeeStatusFilter);
+        if (contractEvalFilter) params.set('contract_eval', contractEvalFilter);
+        if (search) params.set('search', search);
+
+        const res = await fetch(`/api/admin/employees/export?${params.toString()}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `DATA_MASTER_KARYAWAN_PT_ITSP_${curDate}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct XLSX export failed, falling back to clean CSV:', err);
+      }
+    }
+
+    // 2. High Quality CSV Fallback with UTF-8 BOM and sep=, for Excel compatibility
     const headers = [
       'No',
-      'ID Employees',
+      'ID Karyawan',
+      'Payroll ID',
       'Nama Lengkap',
       'NIK KTP',
       'Jenis Kelamin',
       'Tempat Lahir',
       'Tanggal Lahir',
+      'Usia',
       'Agama',
       'Status Pernikahan',
+      'Status PTKP',
       'Nomor HP / WA',
       'Email',
       'Alamat KTP Lengkap',
-      'RT/RW KTP',
+      'RT KTP',
+      'RW KTP',
       'Kelurahan KTP',
       'Kecamatan KTP',
       'Kota/Kabupaten KTP',
@@ -839,21 +874,21 @@ export default function AdminEmployeesPage() {
       'Pendidikan Terakhir',
       'Nama Sekolah / Kampus',
       'Jurusan',
-      'Years Lulus',
-      'Nilai / IPK',
       'Departemen',
+      'Bagian / Section',
       'Jabatan / Posisi',
-      'Lokasi Pabrik',
-      'Contract Status (PKWT/PKWTT)',
+      'Level',
+      'Plant',
+      'Tipe Karyawan',
+      'Status Kontrak (PKWT/PKWTT)',
       'Contract Start Date (Join Date)',
       'Contract End Date',
       'Gaji Disepakati',
-      'Nama Kontak Darurat',
-      'Hubungan Kontak Darurat',
-      'No Telp Darurat',
       'No NPWP',
       'No BPJS Ketenagakerjaan',
-      'No BPJS Kesehatan',
+      'Status Karyawan',
+      'Tanggal Keluar',
+      'Alasan Keluar',
       'Catatan HR',
     ];
 
@@ -866,54 +901,57 @@ export default function AdminEmployeesPage() {
     const rows = employees.map((emp, idx) => [
       idx + 1,
       escapeCsv(emp.employee_id),
+      escapeCsv(emp.payroll_id || ''),
       escapeCsv(emp.full_name),
-      escapeCsv(emp.national_id ? `'${emp.national_id}` : ''),
-      escapeCsv(emp.gender),
-      escapeCsv(emp.birth_place),
-      escapeCsv(emp.birth_date),
-      escapeCsv(emp.religion),
-      escapeCsv(emp.marital_status),
-      escapeCsv(emp.phone ? `'${emp.phone}` : ''),
-      escapeCsv(emp.email),
-      escapeCsv(emp.ktp_street_address),
-      escapeCsv(emp.ktp_rt_rw),
-      escapeCsv(emp.ktp_kelurahan),
-      escapeCsv(emp.ktp_kecamatan),
-      escapeCsv(emp.ktp_city),
-      escapeCsv(emp.ktp_province),
-      escapeCsv(emp.domicile_street_address || emp.ktp_street_address),
-      escapeCsv(emp.education_level),
-      escapeCsv(emp.institution_name),
-      escapeCsv(emp.major),
-      escapeCsv(emp.graduation_year),
-      escapeCsv(emp.gpa_or_grade),
-      escapeCsv(emp.department),
-      escapeCsv(emp.job_title),
-      escapeCsv(emp.work_location),
-      escapeCsv(emp.contract_status),
-      escapeCsv(emp.join_date),
-      escapeCsv(emp.contract_end_date || 'TETAP'),
-      escapeCsv(emp.agreed_salary),
-      escapeCsv(emp.emergency_contact_name),
-      escapeCsv(emp.emergency_contact_relation),
-      escapeCsv(emp.emergency_contact_phone ? `'${emp.emergency_contact_phone}` : ''),
-      escapeCsv(emp.npwp_number ? `'${emp.npwp_number}` : ''),
-      escapeCsv(emp.bpjs_tk_number ? `'${emp.bpjs_tk_number}` : ''),
-      escapeCsv(emp.bpjs_kes_number ? `'${emp.bpjs_kes_number}` : ''),
-      escapeCsv(emp.notes),
+      escapeCsv(emp.national_id || emp.nik || ''),
+      escapeCsv(emp.gender || ''),
+      escapeCsv(emp.birth_place || ''),
+      escapeCsv(emp.birth_date ? String(emp.birth_date).slice(0, 10) : ''),
+      escapeCsv(emp.age ?? ''),
+      escapeCsv(emp.religion || ''),
+      escapeCsv(emp.marital_status || emp.marriage_status || ''),
+      escapeCsv(emp.ptkp_status || ''),
+      escapeCsv(emp.phone || ''),
+      escapeCsv(emp.email || ''),
+      escapeCsv(emp.ktp_street_address || emp.address_ktp || emp.street_ktp || ''),
+      escapeCsv(emp.rt_ktp || ''),
+      escapeCsv(emp.rw_ktp || ''),
+      escapeCsv(emp.village_ktp || emp.ktp_kelurahan || ''),
+      escapeCsv(emp.district_ktp || emp.ktp_kecamatan || ''),
+      escapeCsv(emp.city_ktp || emp.ktp_city || ''),
+      escapeCsv(emp.province_ktp || emp.ktp_province || ''),
+      escapeCsv(emp.domicile_street_address || emp.address_domicile || emp.street_domicile || ''),
+      escapeCsv(emp.education_level || emp.last_education || ''),
+      escapeCsv(emp.institution_name || emp.school_name || ''),
+      escapeCsv(emp.major || ''),
+      escapeCsv(emp.department || ''),
+      escapeCsv(emp.section || ''),
+      escapeCsv(emp.job_title || ''),
+      escapeCsv(emp.level || ''),
+      escapeCsv(emp.plant || ''),
+      escapeCsv(emp.employee_type || ''),
+      escapeCsv(emp.contract_status || ''),
+      escapeCsv(emp.join_date || (emp.contract_start_date ? String(emp.contract_start_date).slice(0, 10) : '')),
+      escapeCsv(emp.contract_end_date ? String(emp.contract_end_date).slice(0, 10) : (String(emp.contract_status || '').toUpperCase().includes('PKWTT') ? 'TETAP' : '')),
+      escapeCsv(emp.agreed_salary || emp.salary || ''),
+      escapeCsv(emp.npwp || emp.npwp_number || ''),
+      escapeCsv(emp.bpjs_tk_no || emp.bpjs_tk_number || ''),
+      escapeCsv(emp.employee_status === 'active' ? 'Aktif' : 'Resign / Nonaktif'),
+      escapeCsv(emp.exit_date ? String(emp.exit_date).slice(0, 10) : ''),
+      escapeCsv(emp.exit_reason || ''),
+      escapeCsv(emp.notes || ''),
     ]);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+    const csvContent = '\uFEFFsep=,\r\n' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    const curDate = new Date().toISOString().split('T')[0];
     link.setAttribute('href', url);
     link.setAttribute('download', `DATA_KARYAWAN_PT_ITSP_${curDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
   // Helper remaining days calculation
@@ -1079,8 +1117,25 @@ export default function AdminEmployeesPage() {
           </Button>
 
           <Button
+            variant="contained"
+            onClick={() => handleExportEmployees('xlsx')}
+            startIcon={<DownloadIcon />}
+            sx={{
+              fontWeight: 700,
+              textTransform: 'none',
+              borderRadius: 2,
+              bgcolor: '#0F172A',
+              color: '#FFFFFF',
+              boxShadow: 'none',
+              '&:hover': { bgcolor: '#1E293B' },
+            }}
+          >
+            Export Excel (.xlsx)
+          </Button>
+
+          <Button
             variant="outlined"
-            onClick={handleExportEmployees}
+            onClick={() => handleExportEmployees('csv')}
             startIcon={<DownloadIcon />}
             sx={{
               fontWeight: 700,
