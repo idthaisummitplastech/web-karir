@@ -73,8 +73,11 @@ import {
   PersonAdd as PersonAddIcon,
   ManageAccounts as ManageAccountsIcon,
   Tune as TuneIcon,
+  PictureAsPdf as PdfIcon,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
+import { downloadFile } from '@/lib/download-helper';
 
 // Helper function to safely parse stringified JSON arrays/objects from DB
 const parseJsonSafe = (val: any, fallback: any) => {
@@ -143,6 +146,7 @@ export default function AdminEmployeesPage() {
   const [selectedEmp, setSelectedEmp] = useState<any | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailTab, setDetailTab] = useState(0);
+  const [docPreview, setDocPreview] = useState<{ title: string; url: string; isPdf?: boolean } | null>(null);
 
   // Edit Employee Profile & Contract Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -1969,7 +1973,7 @@ export default function AdminEmployeesPage() {
                       {/* Actions */}
                       <TableCell align="right">
                         <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-                          <Tooltip title="Lihat Profil Lengkap & Dokumen Berkas">
+                          <Tooltip title="View Complete Profile & Document Archives">
                             <IconButton
                               size="small"
                               onClick={() => {
@@ -1983,7 +1987,7 @@ export default function AdminEmployeesPage() {
                             </IconButton>
                           </Tooltip>
 
-                          <Tooltip title="Perbarui / Perpanjang Contract Period">
+                          <Tooltip title="Renew / Extend Contract Period">
                             <IconButton
                               size="small"
                               onClick={() => handleOpenEditModal(emp)}
@@ -2041,7 +2045,7 @@ export default function AdminEmployeesPage() {
         />
       </Paper>
 
-      {/* MODAL 1: ATUR NOMOR URUT TERAKHIR ID KARYAWAN */}
+      {/* MODAL 1: CONFIGURE LATEST EMPLOYEE ID SEQUENCE */}
       <Dialog open={sequenceModalOpen} onClose={() => setSequenceModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: '#0F172A', color: '#FFFFFF', pb: 1 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2070,7 +2074,7 @@ export default function AdminEmployeesPage() {
           <Paper elevation={0} sx={{ p: 2.5, mb: 2.5, borderRadius: 2, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>
-                Nomor Urut Terakhir di Database Saat Ini:
+                Current Latest Sequence Number in Database:
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 900, fontFamily: 'monospace', color: '#018730' }}>
                 {currentDbSeq}
@@ -2083,7 +2087,7 @@ export default function AdminEmployeesPage() {
               label="Change Last Sequence Number To"
               value={lastSeqInput}
               onChange={(e) => setLastSeqInput(parseInt(e.target.value) || 0)}
-              helperText="Employees berikutnya yang ditambahkan akan otomatis mendapatkan nomor urut: (Nomor Terakhir + 1)."
+              helperText="The next employee added will automatically receive sequence number: (Latest Sequence + 1)."
             />
           </Paper>
 
@@ -2094,7 +2098,7 @@ export default function AdminEmployeesPage() {
           </Alert>
         </DialogContent>
         <DialogActions sx={{ p: 2, bgcolor: '#F1F5F9' }}>
-          <Button onClick={() => setSequenceModalOpen(false)}>Tutup</Button>
+          <Button onClick={() => setSequenceModalOpen(false)}>Close</Button>
           <Button
             variant="contained"
             onClick={handleSaveSequence}
@@ -2147,15 +2151,15 @@ export default function AdminEmployeesPage() {
               }
             }}
           >
-            <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Data Diri & Foto" />
+            <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Personal Info & Photo" />
             <Tab icon={<BusinessIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Employment & Contract" />
-            <Tab icon={<HomeIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Alamat & Pendidikan" />
-            <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Pajak, Bank & Keluarga" />
+            <Tab icon={<HomeIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Address & Education" />
+            <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Tax, Bank & Family" />
           </Tabs>
         </Box>
 
         <DialogContent dividers sx={{ p: 3, maxHeight: '68vh', overflowY: 'auto', bgcolor: '#FFFFFF' }}>
-          {/* TAB 0: DATA DIRI & FOTO */}
+          {/* TAB 0: PERSONAL INFO & PHOTO */}
           {editTab === 0 && (
             <Stack spacing={2.5}>
               {/* Upload Foto Profil */}
@@ -2214,7 +2218,7 @@ export default function AdminEmployeesPage() {
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
-                    label="NIK KTP (16 Digit)"
+                    label="National ID Card (KTP - 16 Digits)"
                     value={editNik}
                     onChange={(e) => setEditNik(e.target.value)}
                     slotProps={{ htmlInput: { maxLength: 16 } }}
@@ -2259,7 +2263,7 @@ export default function AdminEmployeesPage() {
                   <TextField
                     fullWidth
                     type="number"
-                    label="Usia / Umur (Years)"
+                    label="Age (Years)"
                     value={editAge}
                     onChange={(e) => setEditAge(e.target.value)}
                   />
@@ -2268,7 +2272,7 @@ export default function AdminEmployeesPage() {
                   <TextField
                     fullWidth
                     select
-                    label="Jenis Kelamin"
+                    label="Gender"
                     value={editGender}
                     onChange={(e) => setEditGender(e.target.value)}
                   >
@@ -2280,7 +2284,7 @@ export default function AdminEmployeesPage() {
                   <TextField
                     fullWidth
                     select
-                    label="Agama"
+                    label="Religion"
                     value={editReligion}
                     onChange={(e) => setEditReligion(e.target.value)}
                   >
@@ -2305,7 +2309,7 @@ export default function AdminEmployeesPage() {
                   disabled
                   label="ID Employees Resmi (Generate Sistem)"
                   value={selectedEmp?.employee_id || '-'}
-                  helperText="Nomor urut resmi tidak dapat diubah sembarangan."
+                  helperText="Official sequence number cannot be modified arbitrarily."
                 />
               </Grid>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -2342,7 +2346,7 @@ export default function AdminEmployeesPage() {
               <Grid size={{ xs: 12, sm: 4 }}>
                 <TextField
                   fullWidth
-                  label="Seksi / Section"
+                  label="Placement Section"
                   value={editSection}
                   onChange={(e) => setEditSection(e.target.value)}
                   placeholder="Contoh: SYD, Painting, Welding"
@@ -2396,7 +2400,7 @@ export default function AdminEmployeesPage() {
               <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   fullWidth
-                  label="Gaji Disepakati / Pokok"
+                  label="Agreed / Basic Salary"
                   value={editSalary}
                   onChange={(e) => setEditSalary(e.target.value)}
                   placeholder="Contoh: Rp 5.257.834"
@@ -2426,7 +2430,7 @@ export default function AdminEmployeesPage() {
               <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
-                  label="Lokasi Penempatan Kerja"
+                  label="Work Placement Location"
                   value={editLocation}
                   onChange={(e) => setEditLocation(e.target.value)}
                 />
@@ -2439,18 +2443,18 @@ export default function AdminEmployeesPage() {
                   label="Contract Notes / Extension Reference"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  placeholder="Catatan dari HRD mengenai evaluasi atau perpanjangan kontrak"
+                  placeholder="HR notes regarding contract evaluation or extension"
                 />
               </Grid>
             </Grid>
           )}
 
-          {/* TAB 2: ALAMAT & PENDIDIKAN */}
+          {/* TAB 2: ADDRESS & EDUCATION */}
           {editTab === 2 && (
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <HomeIcon sx={{ color: '#018730', fontSize: 20 }} /> Alamat Tempat Tinggal
+                  <HomeIcon sx={{ color: '#018730', fontSize: 20 }} /> Residential Address
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12 }}>
@@ -2458,7 +2462,7 @@ export default function AdminEmployeesPage() {
                       fullWidth
                       multiline
                       rows={2}
-                      label="Alamat Lengkap Sesuai KTP"
+                      label="Official ID (KTP) Registered Address"
                       value={editAddressKtp}
                       onChange={(e) => setEditAddressKtp(e.target.value)}
                       placeholder="Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Provinsi"
@@ -2469,10 +2473,10 @@ export default function AdminEmployeesPage() {
                       fullWidth
                       multiline
                       rows={2}
-                      label="Alamat Domisili Sekarang (Tempat Tinggal)"
+                      label="Current Residential (Domicile) Address"
                       value={editAddressDomicile}
                       onChange={(e) => setEditAddressDomicile(e.target.value)}
-                      placeholder="Kosongkan atau ketik sama jika sesuai dengan alamat KTP"
+                      placeholder="Leave blank or same if identical to KTP address"
                     />
                   </Grid>
                 </Grid>
@@ -2482,13 +2486,13 @@ export default function AdminEmployeesPage() {
 
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <SchoolIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Pendidikan Terakhir
+                  <SchoolIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Latest Formal Education
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth
-                      label="Jenjang Pendidikan Terakhir"
+                      label="Latest Education Level"
                       value={editEduLevel}
                       onChange={(e) => setEditEduLevel(e.target.value)}
                       placeholder="Contoh: SMK, SMA, D3, S1"
@@ -2497,7 +2501,7 @@ export default function AdminEmployeesPage() {
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth
-                      label="Nama Sekolah / Perguruan Tinggi"
+                      label="School / University Name"
                       value={editSchool}
                       onChange={(e) => setEditSchool(e.target.value)}
                       placeholder="Contoh: SMKN 1 Karawang"
@@ -2506,7 +2510,7 @@ export default function AdminEmployeesPage() {
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <TextField
                       fullWidth
-                      label="Jurusan / Program Studi"
+                      label="Major / Field of Study"
                       value={editMajor}
                       onChange={(e) => setEditMajor(e.target.value)}
                       placeholder="Contoh: Teknik Mesin, TKJ, dll"
@@ -2517,12 +2521,12 @@ export default function AdminEmployeesPage() {
             </Stack>
           )}
 
-          {/* TAB 3: PAJAK, BANK & KELUARGA */}
+          {/* TAB 3: TAX, BANK & FAMILY */}
           {editTab === 3 && (
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <BusinessIcon sx={{ color: '#018730', fontSize: 20 }} /> Pajak, Jaminan Sosial & Rekening Payroll
+                  <BusinessIcon sx={{ color: '#018730', fontSize: 20 }} /> Tax, Social Security & Payroll Account
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -2569,17 +2573,17 @@ export default function AdminEmployeesPage() {
                       value={editBankName}
                       onChange={(e) => setEditBankName(e.target.value)}
                       placeholder="Contoh: BCA, Mandiri, BNI, BRI"
-                      helperText="Disiapkan untuk bank penggajian"
+                      helperText="Designated payroll bank"
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <TextField
                       fullWidth
-                      label="Nomor Rekening Bank Payroll"
+                      label="Payroll Bank Account Number"
                       value={editBankAcc}
                       onChange={(e) => setEditBankAcc(e.target.value)}
-                      placeholder="No. Rekening Bank"
-                      helperText="Disiapkan untuk nomor rekening bank"
+                      placeholder="Bank Account No."
+                      helperText="Designated for payroll bank account number"
                     />
                   </Grid>
                 </Grid>
@@ -2589,13 +2593,13 @@ export default function AdminEmployeesPage() {
 
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <FamilyIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Data Keluarga & Tanggungan
+                  <FamilyIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Family Data & Dependants
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="Nama Ayah Kandung"
+                      label="Biological Father's Name"
                       value={editFather}
                       onChange={(e) => setEditFather(e.target.value)}
                     />
@@ -2603,7 +2607,7 @@ export default function AdminEmployeesPage() {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="Nama Ibu Kandung"
+                      label="Biological Mother's Name"
                       value={editMother}
                       onChange={(e) => setEditMother(e.target.value)}
                     />
@@ -2611,17 +2615,17 @@ export default function AdminEmployeesPage() {
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
-                      label="Nama Pasangan (Suami / Istri)"
+                      label="Spouse Name (Husband / Wife)"
                       value={editSpouse}
                       onChange={(e) => setEditSpouse(e.target.value)}
-                      placeholder="Kosongkan jika belum menikah"
+                      placeholder="Leave blank if unmarried"
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       type="number"
-                      label="Jumlah Anggota Keluarga / Tanggungan"
+                      label="Family Dependants Count"
                       value={editFamilyCount}
                       onChange={(e) => setEditFamilyCount(e.target.value)}
                     />
@@ -2645,7 +2649,7 @@ export default function AdminEmployeesPage() {
         </DialogActions>
       </Dialog>
 
-      {/* MODAL 3: DETAIL PROFIL LENGKAP KARYAWAN (TABS) */}
+            {/* MODAL 3: COMPLETE EMPLOYEE PROFILE & DOCUMENT ARCHIVES (TABS) */}
       <Dialog open={detailModalOpen} onClose={() => setDetailModalOpen(false)} maxWidth="md" fullWidth className="notranslate" translate="no">
         <DialogTitle sx={{ pb: 1, bgcolor: '#0F172A', color: '#FFFFFF' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2654,7 +2658,7 @@ export default function AdminEmployeesPage() {
                 src={selectedEmp?.photo_profile || selectedEmp?.photo_file || undefined}
                 sx={{ width: 44, height: 44, bgcolor: '#018730', fontWeight: 800 }}
               >
-                {selectedEmp?.full_name?.charAt(0) || 'K'}
+                {selectedEmp?.full_name?.charAt(0) || 'E'}
               </Avatar>
               <Box>
                 <Typography variant="h6" className="notranslate" translate="no" sx={{ fontWeight: 800, fontSize: 18, color: '#FFFFFF' }}>
@@ -2676,7 +2680,7 @@ export default function AdminEmployeesPage() {
                 }}
                 sx={{ bgcolor: '#018730', fontWeight: 700, textTransform: 'none', borderRadius: 1.5, '&:hover': { bgcolor: '#005c21' } }}
               >
-                Edit Data Lengkap
+                Edit Full Profile
               </Button>
               <IconButton size="small" onClick={() => setDetailModalOpen(false)} sx={{ color: '#94A3B8' }}>
                 <CloseIcon />
@@ -2700,44 +2704,44 @@ export default function AdminEmployeesPage() {
               }
             }}
           >
-            <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Data Diri & Alamat" />
+            <Tab icon={<PersonIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Personal Info & Address" />
             <Tab icon={<BusinessIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Employment & Contract" />
-            <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Pendidikan & Pengalaman" />
-            <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Keluarga & Darurat" />
-            <Tab icon={<DocIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Berkas Dokumen" />
+            <Tab icon={<SchoolIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Education & Experience" />
+            <Tab icon={<FamilyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Family & Emergency" />
+            <Tab icon={<DocIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Document Archives" />
           </Tabs>
         </Box>
 
         <DialogContent dividers sx={{ p: 3, maxHeight: '68vh', overflowY: 'auto' }}>
           {selectedEmp && (
             <>
-              {/* TAB 0: BIODATA & ALAMAT */}
+              {/* TAB 0: PERSONAL INFO & ADDRESS */}
               {detailTab === 0 && (
                 <Grid container spacing={2.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>NIK KTP</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>National ID (KTP)</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.national_id || selectedEmp.nik || '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Usia / Umur</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Age</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 800, color: '#0F172A' }}>
                       {selectedEmp.age ? `${selectedEmp.age} Years` : '-'}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jenis Kelamin</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Gender</Typography>
                     <Typography variant="body1">{selectedEmp.gender || '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tempat, Tanggal Lahir</Typography>
-                    <Typography variant="body1">{selectedEmp.birth_place || '-'}, {selectedEmp.birth_date ? new Date(selectedEmp.birth_date).toLocaleDateString('id-ID') : '-'}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Place & Date of Birth</Typography>
+                    <Typography variant="body1">{selectedEmp.birth_place || '-'}, {selectedEmp.birth_date ? new Date(selectedEmp.birth_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Agama / Status Pernikahan</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Religion / Marital Status</Typography>
                     <Typography variant="body1">{selectedEmp.religion || '-'} • {selectedEmp.marital_status || '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Kontak (HP &amp; WhatsApp)</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Phone / WhatsApp</Typography>
                     <Typography variant="body1" sx={{ fontWeight: 700, color: '#018730' }}>{selectedEmp.phone || '-'}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
@@ -2749,16 +2753,16 @@ export default function AdminEmployeesPage() {
 
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <HomeIcon fontSize="small" sx={{ color: '#018730' }} /> Alamat Sesuai KTP
+                      <HomeIcon fontSize="small" sx={{ color: '#018730' }} /> Registered ID Card Address (KTP)
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#334155' }}>
-                      {selectedEmp.ktp_street_address || '-'} {selectedEmp.ktp_rt_rw && `RT/RW ${selectedEmp.ktp_rt_rw}`}, Kel. {selectedEmp.ktp_kelurahan || '-'}, Kec. {selectedEmp.ktp_kecamatan || '-'}, {selectedEmp.ktp_city || '-'}, {selectedEmp.ktp_province || '-'} {selectedEmp.ktp_postal_code}
+                      {selectedEmp.ktp_street_address || '-'} {selectedEmp.ktp_rt_rw && `RT/RW ${selectedEmp.ktp_rt_rw}`}{selectedEmp.ktp_kelurahan ? `, Kel. ${selectedEmp.ktp_kelurahan}` : ''}{selectedEmp.ktp_kecamatan ? `, Kec. ${selectedEmp.ktp_kecamatan}` : ''}{selectedEmp.ktp_city ? `, ${selectedEmp.ktp_city}` : ''}{selectedEmp.ktp_province ? `, ${selectedEmp.ktp_province}` : ''} {selectedEmp.ktp_postal_code || ''}
                     </Typography>
                   </Grid>
 
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <HomeIcon fontSize="small" sx={{ color: '#0284C7' }} /> Alamat Domisili
+                      <HomeIcon fontSize="small" sx={{ color: '#0284C7' }} /> Current Residential Address (Domicile)
                     </Typography>
                     <Typography variant="body2" sx={{ color: '#334155' }}>
                       {selectedEmp.domicile_street_address || selectedEmp.ktp_street_address || '-'}
@@ -2767,7 +2771,7 @@ export default function AdminEmployeesPage() {
                 </Grid>
               )}
 
-              {/* TAB 1: KEPEGAWAIAN & KONTRAK */}
+              {/* TAB 1: EMPLOYMENT & CONTRACT */}
               {detailTab === 1 && (
                 <Box>
                   {/* Top Key Performance & Career Stats */}
@@ -2781,7 +2785,7 @@ export default function AdminEmployeesPage() {
                           {selectedEmp.years_of_service != null ? `${selectedEmp.years_of_service} Years` : '-'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#166534', display: 'block', mt: 0.3 }}>
-                          Akumulasi durasi pengabdian kerja
+                          Cumulative tenure of service
                         </Typography>
                       </Paper>
                     </Grid>
@@ -2803,7 +2807,7 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                       <Paper elevation={0} sx={{ p: 2, bgcolor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 2 }}>
                         <Typography variant="caption" sx={{ color: '#92400E', fontWeight: 700, textTransform: 'uppercase' }}>
-                          Level &amp; Seksi Penempatan
+                          Level & Placement Section
                         </Typography>
                         <Typography variant="h5" sx={{ fontWeight: 800, color: '#D97706', mt: 0.5 }}>
                           Level: {selectedEmp.level || '-'}
@@ -2818,7 +2822,7 @@ export default function AdminEmployeesPage() {
                   {/* Detail Grid */}
                   <Grid container spacing={2.5}>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor ID Employees</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Employee ID Number</Typography>
                       <Typography variant="h6" sx={{ fontWeight: 900, fontFamily: 'monospace', color: '#018730' }}>
                         {selectedEmp.employee_id}
                       </Typography>
@@ -2831,13 +2835,13 @@ export default function AdminEmployeesPage() {
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Kategori &amp; Lingkungan</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Category & Work Environment</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {selectedEmp.employee_type || 'Direct'} ({selectedEmp.factory_office || 'Factory'})
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Plant Location Pabrik</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Plant Location</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700, color: '#D97706' }}>
                         {selectedEmp.plant ? `Plant ${selectedEmp.plant}` : (selectedEmp.work_location || 'Plant 1 KIIC Karawang')}
                       </Typography>
@@ -2853,28 +2857,28 @@ export default function AdminEmployeesPage() {
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Status Pajak PTKP</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>PTKP Tax Status</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>{selectedEmp.ptkp_status || '-'}</Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Gaji &amp; Kompensasi Disepakati</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Agreed Salary & Compensation</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 800, color: '#018730' }}>{selectedEmp.agreed_salary || selectedEmp.salary || '-'}</Typography>
                     </Grid>
 
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor Akun (Account No.)</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Account No.</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {selectedEmp.account_no || '-'}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Rekening Bank Payroll</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Payroll Bank Account</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700, color: selectedEmp.bank_account_no ? '#018730' : '#64748B' }}>
-                        {selectedEmp.bank_account_no ? `${selectedEmp.bank_name ? selectedEmp.bank_name + ' - ' : ''}${selectedEmp.bank_account_no}` : 'Belum diisi (Siap diinput)'}
+                        {selectedEmp.bank_account_no ? `${selectedEmp.bank_name ? selectedEmp.bank_name + ' - ' : ''}${selectedEmp.bank_account_no}` : 'Not provided (Ready for input)'}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>NPWP &amp; Jamsostek (BPJS TK)</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tax ID (NPWP) & Social Security (BPJS TK)</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         NPWP: {selectedEmp.npwp || selectedEmp.npwp_number || '-'} <br />
                         BPJS TK: {selectedEmp.bpjs_tk_no || selectedEmp.bpjs_tk_number || '-'}
@@ -2886,17 +2890,17 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Contract Start Date (Join Date)</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                        {selectedEmp.join_date ? new Date(selectedEmp.join_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : (selectedEmp.contract_start_date ? new Date(selectedEmp.contract_start_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : '-')}
+                        {selectedEmp.join_date ? new Date(selectedEmp.join_date).toLocaleDateString('en-US', { dateStyle: 'full' }) : (selectedEmp.contract_start_date ? new Date(selectedEmp.contract_start_date).toLocaleDateString('en-US', { dateStyle: 'full' }) : '-')}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Contract End Date</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                        {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('id-ID', { dateStyle: 'full' }) : 'Permanent Employee (PKWTT)'}
+                        {selectedEmp.contract_end_date ? new Date(selectedEmp.contract_end_date).toLocaleDateString('en-US', { dateStyle: 'full' }) : 'Permanent Employee (PKWTT)'}
                       </Typography>
                     </Grid>
                     <Grid size={{ xs: 12 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Catatan HR &amp; Registrasi SK</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>HR Notes & Official Decree Reference</Typography>
                       <Typography variant="body2" sx={{ color: '#334155', bgcolor: '#F8FAFC', p: 1.5, borderRadius: 1.5, mt: 0.5 }}>
                         {selectedEmp.notes || 'No additional notes.'}
                       </Typography>
@@ -2928,19 +2932,19 @@ export default function AdminEmployeesPage() {
                                 return (
                                   <TableRow key={idx} sx={{ bgcolor: isCurrent ? '#F0FDF4' : 'inherit' }}>
                                     <TableCell sx={{ fontWeight: 700 }}>
-                                      {item.contract_name || `Kontrak ${item.sequence || idx + 1}`}
+                                      {item.contract_name || `Contract ${item.sequence || idx + 1}`}
                                     </TableCell>
                                     <TableCell>
-                                      {item.start_date ? new Date(item.start_date).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                                      {item.start_date ? new Date(item.start_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : '-'}
                                     </TableCell>
                                     <TableCell>
-                                      {item.end_date ? new Date(item.end_date).toLocaleDateString('id-ID', { dateStyle: 'medium' }) : '-'}
+                                      {item.end_date ? new Date(item.end_date).toLocaleDateString('en-US', { dateStyle: 'medium' }) : '-'}
                                     </TableCell>
                                     <TableCell>
                                       {isCurrent ? (
                                         <Chip size="small" label="Active / Ongoing Contract" color="success" sx={{ fontWeight: 800, fontSize: 11 }} />
                                       ) : (
-                                        <Chip size="small" label="Selesai" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 600, fontSize: 11 }} />
+                                        <Chip size="small" label="Completed" sx={{ bgcolor: '#F1F5F9', color: '#64748B', fontWeight: 600, fontSize: 11 }} />
                                       )}
                                     </TableCell>
                                   </TableRow>
@@ -2955,32 +2959,32 @@ export default function AdminEmployeesPage() {
                 </Box>
               )}
 
-              {/* TAB 2: PENDIDIKAN & PENGALAMAN */}
+              {/* TAB 2: EDUCATION & EXPERIENCE */}
               {detailTab === 2 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SchoolIcon fontSize="small" sx={{ color: '#018730' }} /> Pendidikan Terakhir
+                    <SchoolIcon fontSize="small" sx={{ color: '#018730' }} /> Latest Formal Education
                   </Typography>
                   <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jenjang</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Degree / Level</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.education_level || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Sekolah / Universitas</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>School / University</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.institution_name || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Jurusan</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Major / Field of Study</Typography>
                         <Typography variant="body2">{selectedEmp.major || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Years Lulus</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Graduation Year</Typography>
                         <Typography variant="body2">{selectedEmp.graduation_year || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nilai / IPK</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>GPA / Grade</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.gpa_or_grade || '-'}</Typography>
                       </Grid>
                     </Grid>
@@ -3015,21 +3019,21 @@ export default function AdminEmployeesPage() {
                 </Box>
               )}
 
-              {/* TAB 3: KELUARGA & KONTAK DARURAT */}
+              {/* TAB 3: FAMILY & EMERGENCY CONTACTS */}
               {detailTab === 3 && (
                 <Stack spacing={2.5}>
-                  {/* Ringkasan Status Keluarga & PTKP */}
+                  {/* Family Status & PTKP Summary */}
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <Paper elevation={0} sx={{ p: 2, bgcolor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 2 }}>
                         <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
-                          Status Pajak PTKP
+                          PTKP Tax Status
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 800, color: '#15803D', mt: 0.5 }}>
                           {selectedEmp.ptkp_status || selectedEmp.marital_status || '-'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#166534' }}>
-                          Status perpajakan PPh 21
+                          Income tax (PPh 21) status
                         </Typography>
                       </Paper>
                     </Grid>
@@ -3037,13 +3041,13 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <Paper elevation={0} sx={{ p: 2, bgcolor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 2 }}>
                         <Typography variant="caption" sx={{ color: '#1E40AF', fontWeight: 700, textTransform: 'uppercase' }}>
-                          Jumlah Anggota Keluarga
+                          Family Members Count
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 800, color: '#1D4ED8', mt: 0.5 }}>
-                          {selectedEmp.family_members_count != null ? `${selectedEmp.family_members_count} Jiwa` : '-'}
+                          {selectedEmp.family_members_count != null ? `${selectedEmp.family_members_count} People` : '-'}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#1E40AF' }}>
-                          Total tanggungan keluarga
+                          Total registered family dependants
                         </Typography>
                       </Paper>
                     </Grid>
@@ -3051,38 +3055,38 @@ export default function AdminEmployeesPage() {
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <Paper elevation={0} sx={{ p: 2, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                         <Typography variant="caption" sx={{ color: '#475569', fontWeight: 700, textTransform: 'uppercase' }}>
-                          Status Pernikahan
+                          Marital Status
                         </Typography>
                         <Typography variant="h6" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5 }}>
-                          {selectedEmp.marital_status || (selectedEmp.spouse_name ? 'Menikah' : 'Belum Menikah')}
+                          {selectedEmp.marital_status || (selectedEmp.spouse_name ? 'Married' : 'Single')}
                         </Typography>
                         <Typography variant="caption" sx={{ color: '#64748B' }}>
-                          Sesuai kartu keluarga
+                          According to official Family Card
                         </Typography>
                       </Paper>
                     </Grid>
                   </Grid>
 
-                  {/* Orang Tua & Pasangan */}
+                  {/* Parents & Spouse */}
                   <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FamilyIcon sx={{ color: '#018730', fontSize: 20 }} /> Data Orang Tua &amp; Pasangan (Suami / Istri)
+                      <FamilyIcon sx={{ color: '#018730', fontSize: 20 }} /> Parents & Spouse Information
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ayah Kandung</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Biological Father's Name</Typography>
                         <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {selectedEmp.father_name || '-'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Ibu Kandung</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Biological Mother's Name</Typography>
                         <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A' }}>
                           {selectedEmp.mother_name || '-'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nama Pasangan (Suami / Istri)</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Spouse Name (Husband / Wife)</Typography>
                         <Typography variant="body1" className="notranslate" translate="no" sx={{ fontWeight: 700, color: selectedEmp.spouse_name ? '#0284C7' : '#64748B' }}>
                           {selectedEmp.spouse_name || '-'}
                         </Typography>
@@ -3090,10 +3094,10 @@ export default function AdminEmployeesPage() {
                     </Grid>
                   </Paper>
 
-                  {/* Anak-Anak Kandung */}
+                  {/* Biological Children */}
                   <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PersonIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Data Anak Kandung
+                      <PersonIcon sx={{ color: '#0284C7', fontSize: 20 }} /> Biological Children
                     </Typography>
                     {(() => {
                       const children = parseJsonSafe(selectedEmp.family_children, []);
@@ -3107,12 +3111,12 @@ export default function AdminEmployeesPage() {
                       return (
                         <Grid container spacing={1.5}>
                           {children.map((child: any, idx: number) => {
-                            const childName = typeof child === 'string' ? child : (child?.name || `Anak ke-${idx + 1}`);
+                            const childName = typeof child === 'string' ? child : (child?.name || `Child #${idx + 1}`);
                             return (
                               <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
                                 <Box sx={{ p: 1.5, bgcolor: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 1.5 }}>
                                   <Typography variant="caption" sx={{ color: '#0369A1', fontWeight: 800, textTransform: 'uppercase' }}>
-                                    Anak ke-{idx + 1}
+                                    Child #{idx + 1}
                                   </Typography>
                                   <Typography variant="body2" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
                                     {childName}
@@ -3126,10 +3130,10 @@ export default function AdminEmployeesPage() {
                     })()}
                   </Paper>
 
-                  {/* Saudara Kandung */}
+                  {/* Biological Siblings */}
                   <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PersonIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Data Saudara Kandung (Kakak / Adik)
+                      <PersonIcon sx={{ color: '#7C3AED', fontSize: 20 }} /> Biological Siblings (Brothers / Sisters)
                     </Typography>
                     {(() => {
                       const siblings = parseJsonSafe(selectedEmp.family_siblings, []);
@@ -3143,12 +3147,12 @@ export default function AdminEmployeesPage() {
                       return (
                         <Grid container spacing={1.5}>
                           {siblings.map((sibling: any, idx: number) => {
-                            const sibName = typeof sibling === 'string' ? sibling : (sibling?.name || `Saudara ke-${idx + 1}`);
+                            const sibName = typeof sibling === 'string' ? sibling : (sibling?.name || `Sibling #${idx + 1}`);
                             return (
                               <Grid size={{ xs: 12, sm: 6, md: 3 }} key={idx}>
                                 <Box sx={{ p: 1.5, bgcolor: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 1.5 }}>
                                   <Typography variant="caption" sx={{ color: '#7E22CE', fontWeight: 800, textTransform: 'uppercase' }}>
-                                    Saudara ke-{idx + 1}
+                                    Sibling #{idx + 1}
                                   </Typography>
                                   <Typography variant="body2" className="notranslate" translate="no" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>
                                     {sibName}
@@ -3162,55 +3166,55 @@ export default function AdminEmployeesPage() {
                     })()}
                   </Paper>
 
-                  {/* Informasi Rekening Bank & Jaminan Sosial */}
+                  {/* Bank Account & Social Security Information */}
                   <Paper elevation={0} sx={{ p: 2.5, bgcolor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 1.5 }}>
-                      Nomor Jaminan Sosial, Pajak &amp; Rekening Payroll
+                      Social Security, Tax ID & Payroll Account
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor Akun (Account No.)</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Account No.</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 800 }}>
                           {selectedEmp.account_no || '-'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Rekening Bank Payroll</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Payroll Bank Account</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 800, color: selectedEmp.bank_account_no ? '#018730' : '#64748B' }}>
-                          {selectedEmp.bank_account_no ? `${selectedEmp.bank_name ? selectedEmp.bank_name + ' - ' : ''}${selectedEmp.bank_account_no}` : 'Belum diisi'}
+                          {selectedEmp.bank_account_no ? `${selectedEmp.bank_name ? selectedEmp.bank_name + ' - ' : ''}${selectedEmp.bank_account_no}` : 'Not provided'}
                         </Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Nomor NPWP</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>Tax ID (NPWP)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.npwp || selectedEmp.npwp_number || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS TK (Jamsostek)</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Employment (Jamsostek)</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_tk_no || selectedEmp.bpjs_tk_number || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Kesehatan</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>BPJS Health</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmp.bpjs_kes_number || '-'}</Typography>
                       </Grid>
                     </Grid>
                   </Paper>
 
-                  {/* Kontak Darurat */}
+                  {/* Emergency Contact */}
                   <Paper elevation={0} sx={{ p: 2, bgcolor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#DC2626', mb: 1.5 }}>
-                      Kontak Darurat Resmi
+                      Official Emergency Contact
                     </Typography>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nama Kontak Darurat</Typography>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Emergency Contact Name</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 800 }}>{selectedEmp.emergency_contact_name || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Hubungan</Typography>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Relationship</Typography>
                         <Typography variant="body2">{selectedEmp.emergency_contact_relation || '-'}</Typography>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
-                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Nomor Telepon Darurat</Typography>
+                        <Typography variant="caption" sx={{ color: '#991B1B', fontWeight: 700 }}>Emergency Phone Number</Typography>
                         <Typography variant="body2" sx={{ fontWeight: 800, color: '#B91C1C' }}>{selectedEmp.emergency_contact_phone || '-'}</Typography>
                       </Grid>
                     </Grid>
@@ -3218,92 +3222,120 @@ export default function AdminEmployeesPage() {
                 </Stack>
               )}
 
-              {/* TAB 4: BERKAS DOKUMEN PENDAFTARAN */}
+              {/* TAB 4: DOCUMENT ARCHIVES */}
               {detailTab === 4 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mb: 2 }}>
-                    Physical / Digital Document Archive (11 Registration Files):
+                    Document Archives & Attached Files:
                   </Typography>
 
                   <Grid container spacing={2}>
                     {[
-                      { title: 'Foto Profil Resmi', file: selectedEmp.photo_profile },
-                      { title: 'Scan KTP Asli', file: selectedEmp.ktp_file },
-                      { title: 'Scan Kartu Keluarga (KK)', file: selectedEmp.kk_file },
-                      { title: 'Ijazah Terakhir', file: selectedEmp.ijazah_file },
-                      { title: 'Transkrip Nilai / SKHUN', file: selectedEmp.transcript_file },
-                      { title: 'Kartu NPWP', file: selectedEmp.npwp_file },
-                      { title: 'BPJS Ketenagakerjaan', file: selectedEmp.bpjs_tk_file },
-                      { title: 'BPJS Kesehatan', file: selectedEmp.bpjs_kes_file },
-                      { title: 'SKCK Aktif Kepolisian', file: selectedEmp.skck_file },
-                      { title: 'Surat Keterangan Sehat / MCU', file: selectedEmp.health_cert_file },
-                      { title: 'Sertifikat Keahlian / Pelatihan', file: selectedEmp.certificate_file },
-                      { title: 'Offering & Signed Contract Files', file: selectedEmp.signed_contract_file },
-                    ].map((item, idx) => (
-                      <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            border: '1px solid',
-                            borderColor: item.file ? '#BBF7D0' : '#E2E8F0',
-                            bgcolor: item.file ? '#F0FDF4' : '#F8FAFC',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                            height: '100%',
-                          }}
-                        >
-                          <Box sx={{ mb: 1.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: item.file ? '#166534' : '#64748B', fontSize: 13 }}>
-                              {item.title}
-                            </Typography>
-                            <Chip
-                              size="small"
-                              label={item.file ? 'Tersedia' : 'Tidak Ada / Null'}
-                              sx={{
-                                height: 20,
-                                fontSize: 10,
-                                fontWeight: 800,
-                                mt: 0.5,
-                                bgcolor: item.file ? '#DCFCE7' : '#E2E8F0',
-                                color: item.file ? '#15803D' : '#64748B',
-                              }}
-                            />
-                          </Box>
+                      { title: 'Official Profile Photo', file: selectedEmp.photo_profile || selectedEmp.photo_file, ext: 'jpg' },
+                      { title: 'National ID Card (KTP)', file: selectedEmp.ktp_file || selectedEmp.ktpFile, ext: 'jpg' },
+                      { title: 'Family Card (KK)', file: selectedEmp.kk_file || selectedEmp.kkFile, ext: 'jpg' },
+                      { title: 'Graduation Certificate (Ijazah)', file: selectedEmp.ijazah_file || selectedEmp.ijazahFile, ext: 'pdf' },
+                      { title: 'Academic Transcript (SKHUN)', file: selectedEmp.transkrip_file || selectedEmp.transcript_file || selectedEmp.transkripFile, ext: 'pdf' },
+                      { title: 'Tax ID Card (NPWP)', file: selectedEmp.npwp_file || selectedEmp.npwpFile, ext: 'jpg' },
+                      { title: 'BPJS Employment Card', file: selectedEmp.bpjs_ketenagakerjaan_file || selectedEmp.bpjs_tk_file || selectedEmp.bpjsKetenagakerjaanFile, ext: 'jpg' },
+                      { title: 'BPJS Health Card', file: selectedEmp.bpjs_kesehatan_file || selectedEmp.bpjs_kes_file || selectedEmp.bpjsKesehatanFile, ext: 'jpg' },
+                      { title: 'Police Record Clearance (SKCK)', file: selectedEmp.skck_file || selectedEmp.skckFile, ext: 'pdf' },
+                      { title: 'Medical Checkup Report (MCU)', file: selectedEmp.health_cert_file || selectedEmp.mcu_file, ext: 'pdf' },
+                      { title: 'Training & Skills Certificate', file: selectedEmp.certificate_file || selectedEmp.cert_nonformal_file, ext: 'pdf' },
+                      { title: 'Curriculum Vitae (CV Resume)', file: selectedEmp.cv_file || selectedEmp.cvFile, ext: 'pdf' },
+                      { title: 'Signed Employment Contract', file: selectedEmp.signed_contract_file || selectedEmp.signedContractFile, ext: 'pdf' },
+                    ].map((item, idx) => {
+                      const hasFile = Boolean(item.file);
+                      const isPdf = hasFile && (
+                        item.file.startsWith('data:application/pdf') ||
+                        item.file.toLowerCase().endsWith('.pdf') ||
+                        item.ext === 'pdf'
+                      );
 
-                          {item.file ? (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => {
-                                const w = window.open('');
-                                if (item.file.startsWith('data:image')) {
-                                  w?.document.write(`<img src="${item.file}" style="max-width:100%;height:auto;display:block;margin:auto;" />`);
-                                } else {
-                                  w?.document.write(`<iframe src="${item.file}" style="width:100%;height:100%;border:none;"></iframe>`);
-                                }
-                              }}
-                              sx={{
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontSize: 11,
-                                borderColor: '#86EFAC',
-                                color: '#166534',
-                                '&:hover': { bgcolor: '#DCFCE7' },
-                              }}
-                            >
-                              Buka Dokumen
-                            </Button>
-                          ) : (
-                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                              Tidak diunggah saat pendaftaran
-                            </Typography>
-                          )}
-                        </Paper>
-                      </Grid>
-                    ))}
+                      return (
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={idx}>
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              border: '1px solid',
+                              borderColor: hasFile ? '#BBF7D0' : '#E2E8F0',
+                              bgcolor: hasFile ? '#F0FDF4' : '#F8FAFC',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              height: '100%',
+                            }}
+                          >
+                            <Box sx={{ mb: 1.5 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: hasFile ? '#166534' : '#64748B', fontSize: 13 }}>
+                                {item.title}
+                              </Typography>
+                              <Chip
+                                size="small"
+                                label={hasFile ? 'Available' : 'Not Attached'}
+                                sx={{
+                                  height: 20,
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  mt: 0.5,
+                                  bgcolor: hasFile ? '#DCFCE7' : '#E2E8F0',
+                                  color: hasFile ? '#15803D' : '#64748B',
+                                }}
+                              />
+                            </Box>
+
+                            {hasFile ? (
+                              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  fullWidth
+                                  startIcon={<ViewIcon sx={{ fontSize: 16 }} />}
+                                  onClick={() => setDocPreview({ title: item.title, url: item.file, isPdf })}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    fontSize: 11,
+                                    borderColor: '#86EFAC',
+                                    color: '#166534',
+                                    '&:hover': { bgcolor: '#DCFCE7' },
+                                  }}
+                                >
+                                  Preview
+                                </Button>
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  fullWidth
+                                  startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+                                  onClick={() => {
+                                    const cleanTitle = item.title.replace(/[^a-zA-Z0-9]/g, '_');
+                                    const empName = (selectedEmp?.full_name || 'Employee').replace(/\s+/g, '_');
+                                    const ext = isPdf ? 'pdf' : (item.ext || 'jpg');
+                                    downloadFile(item.file, `${cleanTitle}_${empName}.${ext}`);
+                                  }}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    fontSize: 11,
+                                    bgcolor: '#018730',
+                                    '&:hover': { bgcolor: '#005c21' },
+                                  }}
+                                >
+                                  Download
+                                </Button>
+                              </Stack>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                                Not uploaded during registration
+                              </Typography>
+                            )}
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
                   </Grid>
                 </Box>
               )}
@@ -3323,9 +3355,70 @@ export default function AdminEmployeesPage() {
           >
             Edit Profile, Photo & Contract for This Employee
           </Button>
-          <Button onClick={() => setDetailModalOpen(false)}>Tutup</Button>
+          <Button onClick={() => setDetailModalOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* DOCUMENT PREVIEW DIALOG MODAL */}
+      {docPreview && (
+        <Dialog
+          open={Boolean(docPreview)}
+          onClose={() => setDocPreview(null)}
+          maxWidth="md"
+          fullWidth
+          slotProps={{ paper: { sx: { borderRadius: 2.5, overflow: 'hidden' } } }}
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1.5, px: 2.5, bgcolor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {docPreview.isPdf ? <PdfIcon sx={{ color: '#DC2626' }} /> : <ImageIcon sx={{ color: '#0284C7' }} />}
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                File Preview: {docPreview.title}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => {
+                  const cleanTitle = docPreview.title.replace(/\s+/g, '_');
+                  const empName = (selectedEmp?.full_name || 'Employee').replace(/\s+/g, '_');
+                  const ext = docPreview.isPdf ? 'pdf' : 'jpg';
+                  downloadFile(docPreview.url, `${cleanTitle}_${empName}.${ext}`);
+                }}
+                startIcon={<DownloadIcon />}
+                sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#CBD5E1', color: '#334155' }}
+              >
+                Download File
+              </Button>
+              <IconButton size="small" onClick={() => setDocPreview(null)} sx={{ color: '#64748B' }}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center', bgcolor: '#0F172A0A', minHeight: 450 }}>
+            {docPreview.isPdf ? (
+              <iframe
+                src={docPreview.url}
+                title={docPreview.title}
+                style={{ width: '100%', height: '70vh', border: 'none', borderRadius: 8, backgroundColor: '#FFFFFF' }}
+              />
+            ) : (
+              <Box
+                component="img"
+                src={docPreview.url}
+                alt={docPreview.title}
+                sx={{
+                  maxWidth: '100%',
+                  maxHeight: '70vh',
+                  objectFit: 'contain',
+                  borderRadius: 2,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* MODAL 3: IMPORT EXCEL MASTER KARYAWAN */}
       <Dialog open={importModalOpen} onClose={() => !importing && setImportModalOpen(false)} maxWidth="sm" fullWidth>
@@ -3524,7 +3617,7 @@ export default function AdminEmployeesPage() {
         <DialogContent sx={{ p: 3 }}>
           <Alert severity="error" sx={{ mb: 2.5, mt: 1, borderRadius: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
-              PERINGATAN KRUSIAL!
+              CRITICAL WARNING!
             </Typography>
             Tindakan ini akan <strong>menghapus permanen seluruh ({employees.length}) data karyawan</strong> dari database sistem. Data yang sudah dihapus tidak dapat dipulihkan.
           </Alert>
@@ -3649,7 +3742,7 @@ export default function AdminEmployeesPage() {
                 <MenuItem value="Contract Expired (Not Extended)">Contract Expired (Not Extended)</MenuItem>
                 <MenuItem value="Pengunduran Diri (Resign)">Pengunduran Diri (Resign)</MenuItem>
                 <MenuItem value="PHK (Pemutusan Hubungan Kerja)">PHK (Pemutusan Hubungan Kerja)</MenuItem>
-                <MenuItem value="Selesai Magang">Selesai Magang</MenuItem>
+                <MenuItem value="Internship Completed">Internship Completed</MenuItem>
                 <MenuItem value="Meninggal Dunia">Meninggal Dunia</MenuItem>
                 <MenuItem value="Pensiun">Pensiun</MenuItem>
                 <MenuItem value="Lainnya">Lainnya</MenuItem>
@@ -3682,7 +3775,7 @@ export default function AdminEmployeesPage() {
 
           <Alert severity="info" sx={{ mt: 2, bgcolor: '#FEF9C3', border: '1px solid #FDE047' }}>
             <Typography variant="caption" sx={{ color: '#78350F', fontWeight: 600 }}>
-              This employee will be marked as <strong>Employees Keluar</strong> dan disimpan dalam riwayat sesuai pengaturan retensi. Employees tidak akan muncul lagi di daftar aktif.
+              This employee will be marked as <strong>Leaver / Inactive Employee</strong> and archived in history according to data retention settings. The employee will no longer appear in the active master list.
             </Typography>
           </Alert>
         </DialogContent>
@@ -3731,7 +3824,7 @@ export default function AdminEmployeesPage() {
                   <TextField required fullWidth size="small" label="Nama Lengkap *" value={createFullName} onChange={(e) => setCreateFullName(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth size="small" label="NIK KTP" value={createNik} onChange={(e) => setCreateNik(e.target.value)} />
+                  <TextField fullWidth size="small" label="National ID (KTP)" value={createNik} onChange={(e) => setCreateNik(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth size="small" label="No. HP / WhatsApp" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
@@ -3740,7 +3833,7 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="Email" type="email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth select size="small" label="Jenis Kelamin" value={createGender} onChange={(e) => setCreateGender(e.target.value)}>
+                  <TextField fullWidth select size="small" label="Gender" value={createGender} onChange={(e) => setCreateGender(e.target.value)}>
                     <MenuItem value="Laki-laki">Laki-laki</MenuItem>
                     <MenuItem value="Perempuan">Perempuan</MenuItem>
                   </TextField>
@@ -3752,7 +3845,7 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" type="date" label="Tanggal Lahir" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth select size="small" label="Agama" value={createReligion} onChange={(e) => setCreateReligion(e.target.value)}>
+                  <TextField fullWidth select size="small" label="Religion" value={createReligion} onChange={(e) => setCreateReligion(e.target.value)}>
                     {['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'].map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
                   </TextField>
                 </Grid>
@@ -3775,7 +3868,7 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="Level" value={createLevel} onChange={(e) => setCreateLevel(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Seksi / Sub-Dept" value={createSection} onChange={(e) => setCreateSection(e.target.value)} />
+                  <TextField fullWidth size="small" label="Section / Sub-Dept" value={createSection} onChange={(e) => setCreateSection(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField fullWidth select size="small" label="Tipe Employees" value={createEmployeeType} onChange={(e) => setCreateEmployeeType(e.target.value)}>
@@ -3803,10 +3896,10 @@ export default function AdminEmployeesPage() {
                   </Grid>
                 )}
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Gaji Disepakati" value={createSalary} onChange={(e) => setCreateSalary(e.target.value)} placeholder="Misal: 4500000" />
+                  <TextField fullWidth size="small" label="Agreed Salary" value={createSalary} onChange={(e) => setCreateSalary(e.target.value)} placeholder="e.g. 5200000" />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <TextField fullWidth multiline rows={2} size="small" label="Catatan HR" value={createNotes} onChange={(e) => setCreateNotes(e.target.value)} />
+                  <TextField fullWidth multiline rows={2} size="small" label="HR Notes" value={createNotes} onChange={(e) => setCreateNotes(e.target.value)} />
                 </Grid>
               </Grid>
             )}
@@ -3826,7 +3919,7 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="Nama Bank" value={createBankName} onChange={(e) => setCreateBankName(e.target.value)} placeholder="Misal: BRI, BNI, Mandiri" />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Nomor Rekening Bank" value={createBankAcc} onChange={(e) => setCreateBankAcc(e.target.value)} />
+                  <TextField fullWidth size="small" label="Bank Account Number" value={createBankAcc} onChange={(e) => setCreateBankAcc(e.target.value)} />
                 </Grid>
               </Grid>
             )}
@@ -3834,7 +3927,7 @@ export default function AdminEmployeesPage() {
 
           <DialogActions sx={{ p: 2.5, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
-              {createTab > 0 && <Button onClick={() => setCreateTab((t) => t - 1)} sx={{ color: '#64748B' }}>← Sebelumnya</Button>}
+              {createTab > 0 && <Button onClick={() => setCreateTab((t) => t - 1)} sx={{ color: '#64748B' }}>← Previous</Button>}
               {createTab < 2 && <Button onClick={() => setCreateTab((t) => t + 1)} sx={{ color: '#018730', fontWeight: 700 }}>Selanjutnya →</Button>}
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -3935,7 +4028,7 @@ export default function AdminEmployeesPage() {
             {cleaningRetention ? 'Cleaning...' : `Clean ${retentionExpiredCount} Expired Data`}
           </Button>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button onClick={() => setRetentionModalOpen(false)} disabled={savingRetention || cleaningRetention} sx={{ color: '#64748B' }}>Tutup</Button>
+            <Button onClick={() => setRetentionModalOpen(false)} disabled={savingRetention || cleaningRetention} sx={{ color: '#64748B' }}>Close</Button>
             <Button
               variant="contained"
               onClick={handleSaveRetention}
