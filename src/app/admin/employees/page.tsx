@@ -78,6 +78,7 @@ import {
 } from '@mui/icons-material';
 import { KarirTablePagination } from '@/components/admin/KarirTablePagination';
 import { downloadFile } from '@/lib/download-helper';
+import * as XLSX from 'xlsx';
 
 // Helper function to safely parse stringified JSON arrays/objects from DB
 const parseJsonSafe = (val: any, fallback: any) => {
@@ -823,35 +824,6 @@ export default function AdminEmployeesPage() {
 
     const curDate = new Date().toISOString().split('T')[0];
 
-    // 1. Primary: Download formatted .xlsx from backend endpoint
-    if (format === 'xlsx') {
-      try {
-        const params = new URLSearchParams();
-        if (deptFilter) params.set('department', deptFilter);
-        if (contractFilter) params.set('contract_status', contractFilter);
-        if (employeeStatusFilter) params.set('employee_status', employeeStatusFilter);
-        if (contractEvalFilter) params.set('contract_eval', contractEvalFilter);
-        if (search) params.set('search', search);
-
-        const res = await fetch(`/api/admin/employees/export?${params.toString()}`);
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `DATA_MASTER_KARYAWAN_PT_ITSP_${curDate}.xlsx`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          setTimeout(() => URL.revokeObjectURL(url), 10000);
-          return;
-        }
-      } catch (err) {
-        console.warn('Direct XLSX export failed, falling back to clean CSV:', err);
-      }
-    }
-
-    // 2. High Quality CSV Fallback with UTF-8 BOM and sep=, for Excel compatibility
     const headers = [
       'No',
       'ID Karyawan',
@@ -895,6 +867,92 @@ export default function AdminEmployeesPage() {
       'Alasan Keluar',
       'Catatan HR',
     ];
+
+    const rawRows = employees.map((emp, idx) => [
+      idx + 1,
+      emp.employee_id || '',
+      emp.payroll_id || '',
+      emp.full_name || '',
+      emp.national_id || emp.nik || '',
+      emp.gender || '',
+      emp.birth_place || '',
+      emp.birth_date ? String(emp.birth_date).slice(0, 10) : '',
+      emp.age ?? '',
+      emp.religion || '',
+      emp.marital_status || emp.marriage_status || '',
+      emp.ptkp_status || '',
+      emp.phone || '',
+      emp.email || '',
+      emp.ktp_street_address || emp.address_ktp || emp.street_ktp || '',
+      emp.rt_ktp || '',
+      emp.rw_ktp || '',
+      emp.village_ktp || emp.ktp_kelurahan || '',
+      emp.district_ktp || emp.ktp_kecamatan || '',
+      emp.city_ktp || emp.ktp_city || '',
+      emp.province_ktp || emp.ktp_province || '',
+      emp.domicile_street_address || emp.address_domicile || emp.street_domicile || '',
+      emp.education_level || emp.last_education || '',
+      emp.institution_name || emp.school_name || '',
+      emp.major || '',
+      emp.department || '',
+      emp.section || '',
+      emp.job_title || '',
+      emp.level || '',
+      emp.plant || '',
+      emp.employee_type || '',
+      emp.contract_status || '',
+      emp.join_date || (emp.contract_start_date ? String(emp.contract_start_date).slice(0, 10) : ''),
+      emp.contract_end_date ? String(emp.contract_end_date).slice(0, 10) : (String(emp.contract_status || '').toUpperCase().includes('PKWTT') ? 'TETAP' : ''),
+      emp.agreed_salary || emp.salary || '',
+      emp.npwp || emp.npwp_number || '',
+      emp.bpjs_tk_no || emp.bpjs_tk_number || '',
+      emp.employee_status === 'active' ? 'Aktif' : 'Resign / Nonaktif',
+      emp.exit_date ? String(emp.exit_date).slice(0, 10) : '',
+      emp.exit_reason || '',
+      emp.notes || '',
+    ]);
+
+    // 1. Primary: Download formatted .xlsx from backend endpoint or client SheetJS
+    if (format === 'xlsx') {
+      try {
+        const params = new URLSearchParams();
+        if (deptFilter) params.set('department', deptFilter);
+        if (contractFilter) params.set('contract_status', contractFilter);
+        if (employeeStatusFilter) params.set('employee_status', employeeStatusFilter);
+        if (contractEvalFilter) params.set('contract_eval', contractEvalFilter);
+        if (search) params.set('search', search);
+
+        const res = await fetch(`/api/admin/employees/export?${params.toString()}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `DATA_MASTER_KARYAWAN_PT_ITSP_${curDate}.xlsx`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend XLSX export failed, falling back to client-side SheetJS:', err);
+      }
+
+      // Guaranteed client-side authentic .xlsx generation using SheetJS
+      try {
+        const worksheetData = [headers, ...rawRows];
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+        XLSX.utils.book_append_sheet(wb, ws, "Master Karyawan");
+        XLSX.writeFile(wb, `DATA_MASTER_KARYAWAN_PT_ITSP_${curDate}.xlsx`);
+        return;
+      } catch (sheetErr) {
+        console.error('Client-side XLSX generation error:', sheetErr);
+      }
+    }
+
+    // 2. High Quality CSV Fallback with UTF-8 BOM and sep=, for Excel compatibility
 
     const escapeCsv = (str: any) => {
       if (str === null || str === undefined) return '""';
@@ -1519,7 +1577,7 @@ export default function AdminEmployeesPage() {
                 <MenuItem value="PKWT">PKWT (Contract Employee)</MenuItem>
                 <MenuItem value="PKWTT">PKWTT (Employees Tetap)</MenuItem>
                 <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
-                <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+                <MenuItem value="Expatriate">Expatriate</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -2244,7 +2302,7 @@ export default function AdminEmployeesPage() {
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
                     fullWidth
-                    label="Tempat Lahir"
+                    label="Place of Birth"
                     value={editBirthPlace}
                     onChange={(e) => setEditBirthPlace(e.target.value)}
                   />
@@ -2253,7 +2311,7 @@ export default function AdminEmployeesPage() {
                   <TextField
                     fullWidth
                     type="date"
-                    label="Tanggal Lahir"
+                    label="Date of Birth"
                     slotProps={{ inputLabel: { shrink: true } }}
                     value={editBirthDate}
                     onChange={(e) => setEditBirthDate(e.target.value)}
@@ -2276,8 +2334,8 @@ export default function AdminEmployeesPage() {
                     value={editGender}
                     onChange={(e) => setEditGender(e.target.value)}
                   >
-                    <MenuItem value="Laki-laki">Laki-laki</MenuItem>
-                    <MenuItem value="Perempuan">Perempuan</MenuItem>
+                    <MenuItem value="Laki-laki">Male</MenuItem>
+                    <MenuItem value="Perempuan">Female</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -2374,7 +2432,7 @@ export default function AdminEmployeesPage() {
                 <TextField
                   fullWidth
                   select
-                  label="Tipe Employees"
+                  label="Employee Type"
                   value={editEmployeeType}
                   onChange={(e) => setEditEmployeeType(e.target.value)}
                 >
@@ -2393,7 +2451,7 @@ export default function AdminEmployeesPage() {
                   <MenuItem value="PKWT">PKWT (Fixed-Term Contract)</MenuItem>
                   <MenuItem value="PKWTT">PKWTT (Employees Tetap)</MenuItem>
                   <MenuItem value="Trainee">Trainee (Peserta Pemagangan)</MenuItem>
-                  <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+                  <MenuItem value="Expatriate">Expatriate</MenuItem>
                   <MenuItem value="Probation">Probation (Percobaan)</MenuItem>
                 </TextField>
               </Grid>
@@ -3249,7 +3307,7 @@ export default function AdminEmployeesPage() {
                       const isPdf = hasFile && (
                         item.file.startsWith('data:application/pdf') ||
                         item.file.toLowerCase().endsWith('.pdf') ||
-                        item.ext === 'pdf'
+                        (!item.file.startsWith('data:image') && item.ext === 'pdf' && !item.file.startsWith('data:'))
                       );
 
                       return (
@@ -3456,10 +3514,10 @@ export default function AdminEmployeesPage() {
             >
               <Box sx={{ maxWidth: { xs: '100%', sm: '65%' } }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#166534' }}>
-                  Belum memiliki format Excel yang sesuai?
+                  Need the official Excel import format?
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#15803D', display: 'block' }}>
-                  Unduh template resmi <code>.xlsx</code> yang sudah terkonfigurasi dengan sheet <strong>ITSP</strong> (Employees), <strong>Trainee</strong> (Magang), dan sheet <strong>PANDUAN</strong>.
+                  Download the official <code>.xlsx</code> template configured with the <strong>ITSP</strong> (Employees), <strong>Trainee</strong> (Interns), and <strong>GUIDELINES</strong> sheets.
                 </Typography>
               </Box>
               <Button
@@ -3484,7 +3542,7 @@ export default function AdminEmployeesPage() {
             </Box>
 
             <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
-              Unggah file Excel master karyawan resmi (format <code>.xlsx</code> atau <code>.xls</code>). Sistem akan membaca sheet <strong>ITSP</strong> dan <strong>Trainee</strong> secara otomatis.
+              Upload the official master employee Excel file (format <code>.xlsx</code> or <code>.xls</code>). The system will automatically read both the <strong>ITSP</strong> and <strong>Trainee</strong> sheets.
             </Typography>
 
             <Box
@@ -3518,16 +3576,16 @@ export default function AdminEmployeesPage() {
                     {importFile.name}
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#64748B' }}>
-                    Ukuran: {(importFile.size / 1024 / 1024).toFixed(2)} MB • Klik untuk ganti file
+                    Size: {(importFile.size / 1024 / 1024).toFixed(2)} MB • Click to replace file
                   </Typography>
                 </>
               ) : (
                 <>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#334155' }}>
-                    Klik untuk memilih file Excel (.xlsx)
+                    Click to select Excel file (.xlsx)
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94A3B8' }}>
-                    Mendukung file Master Employee PT ITSP
+                    Supports PT ITSP Master Employee official template
                   </Typography>
                 </>
               )}
@@ -3548,10 +3606,10 @@ export default function AdminEmployeesPage() {
                 label={
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
-                      Sertakan Data Mantan Employees / Alumni (Sheet &quot;Out&quot;)
+                      Include Former Employees / Alumni (Sheet &quot;Out&quot;)
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                      Status karyawan ini akan ditandai sebagai &quot;resign&quot; di sistem.
+                      These records will be marked with status &quot;resign&quot; in the system.
                     </Typography>
                   </Box>
                 }
@@ -3572,7 +3630,7 @@ export default function AdminEmployeesPage() {
                       Clear / Reset All Old Data First
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#64748B' }}>
-                      Pilih opsi ini jika Anda ingin mengosongkan database terlebih dahulu dan menimpa dengan file baru.
+                      Select this option to erase existing records first and overwrite with new data.
                     </Typography>
                   </Box>
                 }
@@ -3592,7 +3650,7 @@ export default function AdminEmployeesPage() {
               startIcon={importing ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <UploadFileIcon />}
               sx={{ bgcolor: '#018730', fontWeight: 800, '&:hover': { bgcolor: '#005c21' } }}
             >
-              {importing ? 'Mengimpor Data...' : 'Mulai Import Data'}
+              {importing ? 'Importing Data...' : 'Start Import'}
             </Button>
           </DialogActions>
         </form>
@@ -3619,7 +3677,7 @@ export default function AdminEmployeesPage() {
             <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
               CRITICAL WARNING!
             </Typography>
-            Tindakan ini akan <strong>menghapus permanen seluruh ({employees.length}) data karyawan</strong> dari database sistem. Data yang sudah dihapus tidak dapat dipulihkan.
+            This action will <strong>permanently delete all ({employees.length}) employee records</strong> from the database. Deleted records cannot be recovered.
           </Alert>
 
           <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>
@@ -3633,7 +3691,7 @@ export default function AdminEmployeesPage() {
           <TextField
             fullWidth
             size="small"
-            placeholder="Ketik DELETE ALL"
+            placeholder="Type DELETE ALL"
             value={confirmDeleteAllText}
             onChange={(e) => setConfirmDeleteAllText(e.target.value)}
             disabled={deletingAll}
@@ -3653,7 +3711,7 @@ export default function AdminEmployeesPage() {
             startIcon={deletingAll ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <DeleteSweepIcon />}
             sx={{ fontWeight: 800 }}
           >
-            {deletingAll ? 'Deleting All Data...' : 'Kosongkan Seluruh Data Employees'}
+            {deletingAll ? 'Deleting All Data...' : 'Permanently Delete All Employees'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -3671,7 +3729,7 @@ export default function AdminEmployeesPage() {
 
         <DialogContent sx={{ p: 3 }}>
           <Typography variant="body1" sx={{ color: '#0F172A', mb: 1, mt: 1 }}>
-            Apakah Anda yakin ingin menghapus data karyawan berikut?
+            Are you sure you want to delete this employee record?
           </Typography>
           <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', mb: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>
@@ -3685,7 +3743,7 @@ export default function AdminEmployeesPage() {
             </Typography>
           </Box>
           <Typography variant="caption" sx={{ color: '#DC2626', fontWeight: 600 }}>
-            Catatan: Data ini akan dihapus permanen dari daftar master karyawan.
+            Note: This record will be permanently deleted from the employee master list.
           </Typography>
         </DialogContent>
 
@@ -3711,7 +3769,7 @@ export default function AdminEmployeesPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <ExitToAppIcon />
-              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17 }}>Tandai Employees Keluar</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17 }}>Mark Employee Exit / Separation</Typography>
             </Box>
             <IconButton size="small" onClick={() => setTerminateModalOpen(false)} sx={{ color: '#FDE68A' }} disabled={terminating}>
               <CloseIcon />
@@ -3734,18 +3792,18 @@ export default function AdminEmployeesPage() {
               <TextField
                 fullWidth
                 select
-                label="Alasan Keluar *"
+                label="Exit Reason *"
                 size="small"
                 value={terminateReason}
                 onChange={(e) => setTerminateReason(e.target.value)}
               >
                 <MenuItem value="Contract Expired (Not Extended)">Contract Expired (Not Extended)</MenuItem>
-                <MenuItem value="Pengunduran Diri (Resign)">Pengunduran Diri (Resign)</MenuItem>
-                <MenuItem value="PHK (Pemutusan Hubungan Kerja)">PHK (Pemutusan Hubungan Kerja)</MenuItem>
+                <MenuItem value="Pengunduran Diri (Resign)">Voluntary Resignation</MenuItem>
+                <MenuItem value="PHK (Pemutusan Hubungan Kerja)">Termination / Layoff</MenuItem>
                 <MenuItem value="Internship Completed">Internship Completed</MenuItem>
-                <MenuItem value="Meninggal Dunia">Meninggal Dunia</MenuItem>
-                <MenuItem value="Pensiun">Pensiun</MenuItem>
-                <MenuItem value="Lainnya">Lainnya</MenuItem>
+                <MenuItem value="Meninggal Dunia">Deceased</MenuItem>
+                <MenuItem value="Pensiun">Retirement</MenuItem>
+                <MenuItem value="Lainnya">Other</MenuItem>
               </TextField>
             </Grid>
             <Grid size={{ xs: 12 }}>
@@ -3766,7 +3824,7 @@ export default function AdminEmployeesPage() {
                 rows={3}
                 label="Additional Notes (Optional)"
                 size="small"
-                placeholder="Misal: Employees mengundurkan diri karena alasan pribadi..."
+                placeholder="Example: Employee resigned due to personal reasons..."
                 value={terminateNotes}
                 onChange={(e) => setTerminateNotes(e.target.value)}
               />
@@ -3801,7 +3859,7 @@ export default function AdminEmployeesPage() {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PersonAddIcon sx={{ color: '#4ADE80' }} />
-                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, color: '#FFFFFF' }}>Add Employee Baru</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, fontSize: 17, color: '#FFFFFF' }}>Add New Employee</Typography>
               </Box>
               <IconButton size="small" onClick={() => setCreateModalOpen(false)} sx={{ color: '#94A3B8' }} disabled={creating}>
                 <CloseIcon />
@@ -3811,9 +3869,9 @@ export default function AdminEmployeesPage() {
 
           <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#F8FAFC' }}>
             <Tabs value={createTab} onChange={(_, v) => setCreateTab(v)} sx={{ px: 2 }}>
-              <Tab label="Data Pribadi" sx={{ fontWeight: 700, textTransform: 'none', fontSize: 13 }} />
+              <Tab label="Personal Details" sx={{ fontWeight: 700, textTransform: 'none', fontSize: 13 }} />
               <Tab label="Employment Data" sx={{ fontWeight: 700, textTransform: 'none', fontSize: 13 }} />
-              <Tab label="Data Keuangan" sx={{ fontWeight: 700, textTransform: 'none', fontSize: 13 }} />
+              <Tab label="Financial & Compensation" sx={{ fontWeight: 700, textTransform: 'none', fontSize: 13 }} />
             </Tabs>
           </Box>
 
@@ -3821,28 +3879,28 @@ export default function AdminEmployeesPage() {
             {createTab === 0 && (
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField required fullWidth size="small" label="Nama Lengkap *" value={createFullName} onChange={(e) => setCreateFullName(e.target.value)} />
+                  <TextField required fullWidth size="small" label="Full Name *" value={createFullName} onChange={(e) => setCreateFullName(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth size="small" label="National ID (KTP)" value={createNik} onChange={(e) => setCreateNik(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth size="small" label="No. HP / WhatsApp" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
+                  <TextField fullWidth size="small" label="Phone / WhatsApp" value={createPhone} onChange={(e) => setCreatePhone(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth size="small" label="Email" type="email" value={createEmail} onChange={(e) => setCreateEmail(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField fullWidth select size="small" label="Gender" value={createGender} onChange={(e) => setCreateGender(e.target.value)}>
-                    <MenuItem value="Laki-laki">Laki-laki</MenuItem>
-                    <MenuItem value="Perempuan">Perempuan</MenuItem>
+                    <MenuItem value="Laki-laki">Male</MenuItem>
+                    <MenuItem value="Perempuan">Female</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Tempat Lahir" value={createBirthPlace} onChange={(e) => setCreateBirthPlace(e.target.value)} />
+                  <TextField fullWidth size="small" label="Place of Birth" value={createBirthPlace} onChange={(e) => setCreateBirthPlace(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" type="date" label="Tanggal Lahir" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                  <TextField fullWidth size="small" type="date" label="Date of Birth" value={createBirthDate} onChange={(e) => setCreateBirthDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField fullWidth select size="small" label="Religion" value={createReligion} onChange={(e) => setCreateReligion(e.target.value)}>
@@ -3871,7 +3929,7 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="Section / Sub-Dept" value={createSection} onChange={(e) => setCreateSection(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth select size="small" label="Tipe Employees" value={createEmployeeType} onChange={(e) => setCreateEmployeeType(e.target.value)}>
+                  <TextField fullWidth select size="small" label="Employee Type" value={createEmployeeType} onChange={(e) => setCreateEmployeeType(e.target.value)}>
                     <MenuItem value="Direct">Direct</MenuItem>
                     <MenuItem value="Indirect">Indirect</MenuItem>
                   </TextField>
@@ -3879,13 +3937,13 @@ export default function AdminEmployeesPage() {
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField fullWidth select size="small" label="Employment Type *" value={createContractStatus} onChange={(e) => setCreateContractStatus(e.target.value)}>
                     <MenuItem value="PKWT">PKWT (Contract)</MenuItem>
-                    <MenuItem value="PKWTT">PKWTT (Tetap)</MenuItem>
-                    <MenuItem value="Trainee">Trainee (Magang)</MenuItem>
-                    <MenuItem value="Expatriate">Expatriate (Tenaga Asing)</MenuItem>
+                    <MenuItem value="PKWTT">PKWTT (Permanent)</MenuItem>
+                    <MenuItem value="Trainee">Trainee (Internship)</MenuItem>
+                    <MenuItem value="Expatriate">Expatriate</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth size="small" label="Lokasi Kerja" value={createLocation} onChange={(e) => setCreateLocation(e.target.value)} />
+                  <TextField fullWidth size="small" label="Work Location" value={createLocation} onChange={(e) => setCreateLocation(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField fullWidth size="small" type="date" label="Start Date / Join Date *" value={createJoinDate} onChange={(e) => setCreateJoinDate(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
@@ -3910,13 +3968,13 @@ export default function AdminEmployeesPage() {
                   <TextField fullWidth size="small" label="No. NPWP" value={createNpwp} onChange={(e) => setCreateNpwp(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField fullWidth size="small" label="No. BPJS Ketenagakerjaan" value={createBpjsTk} onChange={(e) => setCreateBpjsTk(e.target.value)} />
+                  <TextField fullWidth size="small" label="BPJS Employment No." value={createBpjsTk} onChange={(e) => setCreateBpjsTk(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Account No. (Nomor Employees Lama)" value={createAccountNo} onChange={(e) => setCreateAccountNo(e.target.value)} />
+                  <TextField fullWidth size="small" label="Legacy Employee / Account No." value={createAccountNo} onChange={(e) => setCreateAccountNo(e.target.value)} />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <TextField fullWidth size="small" label="Nama Bank" value={createBankName} onChange={(e) => setCreateBankName(e.target.value)} placeholder="Misal: BRI, BNI, Mandiri" />
+                  <TextField fullWidth size="small" label="Bank Name" value={createBankName} onChange={(e) => setCreateBankName(e.target.value)} placeholder="e.g. BRI, BNI, Mandiri, BCA" />
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <TextField fullWidth size="small" label="Bank Account Number" value={createBankAcc} onChange={(e) => setCreateBankAcc(e.target.value)} />
@@ -3928,7 +3986,7 @@ export default function AdminEmployeesPage() {
           <DialogActions sx={{ p: 2.5, bgcolor: '#F1F5F9', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
               {createTab > 0 && <Button onClick={() => setCreateTab((t) => t - 1)} sx={{ color: '#64748B' }}>← Previous</Button>}
-              {createTab < 2 && <Button onClick={() => setCreateTab((t) => t + 1)} sx={{ color: '#018730', fontWeight: 700 }}>Selanjutnya →</Button>}
+              {createTab < 2 && <Button onClick={() => setCreateTab((t) => t + 1)} sx={{ color: '#018730', fontWeight: 700 }}>Next →</Button>}
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Button onClick={() => setCreateModalOpen(false)} disabled={creating} sx={{ color: '#64748B' }}>Cancel</Button>
@@ -3939,7 +3997,7 @@ export default function AdminEmployeesPage() {
                 startIcon={creating ? <CircularProgress size={18} sx={{ color: '#FFFFFF' }} /> : <PersonAddIcon />}
                 sx={{ fontWeight: 800, bgcolor: '#0F172A', '&:hover': { bgcolor: '#1E293B' } }}
               >
-                {creating ? 'Saving...' : 'Save Employees Baru'}
+                {creating ? 'Saving...' : 'Save New Employee'}
               </Button>
             </Box>
           </DialogActions>
@@ -3999,18 +4057,18 @@ export default function AdminEmployeesPage() {
             onChange={(e) => setRetentionMonths(Number(e.target.value))}
             sx={{ mb: 2 }}
           >
-            <MenuItem value={1}>1 Months</MenuItem>
+            <MenuItem value={1}>1 Month</MenuItem>
             <MenuItem value={3}>3 Months</MenuItem>
             <MenuItem value={6}>6 Months</MenuItem>
-            <MenuItem value={12}>1 Years (Default)</MenuItem>
+            <MenuItem value={12}>1 Year (Default)</MenuItem>
             <MenuItem value={24}>2 Years</MenuItem>
-            <MenuItem value={0}>Selamanya (Tidak Pernah Dihapus)</MenuItem>
+            <MenuItem value={0}>Forever (Never Auto-Delete)</MenuItem>
           </TextField>
 
           {retentionExpiredCount > 0 && (
             <Alert severity="warning" sx={{ mt: 1 }}>
               <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                Ada <strong>{retentionExpiredCount}</strong> data riwayat yang sudah melewati batas retensi dan siap dihapus.
+                There are <strong>{retentionExpiredCount}</strong> records exceeding the retention limit ready for cleanup.
               </Typography>
             </Alert>
           )}

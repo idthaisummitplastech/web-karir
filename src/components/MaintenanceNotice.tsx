@@ -148,9 +148,9 @@ export default function MaintenanceNotice({
           </Typography>
 
           <Grid container spacing={2} sx={{ mb: 4, textAlign: 'left' }}>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: '#F8FAFC', border: '1px solid #F1F5F9', height: '100%' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <SpeedIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     Sistem ATS Aktif
@@ -161,9 +161,9 @@ export default function MaintenanceNotice({
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: '#F8FAFC', border: '1px solid #F1F5F9', height: '100%' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <SecurityIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     Seleksi 100% Gratis
@@ -174,9 +174,9 @@ export default function MaintenanceNotice({
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box sx={{ p: 2, borderRadius: 2.5, bgcolor: '#F8FAFC', border: '1px solid #F1F5F9', height: '100%' }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <SupportAgentIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     HR Support
@@ -192,8 +192,7 @@ export default function MaintenanceNotice({
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
-            justifyContent="center"
-            sx={{ mb: 4 }}
+            sx={{ justifyContent: 'center', mb: 4 }}
           >
             <Button
               component={Link}
@@ -260,9 +259,7 @@ export default function MaintenanceNotice({
           <Stack
             direction="row"
             spacing={1}
-            justifyContent="center"
-            alignItems="center"
-            sx={{ color: '#64748B', fontSize: 13 }}
+            sx={{ justifyContent: 'center', alignItems: 'center', color: '#64748B', fontSize: 13 }}
           >
             <EmailIcon sx={{ fontSize: 16, color: '#fc4509' }} />
             <span>HR & Recruitment Contact: info.itsp@thaisummit.co.id</span>

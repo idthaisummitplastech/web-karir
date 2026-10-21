@@ -116,6 +116,7 @@ import {
 } from '@/lib/offering-letter';
 import { useSmartSync } from '@/lib/use-smart-sync';
 import { downloadFile } from '@/lib/download-helper';
+import * as XLSX from 'xlsx';
 
 // Interactive Digital Signature Canvas for HR/Admin
 const DigitalSignatureCanvas: React.FC<{
@@ -463,6 +464,81 @@ export default function AdminApplicantsPage() {
   const [advanceOfferingSignature, setAdvanceOfferingSignature] = useState('');
   const [advanceOfferingSignMode, setAdvanceOfferingSignMode] = useState<'draw' | 'upload'>('draw');
   const [isEditingOfferingOnly, setIsEditingOfferingOnly] = useState(false);
+
+
+  const handleExportApplicants = (format: 'xlsx' | 'csv' = 'xlsx') => {
+    if (applicants.length === 0) {
+      alert('No applicant data to export.');
+      return;
+    }
+
+    const curDate = new Date().toISOString().split('T')[0];
+    const headers = [
+      'No',
+      'Full Name',
+      'Email',
+      'Phone Number',
+      'Job Applied',
+      'Department',
+      'Current Stage',
+      'Stage Name',
+      'Stage Status',
+      'Last Education',
+      'Major',
+      'School / University',
+      'Age',
+      'Applied Date',
+    ];
+
+    const rows = applicants.map((a: any, idx: number) => {
+      const stageObj = RECRUITMENT_STAGES.find((s) => s.number === a.currentStage);
+      const stageName = stageObj ? stageObj.shortName : `Stage ${a.currentStage}`;
+      const appDate = a.createdAt ? String(a.createdAt).slice(0, 10) : '';
+
+      return [
+        idx + 1,
+        a.fullName || '',
+        a.email || '',
+        a.phone || '',
+        a.jobPosting?.title || a.job_posting?.title || '',
+        a.jobPosting?.department || a.job_posting?.department || '',
+        a.currentStage || 1,
+        stageName,
+        a.stageStatus || a.stage_status || 'in_progress',
+        a.lastEducation || a.last_education || '',
+        a.major || '',
+        a.schoolName || a.school_name || '',
+        a.age ?? '',
+        appDate,
+      ];
+    });
+
+    if (format === 'xlsx') {
+      const worksheetData = [headers, ...rows];
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+      XLSX.utils.book_append_sheet(wb, ws, "Applicants");
+      XLSX.writeFile(wb, `DATA_PELAMAR_PT_ITSP_${curDate}.xlsx`);
+      return;
+    }
+
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const clean = String(str).replace(/"/g, '""').replace(/\r?\n/g, ' ');
+      return `"${clean}"`;
+    };
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.map(escapeCsv).join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `DATA_PELAMAR_PT_ITSP_${curDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  };
 
   // Stage 7: Official Employee Appointment & Physical Contract Signing
   const [hireContractModalOpen, setHireContractModalOpen] = useState(false);
@@ -1745,8 +1821,8 @@ export default function AdminApplicantsPage() {
               >
                 <MenuItem value="">All Statuses</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="passed">Lolos Stage Ini</MenuItem>
-                <MenuItem value="failed">Tidak Lolos</MenuItem>
+                <MenuItem value="passed">Passed This Stage</MenuItem>
+                <MenuItem value="failed">Failed</MenuItem>
               </TextField>
             </Box>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -1771,6 +1847,36 @@ export default function AdminApplicantsPage() {
                   Reset
                 </Button>
               )}
+              <Button
+                variant="contained"
+                onClick={() => handleExportApplicants('xlsx')}
+                startIcon={<DownloadIcon />}
+                sx={{
+                  bgcolor: '#0F172A',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: '#1E293B' },
+                }}
+              >
+                Export Excel (.xlsx)
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => handleExportApplicants('csv')}
+                startIcon={<DownloadIcon />}
+                sx={{
+                  borderColor: '#CBD5E1',
+                  color: '#334155',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: '#F1F5F9', borderColor: '#94A3B8' },
+                }}
+              >
+                Export CSV
+              </Button>
             </Box>
           </Box>
         </CardContent>
@@ -2753,7 +2859,7 @@ export default function AdminApplicantsPage() {
                   startIcon={<DownloadIcon />}
                   sx={{ textTransform: 'none', fontWeight: 700, borderColor: '#018730', color: '#018730' }}
                 >
-                  Unduh CV (PDF)
+                  Download CV
                 </Button>
               )}
               <IconButton onClick={() => setDetailModalOpen(false)} sx={{ color: '#64748B' }}>
@@ -3423,7 +3529,7 @@ export default function AdminApplicantsPage() {
                                     {doc.category}
                                   </Typography>
                                   <Chip
-                                    label={hasFile ? 'Tersedia' : doc.required ? 'Belum Diunggah' : 'Opsional'}
+                                    label={hasFile ? 'Available' : doc.required ? 'Not Uploaded' : 'Optional'}
                                     size="small"
                                     sx={{
                                       bgcolor: hasFile ? '#DCFCE7' : doc.required ? '#FEE2E2' : '#F1F5F9',
@@ -3501,7 +3607,7 @@ export default function AdminApplicantsPage() {
                                         '&:hover': { bgcolor: '#F8FAFC', borderColor: '#94A3B8' },
                                       }}
                                     >
-                                      Lihat
+                                      View
                                     </Button>
                                     <Button
                                       size="small"
@@ -3523,7 +3629,7 @@ export default function AdminApplicantsPage() {
                                         '&:hover': { bgcolor: '#005c21' },
                                       }}
                                     >
-                                      Unduh
+                                      Download
                                     </Button>
                                   </>
                                 ) : (
