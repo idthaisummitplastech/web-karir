@@ -535,8 +535,8 @@ export default function AdminIdCardsPage() {
   // PT Address Choice (KIIC or GIIC)
   const [selectedPlant, setSelectedPlant] = useState<'GIIC' | 'KIIC'>('GIIC');
 
-  // Print Display Mode: 'all_panels' (6 panels official Excel) | 'mutu_only' (4 panels) | 'id_card_only' (Front & Back only)
-  const [printLayoutMode, setPrintLayoutMode] = useState<'all_panels' | 'mutu_only' | 'id_card_only'>('all_panels');
+  // Print Display Mode: 'mutu_only' (4 panels — Front, Back, Quality EN, Quality ID) | 'id_card_only' (Front & Back only)
+  const [printLayoutMode, setPrintLayoutMode] = useState<'mutu_only' | 'id_card_only'>('mutu_only');
 
   // Default Digital HR Signature
   const [defaultHrSignature, setDefaultHrSignature] = useState<string>('');
@@ -545,6 +545,11 @@ export default function AdminIdCardsPage() {
   // Signature scale for ID Card print preview (30-250%, default 100)
   const [signatureScale, setSignatureScale] = useState<number>(100);
   const [tempSignatureScale, setTempSignatureScale] = useState<number>(100);
+
+  // Inline photo upload state
+  const [photoUploadingId, setPhotoUploadingId] = useState<number | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const [photoUploadTarget, setPhotoUploadTarget] = useState<any | null>(null);
 
   // Load Saved Format & Signature from localStorage on Mount
   useEffect(() => {
@@ -681,6 +686,79 @@ export default function AdminIdCardsPage() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Inline Photo Upload Handler — uploads directly and syncs to employee data
+  const handlePhotoUploadClick = (emp: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoUploadTarget(emp);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = '';
+      photoInputRef.current.click();
+    }
+  };
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !photoUploadTarget) return;
+    if (!file.type.startsWith('image/')) {
+      alert('File harus berupa gambar (JPG/PNG/WEBP).');
+      return;
+    }
+    // Compress and convert to base64
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const src = evt.target?.result as string;
+      if (!src) return;
+      const img = new (window as any).Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 400;
+        const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL('image/jpeg', 0.82);
+
+        setPhotoUploadingId(photoUploadTarget.id);
+        try {
+          const source: string = photoUploadTarget.source || 'employee';
+          const empId: number = photoUploadTarget.id;
+          let endpoint = `/api/admin/employees/${empId}`;
+          if (source === 'applicant') {
+            endpoint = `/api/admin/applicants/${empId}`;
+          }
+          const res = await fetch(endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photoProfile: base64 }),
+          });
+          if (res.ok) {
+            // Update local state immediately so preview refreshes
+            setEmployees((prev) =>
+              prev.map((item) =>
+                item.id === empId ? { ...item, photoProfile: base64 } : item
+              )
+            );
+            if (selectedEmp?.id === empId) {
+              setSelectedEmp((prev: any) => ({ ...prev, photoProfile: base64 }));
+            }
+          } else {
+            const err = await res.json().catch(() => ({}));
+            alert('Gagal menyimpan foto: ' + (err?.error || res.statusText));
+          }
+        } catch (err: any) {
+          alert('Error upload foto: ' + err.message);
+        } finally {
+          setPhotoUploadingId(null);
+          setPhotoUploadTarget(null);
+        }
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
   };
 
   // Save Default HR Signature
@@ -1219,7 +1297,7 @@ export default function AdminIdCardsPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                overflow: 'hidden',
+                overflow: 'visible',
                 bgcolor: '#FFFFFF',
               }}
             >
@@ -1229,7 +1307,7 @@ export default function AdminIdCardsPage() {
               <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
                 {customFmt.qualityTitleEn}
               </Typography>
-              <Typography sx={{ fontSize: '9px', color: '#000000', textAlign: 'justify', lineHeight: 1.4 }}>
+              <Typography sx={{ fontSize: '8.8px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
                 {customFmt.qualityTextEn}
               </Typography>
             </Box>
@@ -1245,7 +1323,7 @@ export default function AdminIdCardsPage() {
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                overflow: 'hidden',
+                overflow: 'visible',
                 bgcolor: '#FFFFFF',
               }}
             >
@@ -1255,109 +1333,13 @@ export default function AdminIdCardsPage() {
               <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
                 {customFmt.qualityTitleId}
               </Typography>
-              <Typography sx={{ fontSize: '9px', color: '#000000', textAlign: 'justify', lineHeight: 1.4 }}>
+              <Typography sx={{ fontSize: '8.8px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
                 {customFmt.qualityTextId}
               </Typography>
             </Box>
           </Box>
         )}
 
-        {/* ROW 3: ENVIRONMENTAL POLICY STATEMENT (Shown if printLayoutMode === 'all_panels') */}
-        {printLayoutMode === 'all_panels' && (
-          <Box
-            className="notranslate itsp-idcard-row-pair"
-            translate="no"
-            sx={{
-              width: '100%',
-              maxWidth: '710px',
-              mx: 'auto',
-              bgcolor: '#FFFFFF',
-              fontFamily: 'Arial, Helvetica, sans-serif',
-              color: '#000000',
-              border: '1.5px solid #000000',
-              boxSizing: 'border-box',
-              mb: 2,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              height: { xs: 'auto', sm: '224px' },
-            }}
-          >
-            {/* Panel 5: Enviromental Policy Statement (English - Left) */}
-            <Box
-              className="notranslate itsp-idcard-panel"
-              translate="no"
-              sx={{
-                p: 1.5,
-                borderRight: '1.5px solid #000000',
-                height: '100%',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                overflow: 'hidden',
-                bgcolor: '#FFFFFF',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
-                {customFmt.companyName.toUpperCase()}
-              </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
-                {customFmt.environmentalTitleEn}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, fontSize: '8.8px', color: '#000000', lineHeight: 1.32 }}>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>1.</span>
-                  <span>{customFmt.environmentalItem1En.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>2.</span>
-                  <span>{customFmt.environmentalItem2En.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>3.</span>
-                  <span>{customFmt.environmentalItem3En.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Panel 6: Kebijakan Lingkungan Perusahaan (Indonesian - Right) */}
-            <Box
-              className="notranslate itsp-idcard-panel"
-              translate="no"
-              sx={{
-                p: 1.5,
-                height: '100%',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                overflow: 'hidden',
-                bgcolor: '#FFFFFF',
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
-                {customFmt.companyName.toUpperCase()}
-              </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
-                {customFmt.environmentalTitleId}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, fontSize: '8.8px', color: '#000000', lineHeight: 1.32 }}>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>1.</span>
-                  <span>{customFmt.environmentalItem1Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>2.</span>
-                  <span>{customFmt.environmentalItem2Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-                <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>3.</span>
-                  <span>{customFmt.environmentalItem3Id.replace(/^[0-9]+[\.\s]*/, '')}</span>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        )}
       </Box>
     );
   };
@@ -1584,8 +1566,17 @@ export default function AdminIdCardsPage() {
             filteredCount={filteredEmployees.length}
           />
 
+          {/* Hidden file input for photo upload */}
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoFileChange}
+          />
+
           <TableContainer component={Paper} sx={{ borderRadius: 2.5, border: '1px solid #E2E8F0', overflowX: 'auto' }}>
-            <Table size="small" sx={{ minWidth: 700 }}>
+            <Table size="small" sx={{ minWidth: 760 }}>
               <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell padding="checkbox" sx={{ py: 1.5 }}>
@@ -1600,6 +1591,7 @@ export default function AdminIdCardsPage() {
                       sx={{ color: '#018730', '&.Mui-checked': { color: '#018730' } }}
                     />
                   </TableCell>
+                  <TableCell sx={{ fontWeight: 800, py: 1.5, width: 72 }}>Foto</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Employee</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>ID Employee</TableCell>
                   <TableCell sx={{ fontWeight: 800, py: 1.5 }}>Department</TableCell>
@@ -1649,21 +1641,70 @@ export default function AdminIdCardsPage() {
                           />
                         </TableCell>
 
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                            <Avatar
-                              src={emp.photoProfile || undefined}
+                        {/* Foto column with inline upload */}
+                        <TableCell onClick={(e) => e.stopPropagation()} sx={{ width: 72, textAlign: 'center' }}>
+                          <Tooltip title={emp.photoProfile ? 'Ganti Foto' : 'Upload Foto'} placement="top">
+                            <Box
+                              onClick={(e) => handlePhotoUploadClick(emp, e)}
                               sx={{
-                                width: 34,
-                                height: 34,
-                                fontSize: 13,
-                                bgcolor: isChecked ? '#018730' : '#E2E8F0',
-                                color: isChecked ? '#FFFFFF' : '#0F172A',
-                                fontWeight: 800,
+                                position: 'relative',
+                                width: 44,
+                                height: 44,
+                                mx: 'auto',
+                                cursor: 'pointer',
+                                borderRadius: '50%',
+                                border: emp.photoProfile ? '2px solid #018730' : '2px dashed #CBD5E1',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: '#F8FAFC',
+                                transition: 'all 0.15s',
+                                '&:hover': {
+                                  borderColor: '#018730',
+                                  bgcolor: '#F0FDF4',
+                                  '& .photo-upload-overlay': { opacity: 1 },
+                                },
                               }}
                             >
-                              {emp.namaLengkap?.charAt(0) || 'K'}
-                            </Avatar>
+                              {photoUploadingId === emp.id ? (
+                                <CircularProgress size={20} sx={{ color: '#018730' }} />
+                              ) : emp.photoProfile ? (
+                                <>
+                                  <Box
+                                    component="img"
+                                    src={emp.photoProfile}
+                                    alt={emp.namaLengkap}
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                  />
+                                  <Box
+                                    className="photo-upload-overlay"
+                                    sx={{
+                                      position: 'absolute',
+                                      inset: 0,
+                                      bgcolor: 'rgba(0,0,0,0.45)',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      opacity: 0,
+                                      transition: 'opacity 0.15s',
+                                    }}
+                                  >
+                                    <UploadIcon sx={{ fontSize: 18, color: '#FFFFFF' }} />
+                                  </Box>
+                                </>
+                              ) : (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.2 }}>
+                                  <UploadIcon sx={{ fontSize: 16, color: '#94A3B8' }} />
+                                  <Typography sx={{ fontSize: 7, color: '#94A3B8', fontWeight: 700, lineHeight: 1 }}>Foto</Typography>
+                                </Box>
+                              )}
+                            </Box>
+                          </Tooltip>
+                        </TableCell>
+
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                             <Box>
                               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', fontSize: 13 }}>
                                 {emp.namaLengkap}
@@ -1810,17 +1851,17 @@ export default function AdminIdCardsPage() {
                   <Stack direction="row" spacing={1}>
                     <Button
                       size="small"
-                      variant={printLayoutMode === 'all_panels' ? 'contained' : 'outlined'}
-                      onClick={() => setPrintLayoutMode('all_panels')}
+                      variant={printLayoutMode === 'mutu_only' ? 'contained' : 'outlined'}
+                      onClick={() => setPrintLayoutMode('mutu_only')}
                       sx={{
                         fontSize: 11,
                         textTransform: 'none',
                         py: 0.3,
                         px: 1.2,
                         borderRadius: 1.5,
-                        bgcolor: printLayoutMode === 'all_panels' ? '#0F172A' : 'transparent',
+                        bgcolor: printLayoutMode === 'mutu_only' ? '#0F172A' : 'transparent',
                         borderColor: '#0F172A',
-                        color: printLayoutMode === 'all_panels' ? '#FFFFFF' : '#0F172A',
+                        color: printLayoutMode === 'mutu_only' ? '#FFFFFF' : '#0F172A',
                       }}
                     >
                       4 Full Panels (User Excel Format)
