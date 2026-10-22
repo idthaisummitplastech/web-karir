@@ -1,16 +1,12 @@
+'use client';
+
 import * as React from 'react';
-import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Box, Container, Typography, Button, Stack, Paper } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
-
-export const metadata: Metadata = {
-  title: '404 - Page Not Found — PT ITSP Career Portal',
-  description: 'The requested page, vacancy, or file was not found.',
-};
 
 export default function KarirNotFound() {
   return (
