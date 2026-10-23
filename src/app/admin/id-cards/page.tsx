@@ -97,17 +97,17 @@ export interface IdCardFormatConfig {
 
 // Default Official Factory Format as per User Excel Document
 const DEFAULT_IDCARD_FORMAT: IdCardFormatConfig = {
-  templateVersion: 2,
+  templateVersion: 3,
   companyName: 'PT. Indonesia Thai Summit Plastech',
-  kiicLine1: 'Jl. Permata Raya Lot FF-5, Telukjambe Timur',
-  kiicLine2: 'Kawasan KIIC, Karawang – 41361',
-  giicLine1: 'Jl. Edelweis Block DC-1B, Sukamukti Bojongmangu',
-  giicLine2: 'Kawasan GIIC, Kabupaten Bekasi – 17350',
+  kiicLine1: 'Jl. Permata Raya Lot FF-5, Telukjambe Timur,',
+  kiicLine2: 'Kawasan KIIC, Karawang - 41361',
+  giicLine1: 'Jl. Edelveis Block DC-1B, Sukamukti Bojongmangu,',
+  giicLine2: 'Kawasan GIIC, Kabupaten Bekasi - 17350',
   labelEmployeeId: 'Employee ID.',
   labelName: 'Name',
   labelPosition: 'Position',
   labelDepartment: 'Department',
-  labelAuthorizerSignature: "Authorizer's Signature ....................",
+  labelAuthorizerSignature: "Authorizer's Signature  ........................",
   hrmSignerTitle: 'HRM',
   hrmCompanyFooter: 'PT. Indonesia Thai Summit Plastech',
   termsTitle: 'Ketentuan Penggunaan',
@@ -573,11 +573,11 @@ export default function AdminIdCardsPage() {
       const savedFormat = localStorage.getItem('itsp_custom_idcard_format');
       if (savedFormat) {
         const parsed = JSON.parse(savedFormat);
-        if (parsed && parsed.templateVersion === 2) {
+        if (parsed && parsed.templateVersion === 3) {
           setCardFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
           setTempFormat({ ...DEFAULT_IDCARD_FORMAT, ...parsed });
         } else {
-          // Auto-upgrade to Version 2 (Official ITSP Template with Kebijakan Lingkungan)
+          // Auto-upgrade to Version 3 (Official Excel Layout & Gap Format)
           setCardFormat(DEFAULT_IDCARD_FORMAT);
           setTempFormat(DEFAULT_IDCARD_FORMAT);
           localStorage.setItem('itsp_custom_idcard_format', JSON.stringify(DEFAULT_IDCARD_FORMAT));
@@ -890,10 +890,9 @@ export default function AdminIdCardsPage() {
       : [];
 
   // Split employee list to A4 sheets
-  // In 'all_panels' (6 panels) or 'mutu_only' (4 panels), 1 employee kit fits perfectly per A4 sheet (height ~172mm on 297mm A4).
-  // In 'id_card_only' (2 panels), 2 employees fit per A4 sheet.
+  // Exactly 2 employees per A4 sheet (both 4-panel sets fit on 1 sheet with cutting line between them).
   const a4Pages: any[][] = [];
-  const employeesPerSheet = printLayoutMode === 'id_card_only' ? 2 : 1;
+  const employeesPerSheet = 2;
   for (let i = 0; i < employeesToPrint.length; i += employeesPerSheet) {
     a4Pages.push(employeesToPrint.slice(i, i + employeesPerSheet));
   }
@@ -901,24 +900,23 @@ export default function AdminIdCardsPage() {
   // Component renderer for 1 employee's ID Card kit
   const renderSingleIdCard = (emp: any, customFmt: IdCardFormatConfig = cardFormat) => {
     return (
-      <Box key={emp.id} className="notranslate itsp-employee-card-kit" translate="no" sx={{ width: '100%', maxWidth: '710px', mx: 'auto' }}>
-        {/* ROW 1: FRONT & BACK ID CARD */}
+      <Box key={emp.id} className="notranslate itsp-employee-card-kit" translate="no" sx={{ width: '100%', maxWidth: '720px', mx: 'auto' }}>
+        {/* ROW 1: FRONT & BACK ID CARD (2 Separate Boxes With Gap) */}
         <Box
           className="notranslate itsp-idcard-row-pair"
           translate="no"
           sx={{
             width: '100%',
-            maxWidth: '710px',
+            maxWidth: '720px',
             mx: 'auto',
-            bgcolor: '#FFFFFF',
             fontFamily: 'Arial, Helvetica, sans-serif',
             color: '#000000',
-            border: '1.5px solid #000000',
             boxSizing: 'border-box',
-            mb: 2,
+            mb: { xs: 1.5, sm: 2 },
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            height: { xs: 'auto', sm: '224px' },
+            gap: { xs: 1.5, sm: 2 },
+            height: { xs: 'auto', sm: '228px' },
           }}
         >
           {/* PANEL 1: FRONT ID CARD (LEFT) */}
@@ -926,13 +924,13 @@ export default function AdminIdCardsPage() {
             className="notranslate itsp-idcard-panel"
             translate="no"
             sx={{
-              borderRight: '1.5px solid #000000',
+              border: '1.5px solid #000000',
+              bgcolor: '#FFFFFF',
               display: 'flex',
               flexDirection: 'column',
               boxSizing: 'border-box',
               overflow: 'hidden',
               height: '100%',
-              bgcolor: '#FFFFFF',
             }}
           >
             {/* Header: Exact Excel Table Layout with Grid Borders */}
@@ -947,7 +945,7 @@ export default function AdminIdCardsPage() {
               {/* Left Logo Box: bordered cell */}
               <Box
                 sx={{
-                  width: '92px',
+                  width: '88px',
                   borderRight: '1.5px solid #000000',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1017,61 +1015,53 @@ export default function AdminIdCardsPage() {
                 {/* Row 2: Plan 1 (KIIC) */}
                 <Box
                   sx={{
-                    p: '2px 6px',
+                    p: '1.5px 5px',
                     borderBottom: '1px solid #000000',
                     display: 'flex',
-                    alignItems: 'center',
-                    fontSize: 8,
+                    alignItems: 'flex-start',
+                    fontSize: '7.8px',
                     lineHeight: 1.15,
                     fontFamily: 'Arial, sans-serif',
                     color: '#000000',
                     flexGrow: 1,
                   }}
                 >
-                  <Box sx={{ width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Plan 1 :</span>
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customFmt.kiicLine1.replace(/^Plan\s*1\s*:\s*/i, '')}</span>
-                    </Box>
-                    <Box sx={{ pl: '37px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {customFmt.kiicLine2}
-                    </Box>
+                  <span style={{ fontWeight: 700, width: '38px', flexShrink: 0 }}>Plan 1 :</span>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <div style={{ whiteSpace: 'nowrap' }}>{customFmt.kiicLine1.replace(/^Plan\s*1\s*:\s*/i, '')}</div>
+                    <div style={{ whiteSpace: 'nowrap' }}>{customFmt.kiicLine2}</div>
                   </Box>
                 </Box>
 
                 {/* Row 3: Plan 2 (GIIC) */}
                 <Box
                   sx={{
-                    p: '2px 6px',
+                    p: '1.5px 5px',
                     display: 'flex',
-                    alignItems: 'center',
-                    fontSize: 8,
+                    alignItems: 'flex-start',
+                    fontSize: '7.8px',
                     lineHeight: 1.15,
                     fontFamily: 'Arial, sans-serif',
                     color: '#000000',
                     flexGrow: 1,
                   }}
                 >
-                  <Box sx={{ width: '100%' }}>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
-                      <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Plan 2 :</span>
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{customFmt.giicLine1.replace(/^Plan\s*2\s*:\s*/i, '')}</span>
-                    </Box>
-                    <Box sx={{ pl: '37px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {customFmt.giicLine2}
-                    </Box>
+                  <span style={{ fontWeight: 700, width: '38px', flexShrink: 0 }}>Plan 2 :</span>
+                  <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                    <div style={{ whiteSpace: 'nowrap' }}>{customFmt.giicLine1.replace(/^Plan\s*2\s*:\s*/i, '')}</div>
+                    <div style={{ whiteSpace: 'nowrap' }}>{customFmt.giicLine2}</div>
                   </Box>
                 </Box>
               </Box>
             </Box>
 
             {/* Body: Photo on Left + 4 Data Columns on Right */}
-            <Box sx={{ display: 'flex', gap: 1, p: 0.8, alignItems: 'center', flexGrow: 1 }}>
+            <Box sx={{ display: 'flex', gap: 1, p: 0.8, alignItems: 'stretch', flexGrow: 1 }}>
               {/* Official Photo Box with sharp 1px solid border */}
               <Box
                 sx={{
-                  width: 66,
-                  height: 78,
+                  width: 72,
+                  height: 94,
                   border: '1px solid #000000',
                   p: 0.2,
                   bgcolor: '#FFFFFF',
@@ -1113,14 +1103,14 @@ export default function AdminIdCardsPage() {
                 )}
               </Box>
 
-              {/* Table 4 Rows: Employee ID, Name, Position, Department */}
-              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', color: '#000000', tableLayout: 'fixed', fontFamily: 'Arial, sans-serif' }}>
+              {/* Table 4 Rows + Signature */}
+              <Box sx={{ flexGrow: 1, minWidth: 0, pl: 0.6, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', color: '#000000', tableLayout: 'fixed', fontFamily: 'Arial, sans-serif' }}>
                   <tbody>
                     <tr>
                       <td style={{ width: '74px', fontWeight: 700, padding: '1px 0', whiteSpace: 'nowrap' }}>{customFmt.labelEmployeeId}</td>
-                      <td style={{ width: '6px', textAlign: 'center' }}>:</td>
-                      <td style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '10px', wordBreak: 'break-word' }}>
+                      <td style={{ width: '8px', textAlign: 'center' }}>:</td>
+                      <td style={{ fontWeight: 700, fontFamily: 'monospace', fontSize: '9.5px', wordBreak: 'break-word' }}>
                         {formatDisplayId(emp.employeeId)}
                       </td>
                     </tr>
@@ -1141,70 +1131,48 @@ export default function AdminIdCardsPage() {
                     </tr>
                   </tbody>
                 </table>
-              </Box>
-            </Box>
 
-            {/* Footer: Authorizer's Signature */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'flex-end',
-                px: 1,
-                pb: 0.5,
-                mt: 'auto',
-              }}
-            >
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  width: '150px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                {/* Signature Image above dots */}
-                <Box
-                  sx={{
-                    height: `${Math.min(42, Math.max(22, Math.round(26 * (signatureScale / 100))))}px`,
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'center',
-                    overflow: 'visible',
-                  }}
-                >
-                  {defaultHrSignature ? (
-                    <Box
-                      component="img"
-                      src={defaultHrSignature}
-                      alt="Authorizer's Signature"
-                      sx={{
-                        height: `${Math.round(24 * (signatureScale / 100))}px`,
-                        maxWidth: `${Math.round(120 * (signatureScale / 100))}px`,
-                        objectFit: 'contain',
-                        display: 'block',
-                      }}
-                    />
-                  ) : (
-                    <Typography sx={{ color: '#94A3B8', fontSize: 7.5 }}>
-                      [HR Signature]
-                    </Typography>
-                  )}
+                {/* Authorizer's Signature directly below department, matching Excel rows 11-13 */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', pr: 0.5, mt: 'auto' }}>
+                  <Box
+                    sx={{
+                      height: `${Math.min(36, Math.max(18, Math.round(22 * (signatureScale / 100))))}px`,
+                      width: '120px',
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      justifyContent: 'center',
+                      overflow: 'visible',
+                      mb: '-5px',
+                      zIndex: 1,
+                    }}
+                  >
+                    {defaultHrSignature ? (
+                      <Box
+                        component="img"
+                        src={defaultHrSignature}
+                        alt="Authorizer's Signature"
+                        sx={{
+                          height: `${Math.round(22 * (signatureScale / 100))}px`,
+                          maxWidth: `${Math.round(110 * (signatureScale / 100))}px`,
+                          objectFit: 'contain',
+                          display: 'block',
+                        }}
+                      />
+                    ) : null}
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: '7.5px',
+                      fontWeight: 700,
+                      color: '#000000',
+                      lineHeight: 1,
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '-0.2px',
+                    }}
+                  >
+                    {customFmt.labelAuthorizerSignature}
+                  </Typography>
                 </Box>
-                <Typography
-                  sx={{
-                    fontSize: 7.5,
-                    fontWeight: 700,
-                    color: '#000000',
-                    lineHeight: 1.1,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {customFmt.labelAuthorizerSignature}
-                </Typography>
               </Box>
             </Box>
           </Box>
@@ -1214,14 +1182,15 @@ export default function AdminIdCardsPage() {
             className="notranslate itsp-idcard-panel"
             translate="no"
             sx={{
-              p: 1.5,
+              p: 1.4,
+              border: '1.5px solid #000000',
+              bgcolor: '#FFFFFF',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
               boxSizing: 'border-box',
               overflow: 'hidden',
               height: '100%',
-              bgcolor: '#FFFFFF',
             }}
           >
             <Box>
@@ -1238,51 +1207,50 @@ export default function AdminIdCardsPage() {
                 {customFmt.termsTitle}
               </Typography>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, fontSize: '9px', color: '#000000', lineHeight: 1.35, fontFamily: 'Arial, sans-serif' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, fontSize: '8.8px', color: '#000000', lineHeight: 1.35, fontFamily: 'Arial, sans-serif' }}>
                 <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>1.</span>
+                  <span style={{ fontWeight: 700, flexShrink: 0 }}>1.</span>
                   <span>{customFmt.termsItem1.replace(/^[0-9]+[\.\s]*/, '')}</span>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>2.</span>
+                  <span style={{ fontWeight: 700, flexShrink: 0 }}>2.</span>
                   <span>{customFmt.termsItem2.replace(/^[0-9]+[\.\s]*/, '')}</span>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
-                  <span style={{ fontWeight: 700 }}>3.</span>
+                  <span style={{ fontWeight: 700, flexShrink: 0 }}>3.</span>
                   <span>{customFmt.termsItem3.replace(/^[0-9]+[\.\s]*/, '')}</span>
                 </Box>
               </Box>
             </Box>
 
-            <Box sx={{ textAlign: 'right', pt: 0.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, color: '#000000' }}>
+            <Box sx={{ textAlign: 'right', pr: 1, pb: 0.5 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 10, color: '#000000', lineHeight: 1.2 }}>
                 {customFmt.hrmSignerTitle}
               </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 9, color: '#000000' }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 8.8, color: '#000000', lineHeight: 1.2 }}>
                 {customFmt.hrmCompanyFooter}
               </Typography>
             </Box>
           </Box>
         </Box>
 
-        {/* ROW 2: QUALITY POLICY STATEMENT (Shown if printLayoutMode !== 'id_card_only') */}
+        {/* ROW 2: QUALITY POLICY STATEMENT (2 Separate Boxes With Gap) */}
         {printLayoutMode !== 'id_card_only' && (
           <Box
             className="notranslate itsp-idcard-row-pair"
             translate="no"
             sx={{
               width: '100%',
-              maxWidth: '710px',
+              maxWidth: '720px',
               mx: 'auto',
-              bgcolor: '#FFFFFF',
               fontFamily: 'Arial, Helvetica, sans-serif',
               color: '#000000',
-              border: '1.5px solid #000000',
               boxSizing: 'border-box',
-              mb: 2,
+              mb: { xs: 1.5, sm: 2 },
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              height: { xs: 'auto', sm: '224px' },
+              gap: { xs: 1.5, sm: 2 },
+              height: { xs: 'auto', sm: '228px' },
             }}
           >
             {/* Panel 3: Quality Policy Statement (English - Left) */}
@@ -1290,24 +1258,24 @@ export default function AdminIdCardsPage() {
               className="notranslate itsp-idcard-panel"
               translate="no"
               sx={{
-                p: 1.5,
-                borderRight: '1.5px solid #000000',
+                p: 1.4,
+                border: '1.5px solid #000000',
+                bgcolor: '#FFFFFF',
                 height: '100%',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                overflow: 'visible',
-                bgcolor: '#FFFFFF',
+                overflow: 'hidden',
               }}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
                 {customFmt.companyName.toUpperCase()}
               </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
                 {customFmt.qualityTitleEn}
               </Typography>
-              <Typography sx={{ fontSize: '8.8px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
+              <Typography sx={{ fontSize: '8.6px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
                 {customFmt.qualityTextEn}
               </Typography>
             </Box>
@@ -1317,29 +1285,29 @@ export default function AdminIdCardsPage() {
               className="notranslate itsp-idcard-panel"
               translate="no"
               sx={{
-                p: 1.5,
+                p: 1.4,
+                border: '1.5px solid #000000',
+                bgcolor: '#FFFFFF',
                 height: '100%',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-start',
-                overflow: 'visible',
-                bgcolor: '#FFFFFF',
+                overflow: 'hidden',
               }}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
                 {customFmt.companyName.toUpperCase()}
               </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1.2, lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
                 {customFmt.qualityTitleId}
               </Typography>
-              <Typography sx={{ fontSize: '8.8px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
+              <Typography sx={{ fontSize: '8.6px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
                 {customFmt.qualityTextId}
               </Typography>
             </Box>
           </Box>
         )}
-
       </Box>
     );
   };
@@ -1371,11 +1339,11 @@ export default function AdminIdCardsPage() {
         width: 210mm !important;
         min-height: 297mm !important;
         max-height: 297mm !important;
-        padding: 16mm 19.5mm !important;
+        padding: 10mm 15mm !important;
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
-        justifyContent: flex-start !important;
+        justify-content: flex-start !important;
         align-items: center !important;
         background: #ffffff !important;
         border: none !important;
@@ -1386,32 +1354,52 @@ export default function AdminIdCardsPage() {
         page-break-after: avoid !important;
         break-after: avoid !important;
       }
+      .itsp-employee-card-kit {
+        width: 178mm !important;
+        max-width: 178mm !important;
+        min-width: 178mm !important;
+        margin: 0 auto !important;
+        box-sizing: border-box !important;
+      }
       .itsp-idcard-row-pair {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
-        width: 171mm !important;
-        max-width: 171mm !important;
-        min-width: 171mm !important;
+        width: 178mm !important;
+        max-width: 178mm !important;
+        min-width: 178mm !important;
         height: 54mm !important;
         max-height: 54mm !important;
         min-height: 54mm !important;
-        margin: 0 auto 5mm auto !important;
-        display: grid !important;
-        grid-template-columns: 85.5mm 85.5mm !important;
-        border: 1.5px solid #000000 !important;
+        margin: 0 auto 3.5mm auto !important;
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        gap: 6mm !important;
+        border: none !important;
         box-sizing: border-box !important;
-        background: #ffffff !important;
+        background: transparent !important;
       }
       .itsp-idcard-row-pair:last-child {
         margin-bottom: 0 !important;
       }
       .itsp-idcard-panel {
-        width: 85.5mm !important;
+        width: 86mm !important;
+        max-width: 86mm !important;
+        min-width: 86mm !important;
         height: 54mm !important;
         max-height: 54mm !important;
         min-height: 54mm !important;
+        border: 1.5px solid #000000 !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
+        background: #ffffff !important;
+      }
+      .itsp-cutting-line {
+        width: 178mm !important;
+        margin: 4mm auto !important;
+        border-top: 1px dashed #94A3B8 !important;
+        position: relative !important;
+        text-align: center !important;
       }
       @page {
         size: A4 portrait;
@@ -2046,8 +2034,9 @@ export default function AdminIdCardsPage() {
                       {pagePair.length > 1 ? (
                         <>
                           <Box
+                            className="itsp-cutting-line"
                             sx={{
-                              my: 2,
+                              my: 2.5,
                               borderTop: '1.5px dashed #94A3B8',
                               textAlign: 'center',
                               position: 'relative',
@@ -2066,7 +2055,7 @@ export default function AdminIdCardsPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              ✂️ Cutting Line Between Cards (A4 Paper)
+                              ✂️ Garis Potong Antar Kartu / Cutting Line (Kertas A4)
                             </Typography>
                           </Box>
 
@@ -2077,7 +2066,7 @@ export default function AdminIdCardsPage() {
                         <Box
                           className="no-print"
                           sx={{
-                            mt: 2,
+                            mt: 2.5,
                             p: 3,
                             border: '1.5px dashed #CBD5E1',
                             borderRadius: 2,
@@ -2085,11 +2074,11 @@ export default function AdminIdCardsPage() {
                             bgcolor: '#F8FAFC',
                           }}
                         >
-                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>
-                            Bottom of A4 Sheet Still Empty.
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block' }}>
+                            Slot Bawah Lembar A4 Masih Kosong (Muat 2 Karyawan per Lembar)
                           </Typography>
                           <Typography variant="caption" sx={{ display: 'block', color: '#94A3B8', mt: 0.3 }}>
-                            Check one more employee in the left table so this A4 sheet holds 2 cards at once.
+                            Centang 1 karyawan lagi di tabel sebelah kiri agar lembar A4 ini langsung mencetak 2 kartu sekaligus.
                           </Typography>
                         </Box>
                       )}
