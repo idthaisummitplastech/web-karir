@@ -945,7 +945,7 @@ export default function AdminIdCardsPage() {
               {/* Left Logo Box: bordered cell */}
               <Box
                 sx={{
-                  width: '88px',
+                  width: '66px',
                   borderRight: '1.5px solid #000000',
                   display: 'flex',
                   flexDirection: 'column',
@@ -960,17 +960,17 @@ export default function AdminIdCardsPage() {
                   component="img"
                   src="/logo-plastech.jpg"
                   alt="PLASTECH"
-                  sx={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }}
+                  sx={{ height: 36, width: 'auto', objectFit: 'contain', display: 'block' }}
                 />
                 <Typography
                   sx={{
                     fontFamily: 'Impact, Arial Black, sans-serif',
-                    fontSize: 9.5,
+                    fontSize: 9,
                     fontWeight: 900,
                     color: '#1E3A8A',
                     letterSpacing: '0.8px',
                     lineHeight: 1,
-                    mt: 0.4,
+                    mt: 0.3,
                   }}
                 >
                   PLASTECH
@@ -1015,18 +1015,19 @@ export default function AdminIdCardsPage() {
                 {/* Row 2: Plan 1 (KIIC) */}
                 <Box
                   sx={{
-                    p: '1.5px 5px',
+                    p: '1.5px 4px',
                     borderBottom: '1px solid #000000',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    fontSize: '7.8px',
+                    fontSize: { xs: '6.7px', sm: '7.1px' },
                     lineHeight: 1.15,
+                    letterSpacing: '-0.1px',
                     fontFamily: 'Arial, sans-serif',
                     color: '#000000',
                     flexGrow: 1,
                   }}
                 >
-                  <span style={{ fontWeight: 700, width: '38px', flexShrink: 0 }}>Plan 1 :</span>
+                  <span style={{ fontWeight: 700, width: '35px', flexShrink: 0 }}>Plan 1 :</span>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <div style={{ whiteSpace: 'nowrap' }}>{customFmt.kiicLine1.replace(/^Plan\s*1\s*:\s*/i, '')}</div>
                     <div style={{ whiteSpace: 'nowrap' }}>{customFmt.kiicLine2}</div>
@@ -1036,17 +1037,18 @@ export default function AdminIdCardsPage() {
                 {/* Row 3: Plan 2 (GIIC) */}
                 <Box
                   sx={{
-                    p: '1.5px 5px',
+                    p: '1.5px 4px',
                     display: 'flex',
                     alignItems: 'flex-start',
-                    fontSize: '7.8px',
+                    fontSize: { xs: '6.7px', sm: '7.1px' },
                     lineHeight: 1.15,
+                    letterSpacing: '-0.1px',
                     fontFamily: 'Arial, sans-serif',
                     color: '#000000',
                     flexGrow: 1,
                   }}
                 >
-                  <span style={{ fontWeight: 700, width: '38px', flexShrink: 0 }}>Plan 2 :</span>
+                  <span style={{ fontWeight: 700, width: '35px', flexShrink: 0 }}>Plan 2 :</span>
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <div style={{ whiteSpace: 'nowrap' }}>{customFmt.giicLine1.replace(/^Plan\s*2\s*:\s*/i, '')}</div>
                     <div style={{ whiteSpace: 'nowrap' }}>{customFmt.giicLine2}</div>
@@ -1207,7 +1209,7 @@ export default function AdminIdCardsPage() {
                 {customFmt.termsTitle}
               </Typography>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, fontSize: '8.8px', color: '#000000', lineHeight: 1.35, fontFamily: 'Arial, sans-serif' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, fontSize: { xs: '8.8px', sm: '9.6px' }, color: '#000000', lineHeight: 1.4, fontFamily: 'Arial, sans-serif' }}>
                 <Box sx={{ display: 'flex', gap: 0.6, alignItems: 'flex-start' }}>
                   <span style={{ fontWeight: 700, flexShrink: 0 }}>1.</span>
                   <span>{customFmt.termsItem1.replace(/^[0-9]+[\.\s]*/, '')}</span>
@@ -1224,17 +1226,17 @@ export default function AdminIdCardsPage() {
             </Box>
 
             <Box sx={{ textAlign: 'right', pr: 1, pb: 0.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 10, color: '#000000', lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 800, fontSize: { xs: 10, sm: 10.5 }, color: '#000000', lineHeight: 1.25 }}>
                 {customFmt.hrmSignerTitle}
               </Typography>
-              <Typography sx={{ fontWeight: 700, fontSize: 8.8, color: '#000000', lineHeight: 1.2 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: { xs: 8.8, sm: 9.5 }, color: '#000000', lineHeight: 1.25 }}>
                 {customFmt.hrmCompanyFooter}
               </Typography>
             </Box>
           </Box>
         </Box>
 
-        {/* ROW 2: QUALITY POLICY STATEMENT (2 Separate Boxes With Gap) */}
+        {/* ROW 2: QUALITY POLICY STATEMENT (2 Separate Boxes With Gap - Full Sentences To Border) */}
         {printLayoutMode !== 'id_card_only' && (
           <Box
             className="notranslate itsp-idcard-row-pair"
@@ -1253,56 +1255,60 @@ export default function AdminIdCardsPage() {
               height: { xs: 'auto', sm: '228px' },
             }}
           >
-            {/* Panel 3: Quality Policy Statement (English - Left) */}
+            {/* Panel 3: Quality Policy Statement (English - Left, Full Box Layout) */}
             <Box
-              className="notranslate itsp-idcard-panel"
+              className="notranslate itsp-idcard-panel itsp-policy-panel"
               translate="no"
               sx={{
-                p: 1.4,
+                p: { xs: 1.5, sm: 2 },
                 border: '1.5px solid #000000',
                 bgcolor: '#FFFFFF',
                 height: '100%',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                justifyContent: 'space-between',
                 overflow: 'hidden',
               }}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
-                {customFmt.companyName.toUpperCase()}
-              </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
-                {customFmt.qualityTitleEn}
-              </Typography>
-              <Typography sx={{ fontSize: '8.6px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: 11, sm: 11.8 }, textAlign: 'center', color: '#000000', lineHeight: 1.25, letterSpacing: '0.3px', fontFamily: 'Arial, sans-serif' }}>
+                  {customFmt.companyName.toUpperCase()}
+                </Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: 10.5, sm: 11.2 }, textAlign: 'center', color: '#000000', mt: 0.5, lineHeight: 1.25, letterSpacing: '0.2px', fontFamily: 'Arial, sans-serif' }}>
+                  {customFmt.qualityTitleEn}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: { xs: '9.8px', sm: '10.8px' }, color: '#000000', textAlign: 'justify', lineHeight: { xs: 1.5, sm: 1.62 }, wordBreak: 'normal', fontFamily: 'Arial, sans-serif', my: 'auto', pt: 1 }}>
                 {customFmt.qualityTextEn}
               </Typography>
             </Box>
 
-            {/* Panel 4: Kebijakan Mutu Perusahaan (Indonesian - Right) */}
+            {/* Panel 4: Kebijakan Mutu Perusahaan (Indonesian - Right, Full Box Layout) */}
             <Box
-              className="notranslate itsp-idcard-panel"
+              className="notranslate itsp-idcard-panel itsp-policy-panel"
               translate="no"
               sx={{
-                p: 1.4,
+                p: { xs: 1.5, sm: 2 },
                 border: '1.5px solid #000000',
                 bgcolor: '#FFFFFF',
                 height: '100%',
                 boxSizing: 'border-box',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                justifyContent: 'space-between',
                 overflow: 'hidden',
               }}
             >
-              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', lineHeight: 1.2 }}>
-                {customFmt.companyName.toUpperCase()}
-              </Typography>
-              <Typography sx={{ fontWeight: 800, fontSize: 9.5, textAlign: 'center', color: '#000000', mt: 0.3, mb: 1, lineHeight: 1.2 }}>
-                {customFmt.qualityTitleId}
-              </Typography>
-              <Typography sx={{ fontSize: '8.6px', color: '#000000', textAlign: 'justify', lineHeight: 1.45, wordBreak: 'break-word' }}>
+              <Box>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: 11, sm: 11.8 }, textAlign: 'center', color: '#000000', lineHeight: 1.25, letterSpacing: '0.3px', fontFamily: 'Arial, sans-serif' }}>
+                  {customFmt.companyName.toUpperCase()}
+                </Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: 10.5, sm: 11.2 }, textAlign: 'center', color: '#000000', mt: 0.5, lineHeight: 1.25, letterSpacing: '0.2px', fontFamily: 'Arial, sans-serif' }}>
+                  {customFmt.qualityTitleId}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: { xs: '9.8px', sm: '10.8px' }, color: '#000000', textAlign: 'justify', lineHeight: { xs: 1.5, sm: 1.62 }, wordBreak: 'normal', fontFamily: 'Arial, sans-serif', my: 'auto', pt: 1 }}>
                 {customFmt.qualityTextId}
               </Typography>
             </Box>
@@ -1393,6 +1399,18 @@ export default function AdminIdCardsPage() {
         box-sizing: border-box !important;
         overflow: hidden !important;
         background: #ffffff !important;
+      }
+      .itsp-policy-panel {
+        padding: 4mm 4.5mm !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+      }
+      .itsp-policy-panel p,
+      .itsp-policy-panel span,
+      .itsp-policy-panel div {
+        color: #000000 !important;
+        font-family: Arial, sans-serif !important;
       }
       .itsp-cutting-line {
         width: 178mm !important;
