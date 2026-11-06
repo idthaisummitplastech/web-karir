@@ -11,6 +11,16 @@ function getSeedPassword(envName: string): string {
   return `Seed-${crypto.randomBytes(12).toString("hex")}!Aa1`;
 }
 
+// Password akun utama (it-04) WAJIB dari env, minimal 12 karakter. Tanpa fallback,
+// dan nilainya tidak boleh dicetak ke console/log.
+function requireSeedPassword(envName: string): string {
+  const v = process.env[envName];
+  if (!v || v.trim().length < 12) {
+    throw new Error(`FATAL: ${envName} wajib disetel di .env dengan panjang minimal 12 karakter.`);
+  }
+  return v;
+}
+
 async function main() {
   console.log("Seeding web-karir database...");
 
@@ -64,16 +74,17 @@ async function main() {
   for (const a of admins) {
     await prisma.recruitmentAdmin.upsert({
       where: { username: a.username },
-      update: { password: hashedPass, role: a.role, name: a.name },
+      // Jangan menimpa password akun yang sudah ada; update hanya metadata non-kredensial.
+      update: { role: a.role, name: a.name },
       create: a,
     });
   }
 
   // 2b. Primary Superadmin 1526.08.26 / it-04@thaisummit.co.id — Employee ID immutable, role admin portal both
-  const it04Plain = process.env.SEED_IT04_PASSWORD && process.env.SEED_IT04_PASSWORD.length >= 12 ? process.env.SEED_IT04_PASSWORD : `Itsp@${new Date().getFullYear()}`;
-  const hashedIT04 = await bcrypt.hash(it04Plain, 10);
+  const hashedIT04 = await bcrypt.hash(requireSeedPassword("SEED_IT04_PASSWORD"), 10);
   await prisma.recruitmentAdmin.upsert({
     where: { email: "it-04@thaisummit.co.id" },
+    // Update hanya metadata identitas; password dan isFirstLogin tidak disentuh.
     update: {
       employeeId: "1526.08.26",
       username: "it-04",
@@ -82,8 +93,6 @@ async function main() {
       department: "IT",
       isActive: true,
       portalAccess: "both",
-      isFirstLogin: true,
-      password: hashedIT04,
     } as any,
     create: {
       employeeId: "1526.08.26",
@@ -101,7 +110,7 @@ async function main() {
   try {
     await prisma.recruitmentAdmin.upsert({
       where: { employeeId: "1526.08.26" } as any,
-      update: { email: "it-04@thaisummit.co.id", username: "it-04", role: "admin", isActive: true, portalAccess: "both", isFirstLogin: true, password: hashedIT04 } as any,
+      update: { email: "it-04@thaisummit.co.id", username: "it-04", role: "admin", isActive: true, portalAccess: "both" } as any,
       create: {
         employeeId: "1526.08.26",
         username: "it-04",
