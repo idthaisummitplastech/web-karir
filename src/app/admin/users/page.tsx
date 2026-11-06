@@ -46,8 +46,23 @@ import {
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 import { useLanguage } from '@/lib/LanguageContext';
 
-// Helper: default password otomatis sesuai tahun berjalan (e.g. Itsp@2026, Itsp@2027)
-const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
+// Helper: generate password acak aman minimal 14 karakter (tanpa pola berbasis tahun)
+const generateSecurePassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+  let pwd = '';
+  if (typeof window !== 'undefined' && window.crypto) {
+    const array = new Uint8Array(14);
+    window.crypto.getRandomValues(array);
+    for (let i = 0; i < 14; i++) {
+      pwd += chars[array[i] % chars.length];
+    }
+  } else {
+    for (let i = 0; i < 14; i++) {
+      pwd += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  return pwd;
+};
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -76,7 +91,7 @@ export default function AdminUsersPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
-  const [newUserPassword, setNewUserPassword] = useState(getDefaultPassword());
+  const [newUserPassword, setNewUserPassword] = useState(generateSecurePassword());
   const [newPortalAccess, setNewPortalAccess] = useState('both');
   const [newIsActive, setNewIsActive] = useState(true);
   const [showAddPassword, setShowAddPassword] = useState(false);
@@ -251,7 +266,7 @@ export default function AdminUsersPage() {
     setNewEmail('');
     setNewRole('hr');
     setNewDepartment('Human Capital');
-    setNewUserPassword(getDefaultPassword());
+    setNewUserPassword(generateSecurePassword());
     setShowAddPassword(false);
     setNewPortalAccess('both');
     setNewIsActive(true);
@@ -1093,7 +1108,7 @@ export default function AdminUsersPage() {
                 label={t('admin_users_fieldPassword')}
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
-                helperText={`Default otomatis tahun ini: ${getDefaultPassword()}`}
+                helperText={t('admin_users_fieldPasswordHelper')}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">

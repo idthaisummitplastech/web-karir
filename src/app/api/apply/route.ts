@@ -206,8 +206,8 @@ export async function POST(req: Request) {
     });
 
     // Send email with credentials
-    if (result.success && result.applicant) {
-      const tempPassword = result.temp_password || `Itsp@${new Date().getFullYear()}`;
+    if (result.success && result.applicant && result.temp_password) {
+      const tempPassword = result.temp_password;
       const appUrl = getAppUrl();
       const jobTitle = result.applicant.job_posting?.title || "Posisi Pilihan";
 

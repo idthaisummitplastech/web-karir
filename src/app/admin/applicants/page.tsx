@@ -6206,11 +6206,12 @@ export default function AdminApplicantsPage() {
 
           <TextField
             fullWidth
-            label="New Applicant Password (leave blank for year default)"
-            placeholder={`Misal: Itsp@${new Date().getFullYear()} atau tentukan sendiri`}
+            required
+            label="Password Baru Kandidat (minimal 8 karakter)"
+            placeholder="Masukkan kata sandi baru untuk kandidat"
             value={newApplicantPassInput}
             onChange={(e) => setNewApplicantPassInput(e.target.value)}
-            helperText={`Jika dikosongkan, otomatis menggunakan password standar: Itsp@${new Date().getFullYear()}`}
+            helperText="Masukkan kata sandi baru yang aman untuk akun kandidat."
           />
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }}>
