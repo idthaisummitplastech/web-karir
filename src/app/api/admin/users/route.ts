@@ -51,6 +51,7 @@ export async function POST(req: Request) {
       success: true,
       user: result.data || result,
       message: result.message || "Aksi berhasil diproses.",
+      temp_password: result.temp_password || (result.data && result.data.temp_password) || undefined,
     });
   } catch (error: any) {
     console.error("Create user error:", error);

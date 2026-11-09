@@ -13,7 +13,11 @@ export async function POST(req: Request) {
       method: "POST",
       body: JSON.stringify({ ...body, admin_id: session.adminId }),
     });
-    return NextResponse.json({ success: true, message: result.message || "Password berhasil direset." });
+    return NextResponse.json({
+      success: true,
+      message: result.message || "Password berhasil direset.",
+      temp_password: result.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error("Reset password error:", error);
     return NextResponse.json({ error: error.message || "Failed to reset password." }, { status: 400 });
