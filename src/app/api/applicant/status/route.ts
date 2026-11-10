@@ -34,7 +34,11 @@ export async function GET() {
       success: boolean;
       applicant: any;
       settings: Record<string, string>;
-    }>(`/applicants/status/${encodeURIComponent(String(targetIdentifier))}`);
+    }>(`/applicants/status/${encodeURIComponent(String(targetIdentifier))}`, {
+      headers: {
+        'X-Applicant-Id': String(session.applicantId),
+      },
+    });
 
     if (!data || !data.applicant) {
       return NextResponse.json(
