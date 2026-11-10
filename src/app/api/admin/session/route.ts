@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export async function GET() {
   try {
@@ -14,13 +14,7 @@ export async function GET() {
     let liveName = session.name;
 
     try {
-      const liveProfile = await fetchFromBackend<any>('/auth/me/admin', {
-        headers: {
-          'x-admin-id': String(session.adminId),
-          'x-admin-role': session.role,
-          'x-admin-department': session.department || '',
-        },
-      });
+      const liveProfile = await fetchAdminBackend<any>(session, '/auth/me/admin');
       if (liveProfile) {
         liveDepartment = liveProfile.department || liveDepartment;
         liveRole = liveProfile.role || liveRole;

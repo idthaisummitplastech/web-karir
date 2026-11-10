@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend, fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function GET() {
   try {
@@ -13,7 +13,7 @@ export async function GET() {
 
     // 1. Fetch from official data_karyawan (/recruitment/employees)
     try {
-      const empData = await fetchFromBackend("/recruitment/employees");
+      const empData = await fetchAdminBackend(session, "/recruitment/employees");
       if (empData && empData.employees && Array.isArray(empData.employees)) {
         empData.employees.forEach((e: any) => {
           list.push({
@@ -38,7 +38,7 @@ export async function GET() {
 
     // 2. Fetch from legacy karyawan_sementara if any
     try {
-      const legacyData = await fetchFromBackend("/recruitment/karyawan-sementara");
+      const legacyData = await fetchAdminBackend(session, "/recruitment/karyawan-sementara");
       if (Array.isArray(legacyData)) {
         legacyData.forEach((k: any) => {
           // Prevent duplicates if already present
@@ -85,7 +85,7 @@ export async function PUT(req: Request) {
     if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
     if (source === 'karyawan_sementara') {
-      const result = await fetchRawFromBackend(`/recruitment/karyawan-sementara/${id}/toggle-id-card`, {
+      const result = await fetchAdminRawBackend(session, `/recruitment/karyawan-sementara/${id}/toggle-id-card`, {
         method: "PUT",
       });
       return NextResponse.json({ success: true, message: result.message || "Status ID Card diperbarui." });

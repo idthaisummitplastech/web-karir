@@ -17,6 +17,9 @@ export async function POST(req: Request) {
       nik?: string;
     }>("/api/v1/applicants/accept-offer", {
       method: "POST",
+      headers: {
+        'X-Applicant-Id': String(session.applicantId),
+      },
       body: JSON.stringify({
         applicant_id: session.applicantId,
         signed_contract_file: body.signed_contract_file || body.signedContractFile || body.signedFile || undefined,

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend, fetchAdminRawBackend } from "@/lib/api-client";
 
 function resolveJobStatus(job: { isOpen: boolean; openingDate: string | null; closingDate: string | null }) {
   const now = new Date();
@@ -28,7 +28,7 @@ export async function GET() {
     if (!requireHr(session)) {
       return NextResponse.json({ error: "HR & Super Admin only." }, { status: 403 });
     }
-    const jobs = await fetchFromBackend("/jobs/all");
+    const jobs = await fetchAdminBackend(session, "/jobs/all");
     const enriched = (jobs || []).map((j: any) => ({
       ...j,
       ...resolveJobStatus(j),
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Title, department, qualifications & description are required." }, { status: 400 });
     }
 
-    const job = await fetchRawFromBackend("/jobs", {
+    const job = await fetchAdminRawBackend(session, "/jobs", {
       method: "POST",
       body: JSON.stringify({
         title: title.trim(),
@@ -100,7 +100,7 @@ export async function PUT(req: Request) {
     if (updateData.openingDate !== undefined) payload.opening_date = updateData.openingDate || null;
     if (updateData.closingDate !== undefined) payload.closing_date = updateData.closingDate || null;
 
-    const job = await fetchRawFromBackend(`/jobs/${Number(id)}`, {
+    const job = await fetchAdminRawBackend(session, `/jobs/${Number(id)}`, {
       method: "PUT",
       body: JSON.stringify(payload),
     });
@@ -122,7 +122,7 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
-    await fetchRawFromBackend(`/jobs/${Number(id)}`, { method: "DELETE" });
+    await fetchAdminRawBackend(session, `/jobs/${Number(id)}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: "Vacancy deleted." });
   } catch (e: any) {
     console.error("Delete job error:", e);

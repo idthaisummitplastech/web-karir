@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -9,11 +9,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const body = await req.json();
-    const result = await fetchRawFromBackend("/recruitment/reset-password", {
+    const result = await fetchAdminRawBackend(session, "/recruitment/reset-password", {
       method: "POST",
       body: JSON.stringify({ ...body, admin_id: session.adminId }),
     });
-    return NextResponse.json({ success: true, message: result.message || "Password berhasil direset." });
+    return NextResponse.json({
+      success: true,
+      message: result.message || "Password berhasil direset.",
+      temp_password: result.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error("Reset password error:", error);
     return NextResponse.json({ error: error.message || "Failed to reset password." }, { status: 400 });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const result = await fetchRawFromBackend("/recruitment/schedule-interview", {
+    const result = await fetchAdminRawBackend(session, "/recruitment/schedule-interview", {
       method: "POST",
       body: JSON.stringify({
         ...body,

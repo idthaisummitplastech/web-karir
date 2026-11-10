@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { buildBackendUrl, fetchFromBackend } from "@/lib/api-client";
+import { buildBackendUrl, fetchAdminBackend } from "@/lib/api-client";
 import * as XLSX from "xlsx";
 
 export const dynamic = 'force-dynamic';
@@ -48,16 +48,10 @@ export async function GET(req: Request) {
     }
 
     // 2. High-reliability fallback: Fetch data via enterprise API client and build real .xlsx with SheetJS
-    const data = await fetchFromBackend<{
+    const data = await fetchAdminBackend<{
       total: number;
       employees: any[];
-    }>(`/recruitment/employees?${searchParams.toString()}`, {
-      headers: {
-        'X-Internal-Secret': process.env.BACKEND_INTERNAL_SECRET || '',
-        'X-Admin-Id': String(session.adminId || 1),
-        'X-Admin-Role': session.role || 'admin',
-      },
-    });
+    }>(session, `/recruitment/employees?${searchParams.toString()}`);
 
     const employees = data?.employees || [];
 

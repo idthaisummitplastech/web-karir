@@ -46,8 +46,23 @@ import {
 import { KarirTablePagination, KarirTableToolbar } from '@/components/admin/KarirTablePagination';
 import { useLanguage } from '@/lib/LanguageContext';
 
-// Helper: default password otomatis sesuai tahun berjalan (e.g. Itsp@2026, Itsp@2027)
-const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
+// Helper: generate password acak aman minimal 14 karakter (tanpa pola berbasis tahun)
+const generateSecurePassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+  let pwd = '';
+  if (typeof window !== 'undefined' && window.crypto) {
+    const array = new Uint8Array(14);
+    window.crypto.getRandomValues(array);
+    for (let i = 0; i < 14; i++) {
+      pwd += chars[array[i] % chars.length];
+    }
+  } else {
+    for (let i = 0; i < 14; i++) {
+      pwd += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  return pwd;
+};
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -68,6 +83,14 @@ export default function AdminUsersPage() {
   const [processing, setProcessing] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
 
+  // One-time Temp Password Modal
+  const [tempPasswordModal, setTempPasswordModal] = useState<{ open: boolean; password: string; username: string }>({
+    open: false,
+    password: '',
+    username: '',
+  });
+  const [copiedTemp, setCopiedTemp] = useState(false);
+
   // Add User Modal — Employee ID immutable (1526.08.26), email retained for audit, fallback 6 months
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [newEmployeeId, setNewEmployeeId] = useState('');
@@ -76,7 +99,7 @@ export default function AdminUsersPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('hr');
   const [newDepartment, setNewDepartment] = useState('Human Capital');
-  const [newUserPassword, setNewUserPassword] = useState(getDefaultPassword());
+  const [newUserPassword, setNewUserPassword] = useState(generateSecurePassword());
   const [newPortalAccess, setNewPortalAccess] = useState('both');
   const [newIsActive, setNewIsActive] = useState(true);
   const [showAddPassword, setShowAddPassword] = useState(false);
@@ -215,7 +238,17 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setResetFeedback(data.message);
+      setResetModalOpen(false);
+      setNewPasswordInput('');
+      if (data.temp_password) {
+        setTempPasswordModal({
+          open: true,
+          password: data.temp_password,
+          username: selectedUser.username || selectedUser.name || 'Pengguna',
+        });
+      } else {
+        setResetFeedback(data.message);
+      }
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
@@ -251,7 +284,7 @@ export default function AdminUsersPage() {
     setNewEmail('');
     setNewRole('hr');
     setNewDepartment('Human Capital');
-    setNewUserPassword(getDefaultPassword());
+    setNewUserPassword(generateSecurePassword());
     setShowAddPassword(false);
     setNewPortalAccess('both');
     setNewIsActive(true);
@@ -293,9 +326,17 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      alert(data.message);
       setAddModalOpen(false);
       handleOpenAdd();
+      if (data.temp_password) {
+        setTempPasswordModal({
+          open: true,
+          password: data.temp_password,
+          username: newUsername.trim() || newEmail.trim() || 'Pengguna Baru',
+        });
+      } else {
+        alert(data.message);
+      }
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
@@ -1093,7 +1134,7 @@ export default function AdminUsersPage() {
                 label={t('admin_users_fieldPassword')}
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
-                helperText={`Default otomatis tahun ini: ${getDefaultPassword()}`}
+                helperText={t('admin_users_fieldPasswordHelper')}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -1353,6 +1394,48 @@ export default function AdminUsersPage() {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Modal Peringatan Kata Sandi Sementara (One-Time Display) */}
+      <Dialog
+        open={tempPasswordModal.open}
+        onClose={() => setTempPasswordModal({ open: false, password: '', username: '' })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#D97706' }}>
+          ⚠️ Kata Sandi Sementara
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: '#4B5563' }}>
+            Kata sandi sementara untuk akun <strong>{tempPasswordModal.username}</strong> berhasil dibuat. Kata sandi ini hanya ditampilkan <strong>SEKALI</strong>. Harap segera salin dan kirimkan ke pengguna bersangkutan.
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: 2, border: '1px dashed #D1D5DB', textAlign: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: 1.5, wordBreak: 'break-all' }}>
+              {tempPasswordModal.password}
+            </Typography>
+          </Box>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              navigator.clipboard.writeText(tempPasswordModal.password);
+              setCopiedTemp(true);
+              setTimeout(() => setCopiedTemp(false), 2000);
+            }}
+            sx={{ bgcolor: copiedTemp ? '#059669' : '#018730', fontWeight: 700, '&:hover': { bgcolor: copiedTemp ? '#047857' : '#005c21' } }}
+          >
+            {copiedTemp ? 'Tersalin ke Clipboard!' : 'Salin Kata Sandi'}
+          </Button>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={() => setTempPasswordModal({ open: false, password: '', username: '' })}
+            sx={{ color: '#6B7280', fontWeight: 600 }}
+          >
+            Tutup
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

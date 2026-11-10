@@ -4,6 +4,7 @@
  * URL 100% via env (lihat src/lib/urls.ts) — tanpa hardcoded localhost/domain.
  */
 import { getBackendBaseUrl } from './urls';
+import type { AdminTokenPayload } from './auth';
 
 function getInternalSecret(): string {
   const s = process.env.BACKEND_INTERNAL_SECRET;
@@ -147,6 +148,63 @@ export async function fetchRawFromBackend<T = any>(
 
   const json = await res.json();
   return dualCaseObject(json) as T;
+}
+
+/**
+ * Enterprise Admin API Client: Automatically passes verified session identity
+ * (X-Admin-Id, X-Admin-Role, X-Admin-Department) along with internal secret.
+ * Enforces server-side authentication before contacting FastAPI backend.
+ */
+export async function fetchAdminBackend<T = any>(
+  session: AdminTokenPayload | null | undefined,
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
+  if (!session) {
+    throw new Error('Sesi admin tidak ditemukan atau tidak valid.');
+  }
+
+  const customHeaders: Record<string, string> = {
+    'X-Admin-Id': String(session.adminId),
+    'X-Admin-Role': session.role,
+    'X-Admin-Department': session.department || '',
+  };
+
+  return fetchFromBackend<T>(endpoint, {
+    ...options,
+    headers: {
+      ...customHeaders,
+      ...options?.headers,
+    },
+  });
+}
+
+/**
+ * Enterprise Admin API Client (Raw JSON response): Automatically passes verified session identity
+ * (X-Admin-Id, X-Admin-Role, X-Admin-Department) along with internal secret.
+ */
+export async function fetchAdminRawBackend<T = any>(
+  session: AdminTokenPayload | null | undefined,
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
+  if (!session) {
+    throw new Error('Sesi admin tidak ditemukan atau tidak valid.');
+  }
+
+  const customHeaders: Record<string, string> = {
+    'X-Admin-Id': String(session.adminId),
+    'X-Admin-Role': session.role,
+    'X-Admin-Department': session.department || '',
+  };
+
+  return fetchRawFromBackend<T>(endpoint, {
+    ...options,
+    headers: {
+      ...customHeaders,
+      ...options?.headers,
+    },
+  });
 }
 
 export { dualCaseObject };

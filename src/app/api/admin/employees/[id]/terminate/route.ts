@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -24,11 +24,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     const body = await req.json();
 
-    const result = await fetchFromBackend<any>(`/recruitment/employees/${id}/terminate`, {
+    const result = await fetchAdminBackend<any>(session, `/recruitment/employees/${id}/terminate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.adminId}`,
       },
       body: JSON.stringify(body),
     });

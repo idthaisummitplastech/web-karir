@@ -426,7 +426,7 @@ export default function AdminSettingsPage() {
         .replace(/{nama}/g, 'Muhammad Rifqi Alfaridzi')
         .replace(/{posisi}/g, 'Staff IT & Enterprise System')
         .replace(/{email}/g, 'alfaridzi.rifqi28@gmail.com')
-        .replace(/{password}/g, `Itsp@${new Date().getFullYear()}`)
+        .replace(/{password}/g, '[Kata Sandi Sementara]')
         .replace(/{jadwal}/g, 'Senin, 15 September 2026 pukul 09:00 WIB')
         .replace(/{token}/g, 'PSIKO-2026')
         .replace(/{lokasi}/g, 'Plant 1 KIIC Karawang Barat (Ruang Training HC)')
