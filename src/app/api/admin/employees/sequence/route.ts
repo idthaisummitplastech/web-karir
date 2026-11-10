@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,11 +26,7 @@ export async function GET(req: Request) {
     if (joinDate) params.set("join_date", joinDate);
     if (customSeq) params.set("custom_seq", customSeq);
 
-    const data = await fetchFromBackend<any>(`/recruitment/employee-sequence?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${session.adminId}`,
-      },
-    });
+    const data = await fetchAdminBackend<any>(session, `/recruitment/employee-sequence?${params.toString()}`);
 
     return NextResponse.json(data, { headers: ANTI_CACHE_HEADERS });
   } catch (error: any) {
@@ -50,11 +46,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const result = await fetchFromBackend<any>("/recruitment/employee-sequence", {
+    const result = await fetchAdminBackend<any>(session, "/recruitment/employee-sequence", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.adminId}`,
       },
       body: JSON.stringify(body),
     });

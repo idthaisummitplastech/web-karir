@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
     const body = await req.json();
-    const result = await fetchRawFromBackend("/recruitment/resend-email", {
+    const result = await fetchAdminRawBackend(session, "/recruitment/resend-email", {
       method: "POST",
       body: JSON.stringify({ ...body, admin_id: session.adminId }),
     });

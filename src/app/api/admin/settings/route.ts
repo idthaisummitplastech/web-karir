@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend, fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function GET() {
   try {
@@ -15,7 +15,7 @@ export async function GET() {
     }
 
     const isSuperAdmin = session.role === "superadmin" || session.role === "admin";
-    const settings = await fetchFromBackend("/recruitment/settings");
+    const settings = await fetchAdminBackend(session, "/recruitment/settings");
     return NextResponse.json({ success: true, isSuperAdmin, settings: settings || {} });
   } catch (error: any) {
     console.error("Fetch settings error:", error);
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    await fetchRawFromBackend("/recruitment/settings", {
+    await fetchAdminRawBackend(session, "/recruitment/settings", {
       method: "POST",
       body: JSON.stringify(body),
     });

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend, fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend, fetchAdminRawBackend } from "@/lib/api-client";
 
 function isAdminSession(s: { role: string; username: string; email: string } | null) {
   if (!s) return false;
@@ -19,8 +19,8 @@ export async function GET() {
 
     // Fetch CMS users and employee departments from backend
     const [users, deptData] = await Promise.all([
-      fetchFromBackend("/cms/users"),
-      fetchFromBackend("/recruitment/departments").catch(() => ({ departments: [] })),
+      fetchAdminBackend(session, "/cms/users"),
+      fetchAdminBackend(session, "/recruitment/departments").catch(() => ({ departments: [] })),
     ]);
 
     return NextResponse.json({
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const result = await fetchRawFromBackend("/cms/users", {
+    const result = await fetchAdminRawBackend(session, "/cms/users", {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -70,7 +70,7 @@ export async function PUT(req: Request) {
     const { id, ...updateData } = body;
     if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
-    const result = await fetchRawFromBackend(`/cms/users/${id}`, {
+    const result = await fetchAdminRawBackend(session, `/cms/users/${id}`, {
       method: "PUT",
       body: JSON.stringify(updateData),
     });
@@ -93,7 +93,7 @@ export async function DELETE(req: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID is required." }, { status: 400 });
 
-    await fetchRawFromBackend(`/cms/users/${id}`, { method: "DELETE" });
+    await fetchAdminRawBackend(session, `/cms/users/${id}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: "Pengguna berhasil dihapus." });
   } catch (error: any) {
     console.error("Delete user error:", error);

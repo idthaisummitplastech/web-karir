@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const data = await fetchFromBackend<{
+    const data = await fetchAdminBackend<{
       success: boolean;
       message: string;
       autoExpiredCount?: number;
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       hard_deleted_count?: number;
       purgedCvCount?: number;
       purged_cv_count?: number;
-    }>("/api/v1/recruitment/cleanup-applicants", {
+    }>(session, "/api/v1/recruitment/cleanup-applicants", {
       method: "POST",
       body: JSON.stringify({ mode: body?.mode || "soft_cleanup" }),
     });

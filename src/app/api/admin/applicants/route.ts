@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,11 +31,7 @@ export async function GET(req: Request) {
     if (status) params.set("status_filter", status);
     if (search) params.set("search", search);
 
-    const applicants = await fetchFromBackend(`/applicants?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${session.adminId}`,
-      },
-    });
+    const applicants = await fetchAdminBackend(session, `/applicants?${params.toString()}`);
 
     return NextResponse.json({
       success: true,
@@ -50,7 +46,7 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error("Fetch applicants error:", error);
-    return NextResponse.json({ error: "Failed to load applicant list." }, { 
+    return NextResponse.json({ error: "Failed to load applicant list." }, {
       status: 500,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

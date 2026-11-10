@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchRawFromBackend } from "@/lib/api-client";
+import { fetchAdminRawBackend } from "@/lib/api-client";
 
 export async function POST(req: Request) {
   try {
@@ -19,13 +19,8 @@ export async function POST(req: Request) {
         ? "update_test_session"
         : body.action;
 
-    const result = await fetchRawFromBackend("/recruitment/advance-stage", {
+    const result = await fetchAdminRawBackend(session, "/recruitment/advance-stage", {
       method: "POST",
-      headers: {
-        "x-admin-id": String(session.adminId),
-        "x-admin-role": session.role,
-        "x-admin-department": session.department || "",
-      },
       body: JSON.stringify({
         applicant_id: body.applicantId || body.applicant_id,
         action: normalizedAction,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 import { getAdminSession } from "@/lib/auth";
 
 // ─── GET: list departments (with sections) ───────────────────────────────────
@@ -8,7 +8,7 @@ export async function GET() {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-    const res = await fetchFromBackend("/departments?active_only=false");
+    const res = await fetchAdminBackend(session, "/departments?active_only=false");
     const list: any[] = Array.isArray(res) ? res : (res?.data || []);
     return NextResponse.json({
       success: true,
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const session = await getAdminSession();
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     const body = await req.json();
-    const data = await fetchFromBackend("/departments", { method: "POST", body: JSON.stringify(body) });
+    const data = await fetchAdminBackend(session, "/departments", { method: "POST", body: JSON.stringify(body) });
     return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to create department." }, { status: 500 });
@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     const { id, ...body } = await req.json();
     if (!id) return NextResponse.json({ error: "ID departemen diperlukan." }, { status: 400 });
-    const data = await fetchFromBackend(`/departments/${id}`, { method: "PUT", body: JSON.stringify(body) });
+    const data = await fetchAdminBackend(session, `/departments/${id}`, { method: "PUT", body: JSON.stringify(body) });
     return NextResponse.json({ success: true, department: data?.data || data });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to update department." }, { status: 500 });
@@ -56,7 +56,7 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID departemen diperlukan." }, { status: 400 });
-    const data = await fetchFromBackend(`/departments/${id}`, { method: "DELETE" });
+    const data = await fetchAdminBackend(session, `/departments/${id}`, { method: "DELETE" });
     return NextResponse.json({ success: true, message: data.message });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Failed to delete department." }, { status: 500 });

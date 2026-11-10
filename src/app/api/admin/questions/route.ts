@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
-import { fetchFromBackend, fetchRawFromBackend } from '@/lib/api-client';
+import { fetchAdminBackend, fetchAdminRawBackend } from '@/lib/api-client';
 
 // GET: List questions
 export async function GET(req: Request) {
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     if (category) params.set('category', category);
     if (department && department !== 'All') params.set('department', department);
 
-    const questions = await fetchFromBackend(`/tests/questions?${params.toString()}`);
+    const questions = await fetchAdminBackend(admin, `/tests/questions?${params.toString()}`);
     return NextResponse.json({ questions: questions || [] });
   } catch (error: any) {
     console.error('Fetch questions error:', error);
@@ -30,8 +30,8 @@ function formatQuestionPayload(body: any) {
   const options = Array.isArray(body.options)
     ? JSON.stringify(body.options)
     : typeof body.options === 'string'
-    ? body.options
-    : JSON.stringify([]);
+      ? body.options
+      : JSON.stringify([]);
 
   const payload: Record<string, any> = {
     category: body.category,
@@ -63,13 +63,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const payload = formatQuestionPayload(body);
 
-    const result = await fetchRawFromBackend('/tests/questions', {
+    const result = await fetchAdminRawBackend(admin, '/tests/questions', {
       method: 'POST',
-      headers: {
-        'x-admin-id': String(admin.adminId),
-        'x-admin-role': admin.role,
-        'x-admin-department': admin.department || '',
-      },
       body: JSON.stringify(payload),
     });
 
@@ -98,13 +93,8 @@ export async function PUT(req: Request) {
 
     const payload = formatQuestionPayload(rest);
 
-    const result = await fetchRawFromBackend(`/tests/questions/${id}`, {
+    const result = await fetchAdminRawBackend(admin, `/tests/questions/${id}`, {
       method: 'PUT',
-      headers: {
-        'x-admin-id': String(admin.adminId),
-        'x-admin-role': admin.role,
-        'x-admin-department': admin.department || '',
-      },
       body: JSON.stringify(payload),
     });
 
@@ -131,13 +121,8 @@ export async function DELETE(req: Request) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'ID soal wajib disertakan.' }, { status: 400 });
 
-    await fetchRawFromBackend(`/tests/questions/${id}`, {
+    await fetchAdminRawBackend(admin, `/tests/questions/${id}`, {
       method: 'DELETE',
-      headers: {
-        'x-admin-id': String(admin.adminId),
-        'x-admin-role': admin.role,
-        'x-admin-department': admin.department || '',
-      },
     });
     return NextResponse.json({ success: true, message: 'Soal berhasil dihapus.' });
   } catch (error: any) {

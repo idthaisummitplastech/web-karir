@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { fetchFromBackend } from "@/lib/api-client";
+import { fetchAdminBackend } from "@/lib/api-client";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,15 +34,11 @@ export async function GET(req: Request) {
     if (search) params.set("search", search);
     if (sort) params.set("sort", sort);
 
-    const data = await fetchFromBackend<{
+    const data = await fetchAdminBackend<{
       success: boolean;
       total: number;
       employees: any[];
-    }>(`/recruitment/employees?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${session.adminId}`,
-      },
-    });
+    }>(session, `/recruitment/employees?${params.toString()}`);
 
     return NextResponse.json({
       success: true,
@@ -72,11 +68,10 @@ export async function POST(req: Request) {
     // If applicant_id is present, it's signing contract from applicants flow
     const endpoint = body.applicant_id ? "/recruitment/hire-contract" : "/recruitment/employees";
 
-    const result = await fetchFromBackend<any>(endpoint, {
+    const result = await fetchAdminBackend<any>(session, endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.adminId}`,
       },
       body: JSON.stringify(body),
     });
@@ -98,11 +93,8 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "Akses ditolak. Hanya Administrator atau HR yang berhak mereset data karyawan." }, { status: 403, headers: ANTI_CACHE_HEADERS });
     }
 
-    const result = await fetchFromBackend<any>("/recruitment/employees/all", {
+    const result = await fetchAdminBackend<any>(session, "/recruitment/employees/all", {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.adminId}`,
-      },
     });
 
     return NextResponse.json(result, { headers: ANTI_CACHE_HEADERS });

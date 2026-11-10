@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAdminSession } from '@/lib/auth';
-import { fetchFromBackend } from '@/lib/api-client';
-
-function getInternalSecret(): string {
-  const s = process.env.BACKEND_INTERNAL_SECRET;
-  if (!s) throw new Error('BACKEND_INTERNAL_SECRET belum diisi via env');
-  return s;
-}
+import { fetchAdminBackend } from '@/lib/api-client';
 
 export async function GET(req: Request) {
   try {
@@ -25,13 +19,7 @@ export async function GET(req: Request) {
     if (role) qs.set('role', role);
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
 
-    const data = await fetchFromBackend(`/cms/admin-menus${suffix}`, {
-      headers: {
-        'X-Internal-Secret': getInternalSecret(),
-        'X-Admin-Id': String(session.adminId),
-        'X-Admin-Role': session.role,
-      },
-    });
+    const data = await fetchAdminBackend(session, `/cms/admin-menus${suffix}`);
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Failed to load admin menus' }, { status: 500 });
