@@ -1,11 +1,26 @@
-// Test Runner untuk Verifikasi Alur D.3 Web-Karir
-const { SignJWT, jwtVerify } = require('jose');
+// Test Suite Komprehensif Alur D.3 Web-Karir
+// Memanggil LANGSUNG fungsi proxy() asli dari src/proxy.ts dan NextRequest nyata Next.js
 
-async function main() {
-  console.log('=== VERIFIKASI UNIT TEST ALUR D.3 (WEB-KARIR PROXY & SESSION LOGIC) ===\n');
+require('ts-node').register({
+  compilerOptions: {
+    module: 'commonjs',
+    moduleResolution: 'node',
+    target: 'es2022',
+    skipLibCheck: true,
+    esModuleInterop: true,
+  },
+  transpileOnly: true,
+});
 
-  const secretText = 'super-secret-key-for-testing-purposes-min-32-chars';
-  const secret = new TextEncoder().encode(secretText);
+const { NextRequest } = require('next/dist/server/web/spec-extension/request');
+const { proxy } = require('../src/proxy');
+const { signAdminToken } = require('../src/lib/auth');
+const { enforceSessionCompleteness, SessionIncompleteError } = require('../src/lib/api-client');
+
+async function runRealTests() {
+  console.log('=== PENGUJIAN REALISTIS ALUR D.3 DENGAN PROXY ASLI & NEXTREQUEST NYATA ===\n');
+
+  process.env.JWT_SECRET = 'super-secret-key-for-testing-purposes-min-32-chars';
 
   let passed = 0;
   let total = 0;
@@ -20,286 +35,220 @@ async function main() {
     passed++;
   }
 
-  // 1. Uji Penerbitan & Verifikasi Token Admin Sesi
-  async function signToken(payload) {
-    return new SignJWT({ ...payload })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('1d')
-      .sign(secret);
-  }
-
-  async function verifyToken(token) {
-    try {
-      const { payload } = await jwtVerify(token, secret);
-      if (!payload.adminId) return null;
-      return payload;
-    } catch {
-      return null;
-    }
-  }
-
-  // Simulasi Fungsi Proxy Logic
-  function evaluateProxyAccess({ pathname, session, enforceEnabled }) {
-    const isApiRoute = pathname.startsWith('/api/admin');
-    const isAdminPageRoute = pathname.startsWith('/admin');
-
-    if (!session) {
-      if (isApiRoute) return { action: 'reject', status: 401, error: 'Unauthorized' };
-      if (isAdminPageRoute) return { action: 'redirect', destination: '/login' };
-      return { action: 'next' };
-    }
-
-    if (!enforceEnabled) {
-      return { action: 'next' };
-    }
-
-    const apiWhitelist = [
-      '/api/admin/change-password',
-      '/api/admin/session',
-      '/api/admin/logout',
-      '/api/admin/mfa',
-    ];
-
-    const isApiWhitelisted = apiWhitelist.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    );
-
-    const mustChangePassword = Boolean(session.mustChangePassword);
-    const mfaRequired = Boolean(session.mfaRequired);
-    const mfaVerified = session.mfaVerified !== undefined ? Boolean(session.mfaVerified) : Boolean(session.isMfaVerified);
-
-    if (mustChangePassword) {
-      if (isApiRoute && !isApiWhitelisted) {
-        return {
-          action: 'reject',
-          status: 403,
-          code: 'MUST_CHANGE_PASSWORD',
-          error: 'SESSION_INCOMPLETE',
-        };
-      }
-      if (isAdminPageRoute && pathname !== '/admin/change-password') {
-        return { action: 'redirect', destination: '/admin/change-password' };
-      }
-      return { action: 'next' };
-    }
-
-    if (mfaRequired) {
-      if (isApiRoute && !isApiWhitelisted) {
-        return {
-          action: 'reject',
-          status: 403,
-          code: 'MFA_SETUP_REQUIRED',
-          error: 'SESSION_INCOMPLETE',
-        };
-      }
-      if (isAdminPageRoute && pathname !== '/admin/mfa') {
-        return { action: 'redirect', destination: '/admin/mfa?setup=first-time' };
-      }
-      return { action: 'next' };
-    }
-
-    if (!mfaVerified) {
-      if (isApiRoute && !isApiWhitelisted) {
-        return {
-          action: 'reject',
-          status: 403,
-          code: 'MFA_VERIFY_REQUIRED',
-          error: 'SESSION_INCOMPLETE',
-        };
-      }
-      if (isAdminPageRoute && pathname !== '/admin/mfa') {
-        return { action: 'redirect', destination: '/admin/mfa' };
-      }
-      return { action: 'next' };
-    }
-
-    return { action: 'next' };
-  }
-
-  // --- KASUS UJI 1: Request Tanpa Sesi ---
+  // --- KELOMPOK 1: Pengujian Request Tanpa Sesi Langsung ke proxy() Asli ---
   {
-    const res1 = evaluateProxyAccess({ pathname: '/api/admin/applicants', session: null, enforceEnabled: true });
-    assert(res1.action === 'reject' && res1.status === 401, 'Request API tanpa sesi ditolak 401 Unauthorized');
+    const reqApi = new NextRequest('http://localhost:3009/api/admin/applicants');
+    const resApi = await proxy(reqApi);
+    assert(resApi.status === 401, '1. proxy() asli menolak API tanpa cookie sesi dengan HTTP 401');
 
-    const res2 = evaluateProxyAccess({ pathname: '/admin/applicants', session: null, enforceEnabled: true });
-    assert(res2.action === 'redirect' && res2.destination === '/login', 'Request Halaman tanpa sesi dialihkan ke /login');
+    const reqPage = new NextRequest('http://localhost:3009/admin/applicants');
+    const resPage = await proxy(reqPage);
+    assert(resPage.status === 307, '2. proxy() asli mengalihkan Page tanpa sesi ke /login (status 307)');
+    assert(resPage.headers.get('location') === 'http://localhost:3009/login', '3. Redirect URL persis ke /login');
   }
 
-  // --- KASUS UJI 2: Saklar FIRST_LOGIN_ENFORCE = false ---
+  // --- KELOMPOK 2: Saklar FIRST_LOGIN_ENFORCE = false Langsung ke proxy() Asli ---
   {
-    const sessionIncomplete = {
+    process.env.FIRST_LOGIN_ENFORCE = 'false';
+
+    const tokenIncomplete = await signAdminToken({
       adminId: 1,
-      username: 'admin',
-      role: 'admin',
+      username: 'hr_user',
+      name: 'HR User',
+      email: 'hr@itsp.co.id',
+      role: 'hr',
+      isMfaVerified: false,
       mustChangePassword: true,
       mfaRequired: true,
       mfaVerified: false,
-    };
-    const res = evaluateProxyAccess({
-      pathname: '/admin/applicants',
-      session: sessionIncomplete,
-      enforceEnabled: false,
     });
-    assert(res.action === 'next', 'Saat FIRST_LOGIN_ENFORCE=false, akses langsung diizinkan tanpa redirect paksa');
 
-    const resApi = evaluateProxyAccess({
-      pathname: '/api/admin/applicants',
-      session: sessionIncomplete,
-      enforceEnabled: false,
+    const req = new NextRequest('http://localhost:3009/admin/applicants', {
+      headers: { cookie: `admin_session=${tokenIncomplete}` },
     });
-    assert(resApi.action === 'next', 'Saat FIRST_LOGIN_ENFORCE=false, API langsung diizinkan tanpa blokir');
+    const res = await proxy(req);
+    assert(!res.headers.get('location'), '4. Saat FIRST_LOGIN_ENFORCE=false, proxy() asli tidak melakukan redirect paksa');
   }
 
-  // --- KASUS UJI 3: Saklar FIRST_LOGIN_ENFORCE = true (Tahap 1: First Login) ---
+  // --- KELOMPOK 3: Saklar FIRST_LOGIN_ENFORCE = true (Tahap 1: First Login) ---
   {
-    const token = await signToken({
+    process.env.FIRST_LOGIN_ENFORCE = 'true';
+
+    const firstLoginToken = await signAdminToken({
       adminId: 10,
       username: 'new_staff',
+      name: 'Staff Baru',
+      email: 'staff@itsp.co.id',
       role: 'hr',
+      isMfaVerified: false,
       mustChangePassword: true,
       mfaRequired: true,
       mfaVerified: false,
     });
-    const verifiedSession = await verifyToken(token);
-    assert(verifiedSession !== null && verifiedSession.mustChangePassword === true, 'Token first-login memuat klaim mustChangePassword=true');
 
     // 3a. Blokir API operasional
-    const resBlockApi = evaluateProxyAccess({
-      pathname: '/api/admin/applicants',
-      session: verifiedSession,
-      enforceEnabled: true,
+    const reqApi = new NextRequest('http://localhost:3009/api/admin/applicants', {
+      headers: { cookie: `admin_session=${firstLoginToken}` },
     });
-    assert(
-      resBlockApi.action === 'reject' &&
-      resBlockApi.status === 403 &&
-      resBlockApi.code === 'MUST_CHANGE_PASSWORD',
-      'API operasional diblokir 403 SESSION_INCOMPLETE (MUST_CHANGE_PASSWORD)'
-    );
+    const resApi = await proxy(reqApi);
+    assert(resApi.status === 403, '5. proxy() asli memblokir API operasional dengan HTTP 403 untuk first-login');
+    const apiJson = await resApi.json();
+    assert(apiJson.error === 'SESSION_INCOMPLETE' && apiJson.code === 'MUST_CHANGE_PASSWORD', '6. Kode error terstruktur: SESSION_INCOMPLETE / MUST_CHANGE_PASSWORD');
 
-    // 3b. Whitelist API change-password diizinkan
-    const resAllowApi = evaluateProxyAccess({
-      pathname: '/api/admin/change-password',
-      session: verifiedSession,
-      enforceEnabled: true,
+    // 3b. Whitelist API change-password diizinkan lewat
+    const reqWhitelist = new NextRequest('http://localhost:3009/api/admin/change-password', {
+      headers: { cookie: `admin_session=${firstLoginToken}` },
     });
-    assert(resAllowApi.action === 'next', 'Rute API /api/admin/change-password diizinkan untuk penyelesaian sesi');
+    const resWhitelist = await proxy(reqWhitelist);
+    assert(!resWhitelist.headers.get('location') && resWhitelist.status === 200, '7. proxy() asli mengizinkan rute whitelist /api/admin/change-password');
 
     // 3c. Redirect Page ke /admin/change-password
-    const resRedirectPage = evaluateProxyAccess({
-      pathname: '/admin/applicants',
-      session: verifiedSession,
-      enforceEnabled: true,
+    const reqPage = new NextRequest('http://localhost:3009/admin/applicants', {
+      headers: { cookie: `admin_session=${firstLoginToken}` },
     });
-    assert(
-      resRedirectPage.action === 'redirect' &&
-      resRedirectPage.destination === '/admin/change-password',
-      'Halaman dashboard otomatis dialihkan ke /admin/change-password'
-    );
+    const resPage = await proxy(reqPage);
+    assert(resPage.headers.get('location') === 'http://localhost:3009/admin/change-password', '8. proxy() asli mengalihkan halaman UI ke /admin/change-password');
 
     // 3d. Bebas Loop: Halaman /admin/change-password tidak redirect
-    const resChangePage = evaluateProxyAccess({
-      pathname: '/admin/change-password',
-      session: verifiedSession,
-      enforceEnabled: true,
+    const reqSelf = new NextRequest('http://localhost:3009/admin/change-password', {
+      headers: { cookie: `admin_session=${firstLoginToken}` },
     });
-    assert(resChangePage.action === 'next', 'Halaman /admin/change-password diizinkan tanpa redirect loop');
+    const resSelf = await proxy(reqSelf);
+    assert(!resSelf.headers.get('location'), '9. Halaman /admin/change-password bebas redirect loop');
   }
 
-  // --- KASUS UJI 4: Tahap 2: Ganti Password Selesai -> Wajib Setup MFA ---
+  // --- KELOMPOK 4: Tahap 2: Setup MFA (mustChangePassword=false, mfaRequired=true) ---
   {
-    const tokenAfterPasswordChange = await signToken({
+    process.env.FIRST_LOGIN_ENFORCE = 'true';
+
+    const mfaSetupToken = await signAdminToken({
       adminId: 10,
       username: 'new_staff',
+      name: 'Staff Baru',
+      email: 'staff@itsp.co.id',
       role: 'hr',
+      isMfaVerified: false,
       mustChangePassword: false,
       mfaRequired: true,
       mfaVerified: false,
     });
-    const sessionStep2 = await verifyToken(tokenAfterPasswordChange);
 
-    // 4a. API operasional diblokir dengan MFA_SETUP_REQUIRED
-    const resBlockApi = evaluateProxyAccess({
-      pathname: '/api/admin/jobs',
-      session: sessionStep2,
-      enforceEnabled: true,
+    const reqApi = new NextRequest('http://localhost:3009/api/admin/jobs', {
+      headers: { cookie: `admin_session=${mfaSetupToken}` },
     });
-    assert(
-      resBlockApi.action === 'reject' &&
-      resBlockApi.status === 403 &&
-      resBlockApi.code === 'MFA_SETUP_REQUIRED',
-      'API operasional diblokir 403 SESSION_INCOMPLETE (MFA_SETUP_REQUIRED)'
-    );
+    const resApi = await proxy(reqApi);
+    assert(resApi.status === 403, '10. API operasional ditolak saat MFA belum diaktifkan');
+    const apiJson = await resApi.json();
+    assert(apiJson.code === 'MFA_SETUP_REQUIRED', '11. Kode error adalah MFA_SETUP_REQUIRED');
 
-    // 4b. Redirect Page ke /admin/mfa?setup=first-time
-    const resRedirectPage = evaluateProxyAccess({
-      pathname: '/admin/employees',
-      session: sessionStep2,
-      enforceEnabled: true,
+    const reqPage = new NextRequest('http://localhost:3009/admin/dashboard', {
+      headers: { cookie: `admin_session=${mfaSetupToken}` },
     });
-    assert(
-      resRedirectPage.action === 'redirect' &&
-      resRedirectPage.destination === '/admin/mfa?setup=first-time',
-      'Halaman dialihkan ke /admin/mfa?setup=first-time'
-    );
+    const resPage = await proxy(reqPage);
+    assert(resPage.headers.get('location') === 'http://localhost:3009/admin/mfa?setup=first-time', '12. UI dialihkan ke /admin/mfa?setup=first-time');
 
-    // 4c. Whitelist API mfa diizinkan
-    const resAllowMfaApi = evaluateProxyAccess({
-      pathname: '/api/admin/mfa/setup',
-      session: sessionStep2,
-      enforceEnabled: true,
+    const reqMfaPage = new NextRequest('http://localhost:3009/admin/mfa', {
+      headers: { cookie: `admin_session=${mfaSetupToken}` },
     });
-    assert(resAllowMfaApi.action === 'next', 'API /api/admin/mfa/* diizinkan untuk setup MFA');
-
-    // 4d. Halaman /admin/mfa bebas loop
-    const resMfaPage = evaluateProxyAccess({
-      pathname: '/admin/mfa',
-      session: sessionStep2,
-      enforceEnabled: true,
-    });
-    assert(resMfaPage.action === 'next', 'Halaman /admin/mfa diizinkan tanpa redirect loop');
+    const resMfaPage = await proxy(reqMfaPage);
+    assert(!resMfaPage.headers.get('location'), '13. Halaman /admin/mfa diizinkan tanpa redirect loop');
   }
 
-  // --- KASUS UJI 5: Tahap 3: Setup MFA Selesai -> Sesi Lengkap (Dashboard Terbuka Penuh) ---
+  // --- KELOMPOK 5: Tahap 3: Sesi Lengkap (mustChangePassword=false, mfaRequired=false, mfaVerified=true) ---
   {
-    const tokenCompleted = await signToken({
+    process.env.FIRST_LOGIN_ENFORCE = 'true';
+
+    const fullToken = await signAdminToken({
       adminId: 10,
       username: 'new_staff',
+      name: 'Staff Baru',
+      email: 'staff@itsp.co.id',
       role: 'hr',
+      isMfaVerified: true,
       mustChangePassword: false,
       mfaRequired: false,
       mfaVerified: true,
     });
-    const sessionStep3 = await verifyToken(tokenCompleted);
 
-    // 5a. Akses API operasional diizinkan penuh
-    const resApi = evaluateProxyAccess({
-      pathname: '/api/admin/applicants',
-      session: sessionStep3,
-      enforceEnabled: true,
+    const reqApi = new NextRequest('http://localhost:3009/api/admin/applicants', {
+      headers: { cookie: `admin_session=${fullToken}` },
     });
-    assert(resApi.action === 'next', 'Sesi lengkap: Akses API operasional /api/admin/applicants disetujui');
+    const resApi = await proxy(reqApi);
+    assert(resApi.status === 200, '14. Sesi lengkap: proxy() asli menyetujui akses API operasional');
 
-    // 5b. Akses UI dashboard diizinkan penuh
-    const resPage = evaluateProxyAccess({
-      pathname: '/admin/applicants',
-      session: sessionStep3,
-      enforceEnabled: true,
+    const reqPage = new NextRequest('http://localhost:3009/admin/applicants', {
+      headers: { cookie: `admin_session=${fullToken}` },
     });
-    assert(resPage.action === 'next', 'Sesi lengkap: Akses UI dashboard /admin/applicants disetujui');
+    const resPage = await proxy(reqPage);
+    assert(!resPage.headers.get('location'), '15. Sesi lengkap: proxy() asli menyetujui UI dashboard tanpa redirect');
   }
 
-  // --- KASUS UJI 6: Integritas & Anti-Tampering ---
+  // --- KELOMPOK 6: PENEGAKAN DI HELPER (enforceSessionCompleteness di api-client.ts) ---
   {
-    const invalidSignature = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.invalidsig123';
-    const verified = await verifyToken(invalidSignature);
-    assert(verified === null, 'Token dengan signature salah ditolak oleh verifier');
+    process.env.FIRST_LOGIN_ENFORCE = 'true';
+
+    // 6a. Helper menolak session dengan mustChangePassword=true tanpa panggil backend
+    let caughtMustChange = false;
+    try {
+      enforceSessionCompleteness({
+        adminId: 1,
+        username: 'staff',
+        role: 'hr',
+        email: 'staff@itsp.co.id',
+        isMfaVerified: false,
+        mustChangePassword: true,
+        mfaRequired: false,
+        mfaVerified: true,
+      });
+    } catch (e) {
+      if (e instanceof SessionIncompleteError && e.code === 'MUST_CHANGE_PASSWORD') {
+        caughtMustChange = true;
+      }
+    }
+    assert(caughtMustChange, '16. Helper api-client menolak langsung sesi mustChangePassword tanpa menyentuh backend');
+
+    // 6b. Helper menolak session dengan mfaRequired=true
+    let caughtMfaRequired = false;
+    try {
+      enforceSessionCompleteness({
+        adminId: 1,
+        username: 'staff',
+        role: 'hr',
+        email: 'staff@itsp.co.id',
+        isMfaVerified: false,
+        mustChangePassword: false,
+        mfaRequired: true,
+        mfaVerified: true,
+      });
+    } catch (e) {
+      if (e instanceof SessionIncompleteError && e.code === 'MFA_SETUP_REQUIRED') {
+        caughtMfaRequired = true;
+      }
+    }
+    assert(caughtMfaRequired, '17. Helper api-client menolak langsung sesi mfaRequired tanpa menyentuh backend');
+
+    // 6c. Helper mengizinkan jika bypass=true (misal saat change-password/mfa setup)
+    let bypassOk = false;
+    try {
+      enforceSessionCompleteness({
+        adminId: 1,
+        username: 'staff',
+        role: 'hr',
+        email: 'staff@itsp.co.id',
+        isMfaVerified: false,
+        mustChangePassword: true,
+        mfaRequired: true,
+        mfaVerified: false,
+      }, true);
+      bypassOk = true;
+    } catch {}
+    assert(bypassOk, '18. Helper api-client mengizinkan bypass saat dipanggil rute setup penyelesaian sesi');
   }
 
   console.log(`\n=== SEMUA PENGUJIAN SELESAI: ${passed}/${total} PENGUJIAN LULUS 100% ===`);
 }
 
-main().catch((err) => {
-  console.error(err);
+runRealTests().catch((err) => {
+  console.error('Fatal test error:', err);
   process.exit(1);
 });

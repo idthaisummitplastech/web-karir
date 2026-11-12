@@ -62,12 +62,15 @@ export async function verifyApplicantToken(token: string): Promise<ApplicantToke
   }
 }
 
+// TTL Sesi Admin: 8 Jam (28800 detik), tepat sama dengan ACCESS_TOKEN_EXPIRE_MINUTES backend FastAPI
+export const ADMIN_SESSION_TTL_SECONDS = 8 * 60 * 60;
+
 // Admin JWT
 export async function signAdminToken(payload: AdminTokenPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("1d")
+    .setExpirationTime("8h")
     .sign(getJwtSecret());
 }
 
@@ -101,7 +104,7 @@ export function getAdminCookieOptions() {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
-    maxAge: 60 * 60 * 24,
+    maxAge: ADMIN_SESSION_TTL_SECONDS,
     path: "/",
   };
 }

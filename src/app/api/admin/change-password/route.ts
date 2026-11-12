@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       try {
         await fetchAdminRawBackend(session, "/recruitment/reset-password", {
           method: "POST",
+          bypassEnforcement: true,
           body: JSON.stringify({
             target_type: "admin",
             target_id: session.adminId,
@@ -89,3 +90,4 @@ export async function POST(req: Request) {
     );
   }
 }
+
