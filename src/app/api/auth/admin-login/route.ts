@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signAdminToken } from "@/lib/auth";
+import { signAdminToken, getAdminCookieOptions } from "@/lib/auth";
 import { fetchRawFromBackend } from "@/lib/api-client";
 import { cookies } from "next/headers";
 import QRCode from "qrcode";
@@ -69,6 +69,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Data admin tidak valid." }, { status: 500 });
     }
 
+    const isFirstLogin = Boolean(admin.is_first_login ?? admin.isFirstLogin ?? false);
+    const isMfaEnabled = Boolean(admin.is_mfa_enabled ?? admin.isMfaEnabled ?? true);
+    const mustChangePassword = isFirstLogin;
+    const mfaRequired = !isMfaEnabled;
+    const mfaVerified = true;
+
     const token = await signAdminToken({
       adminId: admin.id,
       username: admin.username,
@@ -76,17 +82,15 @@ export async function POST(req: Request) {
       email: admin.email,
       role: admin.role as "hr" | "user_dept" | "admin",
       department: admin.department,
-      isMfaVerified: true,
+      isMfaVerified: mfaVerified,
+      mustChangePassword,
+      mfaRequired,
+      mfaVerified,
+      sessionVersion: admin.session_version ?? 1,
     });
 
     const cookieStore = await cookies();
-    cookieStore.set("admin_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24,
-      path: "/",
-    });
+    cookieStore.set("admin_session", token, getAdminCookieOptions());
 
     return NextResponse.json({
       success: true,

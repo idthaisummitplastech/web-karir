@@ -28,6 +28,10 @@ export interface AdminTokenPayload {
   role: "hr" | "user_dept" | "admin" | "superadmin";
   department?: string | null;
   isMfaVerified: boolean;
+  mustChangePassword?: boolean;
+  mfaRequired?: boolean;
+  mfaVerified?: boolean;
+  sessionVersion?: number;
 }
 
 // Passwords
@@ -90,6 +94,16 @@ export async function getAdminSession(): Promise<AdminTokenPayload | null> {
   const token = cookieStore.get("admin_session")?.value;
   if (!token) return null;
   return verifyAdminToken(token);
+}
+
+export function getAdminCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    maxAge: 60 * 60 * 24,
+    path: "/",
+  };
 }
 
 // TOTP MFA Helpers (Google Authenticator / Microsoft Authenticator)
