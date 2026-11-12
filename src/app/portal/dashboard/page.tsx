@@ -1774,7 +1774,7 @@ export default function ApplicantDashboard() {
           <TextField
             autoFocus
             fullWidth
-            placeholder="Contoh: PSIKO2026 / ITSP2026"
+            placeholder="Masukkan token ujian"
             value={examTokenInput}
             onChange={(e) => setExamTokenInput(e.target.value.toUpperCase())}
             slotProps={{
@@ -1786,7 +1786,7 @@ export default function ApplicantDashboard() {
             }}
           />
           <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mt: 1, textAlign: 'center' }}>
-            Token Demo: <code>ITSP2026</code> atau <code>PSIKO2026</code>
+            Masukkan kode token yang diberikan oleh tim rekrutmen
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, pt: 0 }} className="notranslate" translate="no">
