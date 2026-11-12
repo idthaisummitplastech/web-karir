@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         "X-Internal-Secret": internalSecret,
         "X-Admin-Id": String(session.adminId),
         "X-Admin-Role": session.role,
+        "X-Session-Version": String(session.sessionVersion ?? 1),
       },
       body: formData,
     });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/auth";
+import { getAdminSession, signAdminToken, getAdminCookieOptions } from "@/lib/auth";
 import { fetchFromBackend } from "@/lib/api-client";
+import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +30,18 @@ export async function POST(req: Request) {
         enable,
       }),
     });
+
+    if (data.success && enable) {
+      // Re-issue cookie with mfaVerified=true and mfaRequired=false
+      const updatedToken = await signAdminToken({
+        ...session,
+        isMfaVerified: true,
+        mfaRequired: false,
+        mfaVerified: true,
+      });
+      const cookieStore = await cookies();
+      cookieStore.set("admin_session", updatedToken, getAdminCookieOptions());
+    }
 
     return NextResponse.json(data);
   } catch (error: any) {

@@ -4846,7 +4846,7 @@ export default function AdminApplicantsPage() {
                         fullWidth
                         size="small"
                         label="Meeting ID / Passcode (Opsional)"
-                        placeholder="Meeting ID: 123 456 789 | Passcode: ITSP2026"
+                        placeholder="Meeting ID: 123 456 789 | Passcode: 123456"
                         value={advanceMeetingPasscode}
                         onChange={(e) => setAdvanceMeetingPasscode(e.target.value)}
                         sx={{ bgcolor: '#FFFFFF' }}
@@ -5024,7 +5024,7 @@ export default function AdminApplicantsPage() {
                         fullWidth
                         size="small"
                         label="Meeting ID / Passcode (Opsional)"
-                        placeholder="Meeting ID: 123 456 789 | Passcode: ITSP2026"
+                        placeholder="Meeting ID: 123 456 789 | Passcode: 123456"
                         value={advanceMeetingPasscode}
                         onChange={(e) => setAdvanceMeetingPasscode(e.target.value)}
                         sx={{ bgcolor: '#FFFFFF' }}

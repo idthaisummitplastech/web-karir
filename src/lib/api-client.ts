@@ -150,61 +150,152 @@ export async function fetchRawFromBackend<T = any>(
   return dualCaseObject(json) as T;
 }
 
+export class SessionIncompleteError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'SessionIncompleteError';
+    this.code = code;
+  }
+}
+
+export interface AdminRequestOptions extends RequestInit {
+  bypassEnforcement?: boolean;
+}
+
+/**
+ * Penegakan kelengkapan sesi di tingkat helper (defense-in-depth).
+ * Menolak panggilan ke backend jika mustChangePassword atau mfaRequired atau belum mfaVerified,
+ * tanpa menyentuh backend sama sekali.
+ */
+export function enforceSessionCompleteness(
+  session: AdminTokenPayload | null | undefined,
+  bypass?: boolean
+): void {
+  if (!session) {
+    throw new Error('Sesi admin tidak ditemukan atau tidak valid.');
+  }
+
+  if (bypass) {
+    return;
+  }
+
+  const enforce = process.env.FIRST_LOGIN_ENFORCE === 'true';
+  if (!enforce) {
+    return;
+  }
+
+  if (session.mustChangePassword) {
+    throw new SessionIncompleteError(
+      'MUST_CHANGE_PASSWORD',
+      'SESSION_INCOMPLETE: Akun wajib mengganti kata sandi awal terlebih dahulu.'
+    );
+  }
+
+  if (session.mfaRequired) {
+    throw new SessionIncompleteError(
+      'MFA_SETUP_REQUIRED',
+      'SESSION_INCOMPLETE: Akun wajib mengaktifkan autentikasi dua faktor (MFA) terlebih dahulu.'
+    );
+  }
+
+  const isVerified = session.mfaVerified !== undefined ? session.mfaVerified : session.isMfaVerified;
+  if (!isVerified) {
+    throw new SessionIncompleteError(
+      'MFA_VERIFY_REQUIRED',
+      'SESSION_INCOMPLETE: Akun wajib memverifikasi kode MFA pada sesi login ini.'
+    );
+  }
+}
+
+function handleBackendSessionErrors(err: any): never {
+  const msg = String(err?.message || '');
+  if (msg.includes('FIRST_LOGIN_REQUIRED')) {
+    throw new SessionIncompleteError('MUST_CHANGE_PASSWORD', msg);
+  }
+  if (msg.includes('MFA_SETUP_REQUIRED')) {
+    throw new SessionIncompleteError('MFA_SETUP_REQUIRED', msg);
+  }
+  if (msg.includes('MFA_SESSION_EXPIRED')) {
+    throw new SessionIncompleteError('MFA_SESSION_EXPIRED', msg);
+  }
+  if (msg.includes('MFA_VERIFICATION_REQUIRED')) {
+    throw new SessionIncompleteError('MFA_VERIFY_REQUIRED', msg);
+  }
+  throw err;
+}
+
 /**
  * Enterprise Admin API Client: Automatically passes verified session identity
- * (X-Admin-Id, X-Admin-Role, X-Admin-Department) along with internal secret.
+ * (X-Admin-Id, X-Admin-Role, X-Admin-Department, X-Session-Version) along with internal secret.
  * Enforces server-side authentication before contacting FastAPI backend.
  */
 export async function fetchAdminBackend<T = any>(
   session: AdminTokenPayload | null | undefined,
   endpoint: string,
-  options?: RequestInit
+  options?: AdminRequestOptions
 ): Promise<T> {
   if (!session) {
     throw new Error('Sesi admin tidak ditemukan atau tidak valid.');
   }
 
+  // Penegakan sisi helper sebelum menyentuh backend
+  enforceSessionCompleteness(session, options?.bypassEnforcement);
+
   const customHeaders: Record<string, string> = {
     'X-Admin-Id': String(session.adminId),
     'X-Admin-Role': session.role,
     'X-Admin-Department': session.department || '',
+    'X-Session-Version': String(session.sessionVersion ?? 1),
   };
 
-  return fetchFromBackend<T>(endpoint, {
-    ...options,
-    headers: {
-      ...customHeaders,
-      ...options?.headers,
-    },
-  });
+  try {
+    return await fetchFromBackend<T>(endpoint, {
+      ...options,
+      headers: {
+        ...customHeaders,
+        ...options?.headers,
+      },
+    });
+  } catch (err: any) {
+    handleBackendSessionErrors(err);
+  }
 }
 
 /**
  * Enterprise Admin API Client (Raw JSON response): Automatically passes verified session identity
- * (X-Admin-Id, X-Admin-Role, X-Admin-Department) along with internal secret.
+ * (X-Admin-Id, X-Admin-Role, X-Admin-Department, X-Session-Version) along with internal secret.
  */
 export async function fetchAdminRawBackend<T = any>(
   session: AdminTokenPayload | null | undefined,
   endpoint: string,
-  options?: RequestInit
+  options?: AdminRequestOptions
 ): Promise<T> {
   if (!session) {
     throw new Error('Sesi admin tidak ditemukan atau tidak valid.');
   }
 
+  // Penegakan sisi helper sebelum menyentuh backend
+  enforceSessionCompleteness(session, options?.bypassEnforcement);
+
   const customHeaders: Record<string, string> = {
     'X-Admin-Id': String(session.adminId),
     'X-Admin-Role': session.role,
     'X-Admin-Department': session.department || '',
+    'X-Session-Version': String(session.sessionVersion ?? 1),
   };
 
-  return fetchRawFromBackend<T>(endpoint, {
-    ...options,
-    headers: {
-      ...customHeaders,
-      ...options?.headers,
-    },
-  });
+  try {
+    return await fetchRawFromBackend<T>(endpoint, {
+      ...options,
+      headers: {
+        ...customHeaders,
+        ...options?.headers,
+      },
+    });
+  } catch (err: any) {
+    handleBackendSessionErrors(err);
+  }
 }
 
 export { dualCaseObject };

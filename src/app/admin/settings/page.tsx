@@ -420,12 +420,12 @@ export default function AdminSettingsPage() {
       const currentTpl = emailTemplates[selectedTemplateKey] || DEFAULT_EMAIL_TEMPLATES[selectedTemplateKey];
       const previewSubject = currentTpl.subject
         .replace('{posisi}', 'Staff IT & Enterprise System')
-        .replace('{nama}', 'Muhammad Rifqi');
+        .replace('{nama}', 'Budi Santoso');
 
       const previewBody = currentTpl.body
-        .replace(/{nama}/g, 'Muhammad Rifqi Alfaridzi')
+        .replace(/{nama}/g, 'Budi Santoso')
         .replace(/{posisi}/g, 'Staff IT & Enterprise System')
-        .replace(/{email}/g, 'alfaridzi.rifqi28@gmail.com')
+        .replace(/{email}/g, 'budi.santoso@itsp.co.id')
         .replace(/{password}/g, '[Kata Sandi Sementara]')
         .replace(/{jadwal}/g, 'Senin, 15 September 2026 pukul 09:00 WIB')
         .replace(/{token}/g, 'PSIKO-2026')

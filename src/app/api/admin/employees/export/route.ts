@@ -26,6 +26,7 @@ export async function GET(req: Request) {
           'X-Admin-Id': String(session.adminId || 1),
           'X-Admin-Role': session.role || 'admin',
           'X-Admin-Department': session.department || '',
+          'X-Session-Version': String(session.sessionVersion ?? 1),
         },
         cache: 'no-store',
       });

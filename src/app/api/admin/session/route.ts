@@ -14,7 +14,7 @@ export async function GET() {
     let liveName = session.name;
 
     try {
-      const liveProfile = await fetchAdminBackend<any>(session, '/auth/me/admin');
+      const liveProfile = await fetchAdminBackend<any>(session, '/auth/me/admin', { bypassEnforcement: true });
       if (liveProfile) {
         liveDepartment = liveProfile.department || liveDepartment;
         liveRole = liveProfile.role || liveRole;
