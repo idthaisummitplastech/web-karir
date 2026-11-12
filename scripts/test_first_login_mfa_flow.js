@@ -12,6 +12,16 @@ require('ts-node').register({
   transpileOnly: true,
 });
 
+const path = require('path');
+const Module = require('module');
+const originalResolveFilename = Module._resolveFilename;
+Module._resolveFilename = function (request, parent, isMain, options) {
+  if (request.startsWith('@/')) {
+    request = path.join(__dirname, '..', 'src', request.slice(2));
+  }
+  return originalResolveFilename.call(this, request, parent, isMain, options);
+};
+
 const { NextRequest } = require('next/dist/server/web/spec-extension/request');
 const { proxy } = require('../src/proxy');
 const { signAdminToken } = require('../src/lib/auth');
@@ -241,8 +251,31 @@ async function runRealTests() {
         mfaVerified: false,
       }, true);
       bypassOk = true;
-    } catch {}
+    } catch { }
     assert(bypassOk, '18. Helper api-client mengizinkan bypass saat dipanggil rute setup penyelesaian sesi');
+  }
+
+  // --- KELOMPOK 7: Regresi Alur Handler admin-login/route.ts (A.2) ---
+  {
+    const { POST } = require('../src/app/api/auth/admin-login/route');
+
+    // 7a. Kredensial kosong ditolak HTTP 400
+    const reqEmpty = new NextRequest('http://localhost:3009/api/auth/admin-login', {
+      method: 'POST',
+      body: JSON.stringify({ employee_id: '', password: '' }),
+    });
+    const resEmpty = await POST(reqEmpty);
+    assert(resEmpty.status === 400, '19. admin-login: Kredensial kosong ditolak dengan HTTP 400');
+    const bodyEmpty = await resEmpty.json();
+    assert(bodyEmpty.error.includes('required'), '20. admin-login: Pesan error kredensial wajib');
+
+    // 7b. Kredensial password kosong saja ditolak HTTP 400
+    const reqNoPass = new NextRequest('http://localhost:3009/api/auth/admin-login', {
+      method: 'POST',
+      body: JSON.stringify({ employee_id: 'ITSP.001', password: '' }),
+    });
+    const resNoPass = await POST(reqNoPass);
+    assert(resNoPass.status === 400, '21. admin-login: Password kosong ditolak dengan HTTP 400');
   }
 
   console.log(`\n=== SEMUA PENGUJIAN SELESAI: ${passed}/${total} PENGUJIAN LULUS 100% ===`);
