@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Box,
@@ -117,7 +117,10 @@ const COMPANY_DEPARTMENTS = [
 
 export default function AdminEmployeesPage() {
   const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
   const [contractFilter, setContractFilter] = useState('');
@@ -126,14 +129,14 @@ export default function AdminEmployeesPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Compute available department options
-  const departmentOptions = useMemo(() => {
-    const set = new Set(COMPANY_DEPARTMENTS);
-    employees.forEach((emp) => {
-      if (emp.department) set.add(emp.department);
-    });
-    return Array.from(set).sort();
-  }, [employees]);
+  // AbortController + request id: hanya respons terbaru yang boleh menimpa state.
+  const fetchAbortRef = useRef<AbortController | null>(null);
+  const fetchRequestIdRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
+
+  // Opsi departemen sengaja stabil (konstan) agar dropdown tidak dibangun ulang
+  // setiap daftar karyawan berubah. Nilai dari data tetap tercakup oleh daftar master.
+  const departmentOptions = useMemo(() => [...COMPANY_DEPARTMENTS].sort(), []);
 
   // Admin Session
   const [adminSession, setAdminSession] = useState<{
@@ -311,9 +314,21 @@ export default function AdminEmployeesPage() {
     } catch { /* ignore */ }
   }, []);
 
-  // Fetch Employees List
+  // Fetch Employees List — debounce pencarian, abort request lama, guard respons terbaru.
   const fetchEmployees = useCallback(() => {
-    setLoading(true);
+    // Batalkan request sebelumnya agar respons lama tidak menimpa hasil terbaru.
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+    const requestId = ++fetchRequestIdRef.current;
+
+    // Loading awal vs refreshing: tabel yang sudah terisi tidak dikosongkan saat refresh.
+    if (hasLoadedOnceRef.current) {
+      setRefreshing(true);
+    } else {
+      setInitialLoading(true);
+    }
+
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (deptFilter) params.append('department', deptFilter);
@@ -324,24 +339,46 @@ export default function AdminEmployeesPage() {
     params.append('sort', sortOrder);
     params.append('_t', Date.now().toString());
 
-    fetch(`/api/admin/employees?${params.toString()}`)
+    fetch(`/api/admin/employees?${params.toString()}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => {
+        // Abaikan respons usang / yang bukan milik request terakhir.
+        if (requestId !== fetchRequestIdRef.current) return;
         if (data && data.success && Array.isArray(data.employees)) {
           setEmployees(data.employees);
+          setTotalResults(typeof data.total === 'number' ? data.total : data.employees.length);
         } else {
           setEmployees([]);
+          setTotalResults(0);
         }
       })
       .catch((err) => {
+        if (err?.name === 'AbortError') return;
+        if (requestId !== fetchRequestIdRef.current) return;
         console.error('Fetch employees error:', err);
         setEmployees([]);
+        setTotalResults(0);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (requestId !== fetchRequestIdRef.current) return;
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+        setRefreshing(false);
+      });
   }, [search, deptFilter, contractFilter, contractEvalFilter, employeeStatusFilter, sortOrder]);
+
+  // Debounce input pencarian ~300 ms sebelum memicu fetch.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     fetchEmployees();
+    return () => fetchAbortRef.current?.abort();
   }, [fetchEmployees]);
 
   useEffect(() => {
@@ -1048,6 +1085,7 @@ export default function AdminEmployeesPage() {
       }).length;
 
   const handleResetFilters = () => {
+    setSearchInput('');
     setSearch('');
     setDeptFilter('');
     setContractFilter('');
@@ -1443,9 +1481,17 @@ export default function AdminEmployeesPage() {
             </Typography>
             <Chip
               size="small"
-              label={`${employees.length} Employees`}
+              label={`${totalResults} hasil`}
               sx={{ fontWeight: 700, bgcolor: '#F1F5F9', color: '#334155', fontSize: 12, height: 24 }}
             />
+            {refreshing && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                <CircularProgress size={14} sx={{ color: '#018730' }} />
+                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+                  Memperbarui...
+                </Typography>
+              </Box>
+            )}
           </Box>
 
           {(search || deptFilter || contractFilter || contractEvalFilter || employeeStatusFilter) && (
@@ -1473,12 +1519,9 @@ export default function AdminEmployeesPage() {
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              placeholder="Search name, ID (1530.09.26), national ID, position or division..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
+              placeholder="Cari nama, ID karyawan (1530.09.26), NIK, jabatan, atau divisi..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               slotProps={{
                 input: {
                   startAdornment: (
@@ -1491,6 +1534,7 @@ export default function AdminEmployeesPage() {
                       <IconButton
                         size="small"
                         onClick={() => {
+                          setSearchInput('');
                           setSearch('');
                           setPage(0);
                         }}
@@ -1689,6 +1733,7 @@ export default function AdminEmployeesPage() {
                 size="small"
                 label={`Pencarian: "${search}"`}
                 onDelete={() => {
+                  setSearchInput('');
                   setSearch('');
                   setPage(0);
                 }}
@@ -1779,7 +1824,7 @@ export default function AdminEmployeesPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {initialLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={36} sx={{ color: '#018730', mb: 1.5 }} />
