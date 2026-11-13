@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { fetchFromBackend } from "@/lib/api-client";
 import { getAppUrl } from "@/lib/urls";
 import { emailAccountCreated, sendMailDirect, generateCorporateEmailWrapper } from "@/lib/email";
+import { awaitEmailDelivery, EMAIL_FAILED_APPLICANT_MESSAGE } from "@/lib/apply-email";
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024; // 100 KB strictly
 
@@ -205,33 +206,61 @@ export async function POST(req: Request) {
       }),
     });
 
-    // Send email with credentials
-    if (result.success && result.applicant && result.temp_password) {
-      const tempPassword = result.temp_password;
-      const appUrl = getAppUrl();
-      const jobTitle = result.applicant.job_posting?.title || "Posisi Pilihan";
+    // Kirim email kredensial. sendMailDirect mengembalikan { success:false } saat
+    // SMTP tidak lengkap/gagal (tidak melempar), jadi hasilnya WAJIB di-await.
+    // Timeout ~5 detik: pendaftaran tetap tersimpan walau email lambat.
+    // Kredensial TIDAK PERNAH di-fallback: wajib dari result.temp_password backend.
+    let emailSent = true;
+    if (result.success && result.applicant) {
+      if (!result.temp_password) {
+        // Kegagalan terkontrol: jangan kirim email tanpa kredensial yang sah.
+        emailSent = false;
+        console.error("[APPLY EMAIL ERROR] Kredensial sementara tidak tersedia; email konfirmasi tidak dikirim.", {
+          success: false,
+          error: "missing_temp_password",
+          applicantId: result.applicant.id,
+        });
+      } else {
+        const tempPassword = result.temp_password;
+        const appUrl = getAppUrl();
+        const jobTitle = result.applicant.job_posting?.title || "Posisi Pilihan";
 
-      const emailSubject = `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${jobTitle}`;
-      const emailHtml = emailAccountCreated(
-        result.applicant.full_name,
-        jobTitle,
-        result.applicant.email,
-        tempPassword,
-        appUrl
-      );
+        const emailSubject = `Konfirmasi Pendaftaran & Kredensial Akun Portal Karir PT ITSP - ${jobTitle}`;
+        const emailHtml = emailAccountCreated(
+          result.applicant.full_name,
+          jobTitle,
+          result.applicant.email,
+          tempPassword,
+          appUrl
+        );
 
-      sendMailDirect({
-        to: result.applicant.email,
-        subject: emailSubject,
-        html: emailHtml,
-      }).catch((mailErr) => {
-        console.error("[APPLY EMAIL ERROR] Failed to send email:", mailErr?.message);
-      });
+        const outcome = await awaitEmailDelivery(() =>
+          sendMailDirect({
+            to: result.applicant.email,
+            subject: emailSubject,
+            html: emailHtml,
+          })
+        );
+
+        emailSent = outcome.sent;
+        if (!outcome.sent) {
+          // Log aman: tanpa password, tanpa isi email, tanpa alamat lengkap penerima.
+          console.error("[APPLY EMAIL ERROR] Konfirmasi lamaran gagal terkirim.", {
+            success: false,
+            error: outcome.error,
+            timedOut: Boolean(outcome.timedOut),
+            applicantId: result.applicant.id,
+          });
+        }
+      }
     }
 
     return NextResponse.json({
       success: true,
-      message: result.message || "Pendaftaran lamaran kerja Anda berhasil dikirim!",
+      emailSent,
+      message: emailSent
+        ? (result.message || "Pendaftaran lamaran kerja Anda berhasil dikirim!")
+        : EMAIL_FAILED_APPLICANT_MESSAGE,
       applicant: result.applicant,
     });
   } catch (error: any) {
