@@ -6,7 +6,8 @@
     "dev": "next dev -p 3009",
     "build": "next build",
     "start": "next start -p 3009",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

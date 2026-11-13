@@ -1424,7 +1424,7 @@ export default function ApplyPage() {
                 <EmailSentIcon sx={{ fontSize: 44 }} />
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mb: 1 }}>
-                Application Submitted Successfully!
+                {successInfo.emailSent === false ? 'Pendaftaran Berhasil!' : 'Application Submitted Successfully!'}
               </Typography>
               <Typography variant="body1" sx={{ color: '#475569', maxWidth: 620, mx: 'auto', mb: 3.5, lineHeight: 1.6 }}>
                 Thank you, <strong>{successInfo.applicant.fullName}</strong>. Your application for{' '}
@@ -1432,6 +1432,7 @@ export default function ApplyPage() {
               </Typography>
 
               {/* Box Instruksi Cek Email */}
+              {successInfo.emailSent !== false && (
               <Box
                 sx={{
                   bgcolor: '#F8FAFC',
@@ -1475,6 +1476,13 @@ export default function ApplyPage() {
                   • Use the email address and password to sign in to the Applicant Portal and track all seven selection stages.
                 </Typography>
               </Box>
+              )}
+
+              {successInfo.emailSent === false && (
+                <Alert severity="warning" sx={{ maxWidth: 580, mx: 'auto', textAlign: 'left', mb: 4, borderRadius: 2 }}>
+                  Pendaftaran berhasil, email konfirmasi belum terkirim. Silakan hubungi HR.
+                </Alert>
+              )}
 
               <Button
                 variant="contained"

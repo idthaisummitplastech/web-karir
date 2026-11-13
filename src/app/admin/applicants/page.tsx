@@ -2674,7 +2674,7 @@ export default function AdminApplicantsPage() {
 
                           {/* Resend Stage Email (recovery bila kandidat tidak menerima email) */}
                           {!isFailed && canManage && (
-                            <Tooltip title="Kirim Ulang Email Notifikasi Stage Ini">
+                            <Tooltip title="Kirim Ulang Email Notifikasi Stage Ini (tidak mengirim ulang password lama; gunakan Reset Password bila pelamar belum menerima kredensial awal)">
                               <IconButton
                                 size="small"
                                 onClick={() => handleResendEmail(a)}
