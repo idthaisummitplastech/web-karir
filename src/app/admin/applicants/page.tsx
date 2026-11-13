@@ -664,6 +664,9 @@ export default function AdminApplicantsPage() {
     applicantsRef.current = applicants;
   }, [applicants]);
 
+  // B2: saat menu Select terbuka, polling harus dijeda. Ref dibaca oleh useSmartSync
+  // pada setiap siklus sehingga perubahan open/close langsung berlaku tanpa render ulang.
+  const selectMenuOpenRef = useRef(false);
   const selectedApplicantRef = useRef<any | null>(selectedApplicant);
   useEffect(() => {
     selectedApplicantRef.current = selectedApplicant;
@@ -748,7 +751,8 @@ export default function AdminApplicantsPage() {
     activeIntervalMs: 10000,
     idleIntervalMs: 60000,
     enabled: true,
-    isPaused:
+    isPaused: () =>
+      selectMenuOpenRef.current ||
       advanceModalOpen ||
       overrideModalOpen ||
       hireContractModalOpen ||
@@ -1801,6 +1805,12 @@ export default function AdminApplicantsPage() {
                 label="Filter by Stage"
                 value={stageFilter}
                 onChange={(e) => setStageFilter(e.target.value)}
+                slotProps={{
+                  select: {
+                    onOpen: () => { selectMenuOpenRef.current = true; },
+                    onClose: () => { selectMenuOpenRef.current = false; },
+                  },
+                }}
               >
                 <MenuItem value="">All Stages (1 s/d 7)</MenuItem>
                 {RECRUITMENT_STAGES.map((s) => (
@@ -1818,6 +1828,12 @@ export default function AdminApplicantsPage() {
                 label="Pass / Fail Status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
+                slotProps={{
+                  select: {
+                    onOpen: () => { selectMenuOpenRef.current = true; },
+                    onClose: () => { selectMenuOpenRef.current = false; },
+                  },
+                }}
               >
                 <MenuItem value="">All Statuses</MenuItem>
                 <MenuItem value="in_progress">In Progress</MenuItem>
